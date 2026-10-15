@@ -1,0 +1,20 @@
+[
+  {
+    "repository": "https://github.com/Uniswap/v4-core",
+    "commit": "e50237c43811bd9b526eff40f26772152a42daba",
+    "directory": "lib/v4-core",
+    "selection": "src/ excluding src/test/; licenses/"
+  },
+  {
+    "repository": "https://github.com/foundry-rs/forge-std",
+    "commit": "77041d2ce690e692d6e03cc812b57d1ddaa4d505",
+    "directory": "lib/forge-std",
+    "selection": "src/ and root LICENSE files"
+  },
+  {
+    "repository": "https://github.com/transmissions11/solmate",
+    "commit": "4b47a19038b798b4a33d9749d25e570443520647",
+    "directory": "lib/solmate",
+    "selection": "src/auth/Owned.sol, src/tokens/ERC20.sol; root LICENSE files"
+  }
+]

@@ -1,0 +1,21 @@
+{
+  "description": "Build fingerprints only. These are not deployment addresses or evidence of a live deployment.",
+  "compiler": "0.8.26",
+  "evmVersion": "cancun",
+  "optimizerRuns": 200,
+  "metadata": "no CBOR; no metadata bytecode hash",
+  "contracts": {
+    "BoundedSwapHook": {
+      "creationCodeHash": "0xda1d869de0a76c9fdb5406096a1f7d95e5d79367065c191d41f03ca5f2c1d3c0",
+      "runtimeCodeHash": "0x2a4f88b53877d552c0e429a860e0cf439b90243782bb54f85ede19221e1e97a9",
+      "creationCodeBytes": 4930,
+      "runtimeCodeBytes": 3431
+    },
+    "HooksStoreFactory": {
+      "creationCodeHash": "0x06049ad72fb5add81618a141e5557b1f208e7cb921d012e9dc37d5d576aee7da",
+      "runtimeCodeHash": "0x1f235a60ddcf20b18c10667b2a274e41dfe920f8ce62f3c0880210efff09c22e",
+      "creationCodeBytes": 14003,
+      "runtimeCodeBytes": 13879
+    }
+  }
+}

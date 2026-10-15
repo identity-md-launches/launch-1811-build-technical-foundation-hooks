@@ -1,0 +1,44 @@
+# Threat model
+
+## Assets, boundaries and assumptions
+
+The hook is noncustodial: the v4 PoolManager and external periphery handle balances and settlement. Assets at risk are pool participants' ability to trade, accurate callback attribution and the integrity of Store deployment plans. Pool funds remain subject to v4, token and router risks. A defective hook can disrupt swaps even without holding funds.
+
+The reviewed factory/build and a correctly identified, compatible, non-substituted PoolManager are trusted. The factory validates the manager's code hash at planning, deployment and later verification; the hook authenticates the manager by stored address on every enabled callback. The hook constructor does not call another contract or require external code. Direct standalone deployers must perform the same manager-identity checks as the factory integration. Code hashing alone cannot identify a malicious contract as canonical or detect upgrades behind an unchanged proxy.
+
+The creator, transaction caller, pool initializer, routers, hookData, RPC results and stored plans are untrusted inputs. The callback `sender` is typically a router and is used only for an informational event, never user authorization. PoolId contains the full PoolKey, including currencies, fee, tick spacing and hook. State has no single-pool assumption.
+
+## Failure modes and controls
+
+| Threat | Control / limitation | Local evidence |
+|---|---|---|
+| Direct spoofed callbacks | Enabled callbacks require exact manager caller and `key.hooks == this`; unused callbacks always revert | Unauthorized caller fuzzing, wrong hook and all disabled callback tests |
+| Cross-pool state confusion | Initialization and counters keyed by full PoolId; unknown IDs fail | Two distinct newly initialized pools and independent counters |
+| Unauthorized configuration or asset extraction | No setter, owner, proxy, upgrade, delegatecall, payout, token approval or external asset call in the hook | Source review; deployed settings/runtime comparisons |
+| Dynamic pool with silently zero fee | Dynamic fee pools explicitly fail initialization | Wrapped revert and manager/hook state rollback test |
+| Wrong signed limit handling | Direct signed comparisons avoid negating int256.min; limit is positive uint128 | Min/max/zero tests, signed fuzzing, four exact-mode/direction boundaries |
+| Bypassing economic intent | Limit is only a per-call requested specified-currency bound; splitting swaps is allowed, exact-output input is not capped | Documented template behavior; no claim of economic or MEV protection |
+| Reentrancy | Hook enabled callbacks make no external calls. Factory creates fixed known code and verifies through static calls; it never executes caller-supplied bytecode | Control-flow review; downstream settlement failure rolls back counter and pool state |
+| Wrong CREATE2 deployer or constructor encoding | Shared formula uses actual factory and full creation code plus constructor ABI; factory checks caller commitments | Independent formula fuzzing, script and SDK integration, real CREATE2 deployment |
+| Extra or missing callback permissions | Full low-14-bit equality plus constructor validation, exact fixed spec mask | Permission fuzzing, wrong salt failures, all 14 permissions inspected |
+| Tampered artifact, script, RPC response or cached plan | Compare local factory/hook runtime, independently calculate plan, bind chain and constructor args, verify onchain | Changed plan/settings/hash/address, corrupted runtime and storage tests; adapter tampering tests |
+| Manager at wrong address or with changed code | Require nonempty expected code hash and matching chain, recheck on deployment/verification | Missing code, changed code, wrong chain and invalid spec failures |
+| Copying deployment calldata | Permissionless identical deployment confers no ownership. Duplicate deploy fails; caller can verify existing identical instance | Front-running-equivalent caller and occupied-address tests |
+| Salt exhaustion or arithmetic wrap | Bounded paginated search and checked range; explicit exhaustion result | Empty page, successful page, resume index and overflow tests |
+| Unexpected ETH or tokens | Nonpayable methods, no payable fallback; unsolicited/forced funds are not part of logic and cannot be recovered | Prefunded CREATE2 address deploys identically |
+| Unsettled swap | PoolManager's unlock accounting reverts the transaction; hook count and events roll back too | Deliberately missing settlement and subsequent successful swap |
+| Mainnet broadcast | Factory constructor/deploy, shared integration and adapter allow only local/named test chains | Named mainnets and unknown chain IDs rejected |
+
+The factory emits after verifying freshly created code. Foundry's generic `reentrancy-events` lint flags this sequence; the verification calls are static reads of the fixed hook whose runtime was just checked, and its constructor has no external calls. There is no untrusted state-changing callback in that sequence. This is reviewed reasoning, not an external audit finding.
+
+`swapCount` counts completed `afterSwap` callbacks, not unique traders, volume or guaranteed nonzero fills. Counts/events roll back if a later part of the transaction fails. An initializer pays for its own per-pool storage entry; there are no loops over all pools. Checked uint256 counter overflow is practically unreachable but would revert that pool's swap. Limit rejection does not prevent liquidity removal because no liquidity callback is enabled.
+
+## Residual risks and responsibilities
+
+There is no admin recovery from an incorrect manager, limit or defective immutable implementation. Redeploy a reviewed hook and use new pools. This template intentionally accepts arbitrary new static-fee PoolKeys; it has no currency allowlist or decimal normalization. A pool creator must judge the limit for each pair. The hook ignores hookData. Applications must separately enforce deadlines, output minima/input maxima and token compatibility.
+
+RPC identity, censorship and reorgs are not secured by a bytecode hash. Operators must use trustworthy chain data, validate successful receipts, retain plans and apply chain-specific finality. A backend using this adapter must restrict RPC destinations, rate-limit mining, authenticate users and keep signing outside the read-only adapter. A forged checker response must never mark a deployment verified.
+
+## Review scope and untested areas
+
+This work includes manual review and Foundry fuzz/success/failure tests, plus a local Anvil adapter test. No independent security audit, Slither or Mythril run, public-chain fork, live testnet transaction, hostile-token suite, native-currency integration, production router test, sequencer-failure test, or hosted-service penetration test was performed. Core/vendor functionality is tested only as used here, not re-audited in full. A separate adversarial review is required before release involving others' funds.

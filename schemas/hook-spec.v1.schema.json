@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Hooks Store HookSpec v1",
+  "description": "Shared chat/visual output. Deployment additionally validates integer ranges, chain, manager code, build identity and CREATE2 permissions.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "templateId", "chainId", "poolManager", "poolManagerCodeHash", "permissions", "maxSpecifiedAmount"],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "templateId": {"const": "hooks-store/bounded-swap/v1"},
+    "chainId": {"type": "string", "pattern": "^[1-9][0-9]{0,77}$"},
+    "poolManager": {"type": "string", "pattern": "^0x[0-9a-fA-F]{40}$", "not": {"const": "0x0000000000000000000000000000000000000000"}},
+    "poolManagerCodeHash": {"type": "string", "pattern": "^0x[0-9a-fA-F]{64}$"},
+    "permissions": {"const": ["afterInitialize", "beforeSwap", "afterSwap"]},
+    "maxSpecifiedAmount": {"type": "string", "pattern": "^[1-9][0-9]{0,38}$"}
+  }
+}
