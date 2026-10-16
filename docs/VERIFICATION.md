@@ -69,3 +69,67 @@ The swap-limit decision is tested in `HookIntegration.t.sol`. `HookJobRequester.
 | Static page RPC readback | The page's `eth_call` (`getJob`, `jobsOf`) and `eth_getLogs` calls replayed against a local Anvil after one job was opened, delivered and its review ask refused: 15 words, status Delivered, review Unanswered, one listed job, events in order |
 
 The original 39 tests are unchanged. The 80 tests of the previous follow-up are kept, with the requester's constructor now taking `maxPrice` and `setAsset` replaced by `setPayment`. `HookJobRequester` gained a price ceiling, a version 1 fallback (`failureHook`) and a job/review id collision check; `build-fingerprints.json` records its new hashes. Nothing was broadcast to a public chain and no paid request was submitted.
+
+## Follow-up: listing registry and featured ads
+
+The original 86 Foundry tests and the Intake implementation remain unchanged. This follow-up adds
+40 Foundry tests and a separate read-only listing page. It leaves build configuration, lockfiles,
+remappings and vendored dependencies unchanged and adds no dependency.
+
+| Check | Result |
+|---|---|
+| `forge build` | Pass, solc 0.8.26, original compiler settings |
+| `forge test` | **126 passed**, zero failures/skips, with the existing pinned seed |
+| `forge test --fuzz-seed 0x897ccfb85f71eb00ada949c5387d8bc41b650fda2a7d704b3960c7edf39b4654` | **126 passed**, zero failures/skips |
+| `forge fmt --check` | Pass |
+| `node --test test/listings-reader.test.cjs` | **6 passed**; Node built-ins and local Foundry `cast`, no installed packages or network |
+| Compiled runtime sizes | Registry **9,035 bytes**, ads **8,056 bytes**, both below 24,576 bytes |
+
+`HookListingRegistry.t.sol` covers free creation/editing, every persisted field, immutable historical
+revisions, same-hook independent claims, duplicate rejection, two-step transfers and conflicts,
+owner authorization including fuzzed callers, archive/restore, label normalization/search,
+pagination, input limits and the absence of an audit badge despite audit URLs/labels/ad purchases.
+
+`FeaturedPlacements.t.sol` covers exact price and duration, #ad disclosure, same-block ordering,
+pagination, duplicate ads, automatic visibility expiry, renewing before old settlement, original
+payer refund rights after edits/archive/transfers, stale purchase terms, recipient snapshots,
+configuration failures, admin rotation, direct donations, withdrawal authorization, immediate and
+half-period refunds, expiry boundaries, duplicate actions and fuzzed refund rounding/conservation.
+Expected constructor failures use external call boundaries; traces confirmed later assertions
+actually execute after each expected failure.
+
+`FeaturedAdversarial.t.sol` exercises false/reverting/no-return/malformed tokens, sender and recipient
+transfer taxes, no-op transfers, disappeared code, rollback/retry after failure and callbacks trying
+to reenter each custody mutation. A reverting recipient token transfer cannot block internal
+cancellation or settlement. These mocks establish the local defenses; they are not a live IMD test.
+
+`FeaturedInvariant.t.sol` ran **256 sequences / 128,000 handler calls with zero reverts for each
+seed**. It interleaves deposits, withdrawals, purchases, cancellations, time advances, settlement,
+visibility changes, recipient rotation and proceeds claims. After every action it checks token
+backing, each category's aggregate balances, per-placement refunds and earned funds, and cumulative
+conservation. After every sequence it expires and settles all remaining ads, then withdraws every
+balance without admin cooperation and asserts that no funds remain. History is bounded to 30
+placements per sequence to keep exhaustive invariant checks practical. Unit tests cover invalid
+actions separately, so handler success counts are not padded by expected authorization failures.
+
+The JavaScript tests pin selectors to built artifacts, decode independent `cast abi-encode` vectors,
+check dynamic metadata/label offsets and ordered pages, reject malformed ABI/undisclosed ads, and
+exercise the renderer with malicious HTML and `javascript:` references. Supplied strings remain
+text; every paid card contains a visible #ad badge, its pinned revision and unverified audit status.
+No browser wallet transaction, hosted site or live RPC integration was exercised.
+
+Manual contributor review checked authorization, accounting transitions, snapshot binding, token
+call rollback, loop bounds and admin reach. Foundry lint emits advisory warnings, not build errors:
+timestamp comparisons deliberately meter the seven-day ad period; events follow guarded token
+calls so failed calls cannot record a deposit/withdrawal; label validation reverts inside explicitly
+bounded loops. Scalar counters default to zero under Solidity semantics. `onlyOwner` before the
+configuration guard makes no external call, and the token's code-length check also rejects zero.
+Block timestamp drift/censorship and token behavior remain explicit assumptions in
+[the operating terms and threat model](LISTINGS_AND_ADS.md).
+
+No independent audit, Slither/Mythril run, public-chain fork, live deployment, paid Intake request,
+new token or pool, funded-wallet operation, or rerun of the unchanged optional Python SDK suite
+was performed. Recipient address approval, canonical IMD verification, deployment/source
+verification and a separate contributor's adversarial review remain future launch responsibilities.
+The previous `build-fingerprints.json` remains evidence for the unchanged foundation/Intake build;
+it does not describe these additional contracts or a live deployment.

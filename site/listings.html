@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hooks Store: listings and featured ads</title>
+  <style>
+    body { font: 16px/1.5 system-ui, sans-serif; max-width: 64rem; margin: 2rem auto; padding: 0 1rem; }
+    label { display: block; margin-top: .6rem; }
+    input, button { font: inherit; padding: .4rem; }
+    input { box-sizing: border-box; width: 100%; }
+    button { margin: .8rem .5rem .8rem 0; }
+    article { border: 1px solid #bbb; border-radius: .4rem; padding: 1rem; margin: 1rem 0; overflow-wrap: anywhere; }
+    .ad { background: #fff8e1; border-color: #806000; }
+    .badge { display: inline-block; padding: .15rem .55rem; background: #563e00; color: white; font-weight: bold; }
+    dl { display: grid; grid-template-columns: minmax(8rem, 1fr) 3fr; gap: .3rem 1rem; }
+    dd { margin: 0; white-space: pre-wrap; }
+    dt { font-weight: 600; }
+    .note { color: #444; }
+    #status { white-space: pre-wrap; }
+  </style>
+  <script src="listings.js" defer></script>
+</head>
+<body>
+  <nav><a href="index.html">IMD job status</a></nav>
+  <h1>Hooks Store listings</h1>
+  <p>Free listings are claims submitted by their owners. References and labels are unverified;
+    they do not establish an audit or control of a hook. Featured placements cost 0.1 IMD for seven
+    days and always carry <strong>#ad</strong>.</p>
+  <form id="reader">
+    <label>JSON-RPC URL (leave empty to use your wallet's provider)<input id="rpc" type="url" placeholder="https://..."></label>
+    <label>Expected registry chain ID<input id="chain" type="text" inputmode="numeric" pattern="[0-9]+" required></label>
+    <label>Listing registry address<input id="registry" pattern="0x[0-9a-fA-F]{40}" required></label>
+    <label>Featured placements address<input id="ads" pattern="0x[0-9a-fA-F]{40}" required></label>
+    <label>Filter organic listings by hook chain ID (optional)<input id="filter-chain" inputmode="numeric" pattern="[0-9]+"></label>
+    <label>Filter organic listings by listing owner (optional)<input id="filter-owner" pattern="0x[0-9a-fA-F]{40}"></label>
+    <label>Filter organic listings by exact label (optional)<input id="filter-label" pattern="[a-z0-9-]{1,32}"></label>
+    <button type="submit">Load / refresh snapshot</button>
+  </form>
+  <p class="note">This reader makes no transactions or approval requests. Each page scans 20 IDs;
+    an empty page can still have later results. Refresh to see a newer chain snapshot.</p>
+  <p id="status" role="status" aria-live="polite"></p>
+  <section aria-labelledby="featured-heading">
+    <h2 id="featured-heading">Featured placements <span class="badge">#ad</span></h2>
+    <p>Oldest purchase first. Each card shows the purchased revision, which may differ from the
+      current listing. Editing or archiving a listing does not cancel its existing ad.</p>
+    <div id="featured"></div>
+    <button id="more-ads" type="button" disabled>Next featured page</button>
+  </section>
+  <section aria-labelledby="organic-heading">
+    <h2 id="organic-heading">Free listings</h2>
+    <div id="organic"></div>
+    <button id="more-listings" type="button" disabled>Next listings page</button>
+  </section>
+</body>
+</html>

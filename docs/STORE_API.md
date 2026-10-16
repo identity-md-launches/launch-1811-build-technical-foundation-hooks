@@ -1,5 +1,10 @@
 # Interface for the Store
 
+The new listing and advertising API is documented in [Listings and featured advertising](LISTINGS_AND_ADS.md).
+Its registry and escrow are separate from hook deployment and Intake requests. The reference
+[static reader](../site/listings.html) queries both contracts, shows unverified references and
+historical ad revisions, and marks every paid placement **#ad**.
+
 The stable contract boundary is [IHooksStore](../src/interfaces/IHooksStore.sol). Generated ABI JSON is available after `forge build` at `out/IHooksStore.sol/IHooksStore.json`. The Python adapter supplies a usable reference integration without package installation. Both creator paths must use the same encoder and planner.
 
 ## Contract calls

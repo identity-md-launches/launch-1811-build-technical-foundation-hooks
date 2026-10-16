@@ -1,6 +1,13 @@
 # Hooks Store foundation
 
-A versioned HookSpec, one standalone Uniswap v4 hook, and a shared CREATE2 deployment path for chat and visual creators. The implementation is locally tested. No public-chain transaction was submitted, and no hosted Store, chat service, visual UI or production deployment is claimed.
+A versioned HookSpec, one standalone Uniswap v4 hook, and a shared CREATE2 deployment path for chat and visual creators. The implementation is locally tested. No public-chain transaction was submitted, and no hosted Store, chat creation service, visual builder or production deployment is claimed.
+
+The Store now also has a [free onchain listing registry and refundable featured ads](docs/LISTINGS_AND_ADS.md).
+Listings record chain/address, owner, evidence references, callback/fee/admin disclosures and searchable
+labels. References remain unverified: supplying an audit URL never grants an audited badge. Optional
+**#ad** placements cost **0.1 IMD for seven days**, ordered by purchase ID, with pro-rata cancellation
+refunds and owner-only withdrawal of unused deposits. The [static reader](site/listings.html) displays
+the purchased revision and the ad disclosure. No hosted deployment is claimed.
 
 `BoundedSwapHook` serves any number of **new static-fee pools on one PoolManager**. It rejects swaps whose requested `amountSpecified` is zero or outside an immutable raw-unit limit, then counts successful swap callbacks separately by PoolId. It neither holds swap funds nor changes fees or accounting deltas. Anyone may use it when initializing a new pool. A pool's hook is part of its PoolKey; this does not retrofit hooks onto existing pools.
 
@@ -22,11 +29,18 @@ forge test
 forge fmt --check
 sh script/verify-vendored.sh
 python3 -m unittest discover -s test -p 'test_*.py' -v
+# Optional static listing reader checks (Node.js built-ins only):
+node --test test/listings-reader.test.cjs
 ```
 
 The requested fuzz seed is pinned in `foundry.toml`:
 `0x936d89b088020ddf36122a88c4c9aed7130c7a410f5c44680a7d121950c99345`.
-Tests do not read or mutate environment variables. Python integration tests start and stop their own disposable Anvil instance on loopback; they never use a remote RPC or a private key. In this job all 10 of them passed locally (the previous job could not run them in its environment).
+Tests do not read or mutate environment variables. Python integration tests start and stop their own disposable Anvil instance on loopback; they never use a remote RPC or a private key. The earlier IMD requester hardening follow-up recorded all 10 passing. The listing/ads follow-up did not modify or rerun those SDK tests.
+
+The listings/ads follow-up also checks the supplied seed directly using
+`forge test --fuzz-seed 0x897ccfb85f71eb00ada949c5387d8bc41b650fda2a7d704b3960c7edf39b4654`.
+The protected Foundry configuration and its existing seed are unchanged. New tests include hostile
+token behavior and stateful conservation/withdrawal checks alongside the original suite.
 
 The Foundry suite mines and deploys real CREATE2 hooks, creates a fresh real v4 PoolManager, and initializes two distinct new pools using the same hook. It exercises swaps, limits, both exact modes and directions, per-pool isolation, liquidity withdrawal, failed settlement rollback, permissions, malformed specs and deployment verification. Test tokens and the settlement router exist only in `test/`. Neither deployment script creates tokens, managers or pools.
 
@@ -43,6 +57,8 @@ The Foundry suite mines and deploys real CREATE2 hooks, creates a fresh real v4 
 | Read-only Store client and unsigned transaction builder | [hooks_store.py](sdk/hooks_store.py) |
 | Integration instructions | [Store API](docs/STORE_API.md), [deployment operations](docs/DEPLOYMENT.md) |
 | IMD job requests and review status | [HookJobRequester.sol](src/imd/HookJobRequester.sol), [deploy script](script/DeployHookJobRequester.s.sol), [integration guide](docs/IMD_INTEGRATION.md), [static status page](site/index.html) |
+| Free listing registry | [HookListingRegistry.sol](src/store/HookListingRegistry.sol), [listing and ad API/operations](docs/LISTINGS_AND_ADS.md) |
+| Optional featured #ad escrow | [FeaturedPlacements.sol](src/store/FeaturedPlacements.sol), [read-only listing page](site/listings.html) |
 | Evidence and limits | [verification](docs/VERIFICATION.md), [chain support](docs/CHAINS.md), [threat model](docs/THREAT_MODEL.md) |
 
 Both creator frontends emit the same structured spec. They call `normalize_spec` / `build_spec`, then `StoreClient.plan`; they do not generate arbitrary Solidity or supply arbitrary bytecode. The Store gets a reviewable unsigned transaction. A separately controlled wallet can submit it to an allowed test network, after which a fresh client calls `verify`. The Python adapter can be embedded in a backend; other languages can call the same ABI directly.
@@ -58,6 +74,15 @@ The deployment policy permits local chain `31337`, Ethereum Sepolia `11155111`, 
 The restriction is a property of this factory build (`DeploymentPolicy`), not of the hook template. The hook constructor only binds `spec.chainId` to the actual chain, so the public hook bytecode can be deployed directly on any chain. Such a deployment is not a Store deployment: this factory's registry and `verify` do not recognise it. Future mainnet support needs a separately reviewed factory release with an updated policy list. It does not need a new hook template, bytecode or HookSpec version, so the restriction does not permanently block mainnet. Full chain-specific status is in [CHAINS.md](docs/CHAINS.md).
 
 ## After launch
+
+For the new advertising contract, the explicit launch owner calls `configureToken(token)` once with
+the verified, 18-decimal IMD address for the settlement chain and `setProceedsRecipient(recipient)`
+with the requester-approved treasury address. Neither address is guessed or defaulted; deposits
+require the token and purchases require both settings. **Proposed recipient: the Hooks Store project
+treasury under a requester-approved multisig, exact address pending final approval before live use.**
+Recipient changes affect future purchases only. There is no admin sweep, upgrade, pause, pricing
+control or access to users' credit. Full [settings, admin powers and responsibilities](docs/LISTINGS_AND_ADS.md#after-launch)
+are documented separately from the existing Intake integration. The registry has no global admin.
 
 The hook template and factory have **no after-launch setters**. `HookJobRequester` does; they are listed under "After launch" in [IMD_INTEGRATION.md](docs/IMD_INTEGRATION.md). Until `setJobTemplate` and `setReviewTemplate` are called, its request functions revert `NotConfigured`. Before a test deployment, the operator must verify the PoolManager identity and code, review the limit, and preserve the exact build and plan. After deployment, independently verify the transaction receipt, CREATE2 address, runtime code, callback bits and constructor settings; publish the source and constructor arguments. Pool selection, initialization price, liquidity, routing, approvals and user slippage limits belong to separate pool operators and applications, outside deployment.
 

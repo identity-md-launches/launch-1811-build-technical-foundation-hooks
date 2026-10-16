@@ -1,5 +1,11 @@
 # Deployment and operations
 
+For `HookListingRegistry` and `FeaturedPlacements`, see the separate
+[deployment parameters, recipient approval and after-launch settings](LISTINGS_AND_ADS.md#deployment-parameters-and-proposed-recipient).
+Those new contracts are chain-agnostic and start with ad payments unconfigured. The factory and
+hook scripts described below retain their original release policy. This assignment adds no launch
+manifest, token deployment or broadcast step.
+
 This assignment executed local tests only. The factory and supplied scripts reject all chains except `31337`, `11155111`, `84532` and `46630`. Mainnet deployment is disabled in the release. See [chain support](CHAINS.md) for untested items.
 
 ## Build identity

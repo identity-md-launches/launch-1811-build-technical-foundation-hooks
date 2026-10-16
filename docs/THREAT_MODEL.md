@@ -1,5 +1,12 @@
 # Threat model
 
+The listing registry and ad escrow have their own
+[custody model, assumptions and complete admin-powers account](LISTINGS_AND_ADS.md).
+Listing text is untrusted, paid placement is never audit evidence, and ads retain their purchased
+metadata revision. The escrow isolates unused deposits, refundable fees and earned proceeds;
+recipient rotation cannot take prior funds. New hostile-token and stateful conservation tests
+cover the escrow specifically. The earlier hook/Intake review below remains scoped to those components.
+
 ## Assets, boundaries and assumptions
 
 The hook is noncustodial: the v4 PoolManager and external periphery handle balances and settlement. Assets at risk are pool participants' ability to trade, accurate callback attribution and the integrity of Store deployment plans. Pool funds remain subject to v4, token and router risks. A defective hook can disrupt swaps even without holding funds.
