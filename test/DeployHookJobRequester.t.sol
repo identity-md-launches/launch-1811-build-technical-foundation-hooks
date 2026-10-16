@@ -61,7 +61,7 @@ contract DeployHookJobRequesterTest is Test {
         vm.expectRevert(StoreAdmin.NotOwner.selector);
         script.configure(requester, _templates());
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.NotConfigured.selector, bytes32("jobTemplate")));
-        requester.openJob(keccak256("spec"), "a hook");
+        requester.openJob(keccak256("spec"), "a hook", 0.5 ether);
         script.runConfigure(owner, requester, _templates());
         assertEq(requester.jobAction(), JOB_ACTION);
         assertEq(requester.reviewAction(), ORACLE_ACTION);
@@ -69,7 +69,7 @@ contract DeployHookJobRequesterTest is Test {
         imd.mint(creator, PRICE);
         vm.startPrank(creator);
         imd.approve(address(requester), PRICE);
-        bytes32 id = requester.openJob(keccak256("spec"), "a hook");
+        bytes32 id = requester.openJob(keccak256("spec"), "a hook", 0.5 ether);
         vm.stopPrank();
         assertEq(uint8(requester.getJob(id).status), uint8(HookJobRequester.JobStatus.Open));
     }

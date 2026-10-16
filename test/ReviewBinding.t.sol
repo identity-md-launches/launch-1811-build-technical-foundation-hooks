@@ -11,15 +11,18 @@ contract ReviewBindingTest is HookJobRequesterFixture {
     function _unbound() internal returns (bytes32 jobId, bytes32 askId) {
         jobId = _delivered();
         vm.prank(creator);
-        askId = requester.requestReview(jobId);
+        askId = requester.requestReview(jobId, 0.5 ether);
     }
 
     function _expectMismatch(bytes32 askId, OracleAttestation.Attestation memory a) internal {
+        uint256 snapshot = vm.snapshotState();
         bytes memory sig = _sign(a, signerKey);
         vm.prank(address(intake));
-        vm.expectRevert(abi.encodeWithSelector(HookJobRequester.ReviewAttestationMismatch.selector, askId));
         requester.onReviewResult(askId, a, sig);
+        assertEq(requester.getReviewReceipt(askId).oracleRequestId, a.requestId);
+        assertEq(uint8(_review(requester.reviewOf(askId))), uint8(HookJobRequester.ReviewStatus.Pending));
         assertFalse(requester.consumed(a.requestId));
+        assertTrue(vm.revertToStateAndDelete(snapshot));
     }
 
     function testSwappedHonestAnswersLeaveBothPendingThenSettleTheirOwnAsks() public {
@@ -203,8 +206,11 @@ contract ReviewBindingTest is HookJobRequesterFixture {
         vm.prank(address(intake));
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.UnknownOrSettled.selector, askId));
         requester.onReviewResult(askId, oldAnswer, oldSignature);
+        uint64 askedAt = requester.getReviewAsk(retry).askedAt;
         vm.prank(address(intake));
-        vm.expectRevert(abi.encodeWithSelector(HookJobRequester.ReviewAttestationMismatch.selector, retry));
+        vm.expectRevert(
+            abi.encodeWithSelector(HookJobRequester.AttestationPredatesAsk.selector, oldAnswer.issuedAt, askedAt)
+        );
         requester.onReviewResult(retry, oldAnswer, oldSignature);
         assertFalse(requester.consumed(oldAnswer.requestId));
         assertTrue(intake.complete(retry, abi.encode(retry, fresh, _sign(fresh, signerKey))));
@@ -229,11 +235,11 @@ contract ReviewBindingTest is HookJobRequesterFixture {
         intake.setReuseIds(true);
         vm.prank(creator);
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.DuplicateRequestId.selector, askId));
-        requester.openJob(SPEC_HASH, "colliding job");
+        requester.openJob(SPEC_HASH, "colliding job", 0.5 ether);
         if (outcome != 2) {
             vm.prank(creator);
             vm.expectRevert(abi.encodeWithSelector(HookJobRequester.DuplicateRequestId.selector, askId));
-            requester.requestReview(jobId);
+            requester.requestReview(jobId, 0.5 ether);
         }
         assertEq(imd.balanceOf(creator), balance, "failed asks roll payment back");
         assertTrue(requester.usedIntakeRequestIds(askId));

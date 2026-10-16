@@ -9,7 +9,7 @@ contract ReviewReceiptPackingTest is HookJobRequesterFixture {
     function _unbound() private returns (bytes32 jobId, bytes32 askId) {
         jobId = _delivered();
         vm.prank(creator);
-        askId = requester.requestReview(jobId);
+        askId = requester.requestReview(jobId, 0.5 ether);
     }
 
     function _roundTrip(bytes32 jobId, bytes32 askId, OracleAttestation.Attestation memory a) private {
@@ -27,6 +27,7 @@ contract ReviewReceiptPackingTest is HookJobRequesterFixture {
         assertEq(r.panelSize, a.panelSize);
         assertEq(r.agreed, a.agreed);
         assertEq(r.passed, abi.decode(a.answer, (bool)));
+        assertEq(requester.reviewReceiptSignerEpoch(askId), requester.oracleSignerEpoch());
         assertFalse(requester.consumed(a.requestId));
         assertEq(requester.intakeReviewOfOracle(a.requestId), bytes32(0));
         bytes32 bodyHash = requester.getReviewAsk(askId).bodyHash;
@@ -49,6 +50,7 @@ contract ReviewReceiptPackingTest is HookJobRequesterFixture {
         HookJobRequester.ReviewReceipt memory empty;
         assertEq(abi.encode(requester.getReviewReceipt(askId)), abi.encode(empty));
         assertEq(abi.encode(requester.getReviewReceipt(bytes32(0))), abi.encode(empty));
+        assertEq(requester.reviewReceiptSignerEpoch(askId), 0);
         (bool ok, bytes memory result) =
             address(requester).staticcall(abi.encodeCall(requester.getReviewReceipt, (askId)));
         assertTrue(ok);

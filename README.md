@@ -31,12 +31,12 @@ forge fmt --check
 sh script/verify-vendored.sh
 python3 -m unittest discover -s test -p 'test_*.py' -v
 # Optional static listing reader checks (Node.js built-ins only):
-node --test test/listings-reader.test.cjs
+node --test test/listings-reader.test.cjs test/requester-abi.test.cjs
 ```
 
-The requested fuzz seed is pinned in `foundry.toml`:
+The repository fuzz seed is pinned in `foundry.toml`:
 `0x936d89b088020ddf36122a88c4c9aed7130c7a410f5c44680a7d121950c99345`.
-Tests do not read or mutate environment variables. Python integration tests start and stop their own disposable Anvil instance on loopback; they never use a remote RPC or a private key. The earlier IMD requester hardening follow-up recorded all 10 passing. The listing/ads follow-up did not modify or rerun those SDK tests.
+This follow-up also runs with `FOUNDRY_FUZZ_SEED=0x7b504948825fc356a810f67b6458a77924e9ee1fb1e4281a7e4787866c8d0c12` supplied to the runner. Tests do not read or mutate environment variables. Python integration tests start and stop their own disposable Anvil instance on loopback; they never use a remote RPC or a private key. The earlier IMD requester hardening follow-up recorded all 10 passing. The listing/ads follow-up did not modify or rerun those SDK tests.
 
 The listings/ads follow-up also checks the supplied seed directly using
 `forge test --fuzz-seed 0x897ccfb85f71eb00ada949c5387d8bc41b650fda2a7d704b3960c7edf39b4654`.
@@ -93,17 +93,39 @@ Project-authored code is MIT-licensed. Vendored files retain their original lice
 
 ## IMD request integration
 
-`HookJobRequester` lets a creator's wallet open an IdentityMD Intake v2 `job.open` for standalone-hook code. The job body always names `forge build`, `forge test` and an adversarial review, and the contract tracks the Intake request id. It accepts exactly one authenticated result or failure, from the Intake, for its own open request. Review status requires an oracle answer signed in this contract's EIP-712 domain whose identity and question exactly match the owner's one-time binding of that pending ask. An early signed answer is retained as a receipt; it sets no verdict until an independently verified owner binding matches it. The unsigned job completion sets no review verdict. A static page (`site/index.html`) reads one job's status with `eth_call`, lists a wallet's jobs, and shows the job's on-chain event history with `eth_getLogs`, with no backend and no browser call to api.imd.fun.
+`HookJobRequester` buys an IdentityMD `job.open` for standalone-hook code and a separate signed
+oracle review. Paid calls are now `openJob(specHash, brief, userMaxPrice)` and
+`requestReview(jobId, userMaxPrice)`; there are no uncapped overloads. Each quote must fit both the
+caller's submitted limit and the owner's ceiling. Exact incoming transfers and exact Intake spending
+are checked atomically: partial spending reverts the request, leaving no caller funds to sweep.
+The full [site ABI](site/HookJobRequester.abi.json) is checked against compiler output.
 
-The contract pulls the Intake's current price only up to an owner-set ceiling (`maxPrice`, a constructor argument), so a wallet's standing allowance cannot be drained by a price move. An owner-set `failureHook` (on by default) selects `requestWithFailure` for a version 2 Intake or plain `request` for version 1. `script/DeployHookJobRequester.s.sol` deploys and configures it from explicit arguments and is tested directly.
+Local job expiry still accepts the first late Intake result/failure. Delivered, failed and expired
+jobs are equally reviewable; unsigned callback ordering cannot dictate a signed verdict. A review
+requires an exact owner-authenticated Intake-to-oracle UUID and canonical question/window binding.
+Valid answers arriving before binding **or against a wrong pre-binding** are retained without a
+verdict or UUID consumption. The owner can explicitly reset a pending binding and confirm the
+retained answer without another callback or fee. Swapped answers cannot settle under correct bindings.
 
-Each review needs an owner `bindReview` call with an independently verified Intake-to-oracle ID mapping and canonical question hash/window. It may occur **after** the one-shot callback: the contract verifies and retains the answer, then a matching binding finalizes it without another callback or Intake fee. Neither ID equality nor `keccak256(body)` as the canonical question hash is assumed. Five minutes of backward clock skew is tolerated. A requester expiry call now only records a closure request: late answers remain acceptable and retries stay blocked until the owner confirms expiry for that exact ask without a receipt. A retained answer cannot be expired by its requester and can be confirmed after its signature expires because verification occurred on arrival.
+Requester review expiry only requests closure; delivery stays open and retries stay blocked.
+After the deadline the owner can close an ask without a receipt, including an abandoned ask whose
+requester never requested expiry, after authenticating that no valid delivery remains in flight.
+For signer compromise, rotate to safe authority, explicitly revoke the old signer epoch, and close
+affected retained receipts as `Unanswered`. Ordinary rotation preserves verification; explicit epoch
+revocation blocks confirmation. Receipt history and consumed UUIDs remain intact; finalized verdicts
+cannot be reset. These are logged owner powers requiring independent offchain evidence.
 
-The owner can close a misdelivery using a different, available true UUID, or close an exact matching receipt whose UUID is consumed/reserved elsewhere. Same-UUID field typos and unusable replacement UUIDs revert. Receipt history and consumed UUIDs remain intact. An unbound retry can retain its one-shot answer before an old terminal reservation is released, then finalize after owner release and binding without another fee. Cold receipt delivery uses 168,106 gas with the realistic 5-of-7 ERC-1271 fixture and 185,260 with the audit's 22-cold-read stressor, under 200k; arbitrary production registries are not qualified by these tests.
+Cold one-shot callback tests fit 200k gas, including wrong-prebinding retention: **175,435 gas** with
+a realistic 5-of-7 ERC-1271 signer and **192,598** with the 22-cold-read stress signer. Arbitrary live
+registries still require qualification. The static status page shows receipt revocation and recovery
+history; `Passed` is a signed panel opinion about the review step, never an audited-hook badge.
 
-The owner-supplied mapping is **not independently authenticated onchain**. The owner must verify it offchain and establish that no valid answer is pending before confirming expiry. A dishonest owner can invent a different true UUID or approve premature expiry; an unavailable owner can delay retries. These remain explicit trust and operational requirements.
-
-The live post-delivery mapping/canonicalization, `job.open` callback ABI, action id and body schema still require a pilot. The owner must authenticate the mapping independently, not copy a receipt blindly. Signer/Intake rotations affect future deliveries for already-pending requests; they do not undo retained verification. `NotPassed` remains terminal, including a truthful false caused by missing or pending review evidence. See [audit ef1f6915 remediation](docs/AUDIT_EF1F6915.md) and [IMD_INTEGRATION.md](docs/IMD_INTEGRATION.md) for deployment parameters, owner duties, gas limits, recovery and remaining live assumptions. No paid request was submitted and nothing was deployed.
+The full local suite includes listing/ad escrow, refunds, transfers and conservation invariants.
+See [audit 6b607200 remediation](docs/AUDIT_6B607200.md) and the
+[integration guide](docs/IMD_INTEGRATION.md) for deployment parameters and operator duties.
+Real IMD Intake testing remains necessary for the job action/body/callback ABI, exact spending,
+authenticated post-delivery mapping and canonicalization, and production signer gas under 200k.
+No deployment, paid request or fund movement was performed.
 
 ## Salt mining under eth_call gas caps
 

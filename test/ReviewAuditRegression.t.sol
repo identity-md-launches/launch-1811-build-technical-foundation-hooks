@@ -12,7 +12,7 @@ contract ReviewAuditRegressionTest is HookJobRequesterFixture {
     function _unbound() private returns (bytes32 jobId, bytes32 askId) {
         jobId = _delivered();
         vm.prank(creator);
-        askId = requester.requestReview(jobId);
+        askId = requester.requestReview(jobId, 0.5 ether);
     }
 
     function _deliver(bytes32 askId, OracleAttestation.Attestation memory a) private returns (bool) {
@@ -38,7 +38,7 @@ contract ReviewAuditRegressionTest is HookJobRequesterFixture {
         uint256 balance = imd.balanceOf(creator);
         vm.prank(creator);
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.NotReviewable.selector, jobId));
-        requester.requestReview(jobId);
+        requester.requestReview(jobId, 0.5 ether);
         assertEq(imd.balanceOf(creator), balance);
     }
 
@@ -106,11 +106,11 @@ contract ReviewAuditRegressionTest is HookJobRequesterFixture {
         _retryBlocked(jobId);
     }
 
-    function testExpiryNeedsRequesterDeadlineAndCurrentOwnerApprovalForExactAsk() public {
+    function testExpiryNeedsDeadlineAndCurrentOwnerApprovalForExactAsk() public {
         (bytes32 jobId, bytes32 askId) = _unbound();
         uint64 deadline = requester.getReviewAsk(askId).deadline;
         vm.prank(owner);
-        vm.expectRevert(abi.encodeWithSelector(HookJobRequester.ReviewExpiryNotRequested.selector, askId));
+        vm.expectRevert(abi.encodeWithSelector(HookJobRequester.DeadlineNotReached.selector, deadline));
         requester.confirmReviewExpiry(askId);
         vm.warp(deadline);
         vm.prank(creator);
@@ -149,13 +149,15 @@ contract ReviewAuditRegressionTest is HookJobRequesterFixture {
         assertTrue(requester.usedIntakeRequestIds(askId));
         assertEq(uint8(_review(jobId)), uint8(HookJobRequester.ReviewStatus.Unanswered));
         vm.prank(creator);
-        bytes32 retry = requester.requestReview(jobId);
+        bytes32 retry = requester.requestReview(jobId, 0.5 ether);
         assertFalse(requester.reviewExpiryRequested(retry), "approval cannot carry to a retry");
-        vm.warp(requester.getReviewAsk(retry).deadline + 1);
+        vm.warp(requester.getReviewAsk(retry).deadline);
         vm.startPrank(stranger);
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.UnknownOrSettled.selector, askId));
         requester.confirmReviewExpiry(askId);
-        vm.expectRevert(abi.encodeWithSelector(HookJobRequester.ReviewExpiryNotRequested.selector, retry));
+        vm.expectRevert(
+            abi.encodeWithSelector(HookJobRequester.DeadlineNotReached.selector, requester.getReviewAsk(retry).deadline)
+        );
         requester.confirmReviewExpiry(retry);
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.UnknownOrSettled.selector, bytes32(0)));
         requester.confirmReviewExpiry(bytes32(0));

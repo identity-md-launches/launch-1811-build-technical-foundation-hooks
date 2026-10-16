@@ -25,6 +25,7 @@ contract MockIntake is IIntake {
     uint256 internal nonce;
     bool public v1;
     bool public reuseIds;
+    uint256 public unspent;
 
     event Requested(bytes32 indexed requestId, bytes32 action, bytes body);
     event Completed(bytes32 indexed requestId, bool called);
@@ -39,6 +40,11 @@ contract MockIntake is IIntake {
 
     function setReuseIds(bool on) external {
         reuseIds = on;
+    }
+
+    /// @dev Adversarial quote/spend disagreement; zero preserves normal exact-payment behavior.
+    function setUnspent(uint256 amount) external {
+        unspent = amount;
     }
 
     function priceOf(bytes32 action, address asset) external view returns (uint256) {
@@ -76,7 +82,7 @@ contract MockIntake is IIntake {
         uint256 price = prices[action][asset];
         require(price != 0, "ActionNotSold");
         require(amount == price, "wrong amount");
-        require(TestToken(asset).transferFrom(msg.sender, address(this), amount), "pull failed");
+        require(TestToken(asset).transferFrom(msg.sender, address(this), amount - unspent), "pull failed");
         id = reuseIds && lastRequestId != bytes32(0) ? lastRequestId : keccak256(abi.encode(address(this), ++nonce));
         reqs[id] = Req(msg.sender, action, body, callback.target, callback.selector, onFailure, false);
         lastRequestId = id;

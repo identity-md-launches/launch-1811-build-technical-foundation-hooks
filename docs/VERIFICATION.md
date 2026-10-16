@@ -1,6 +1,6 @@
 # Local verification
 
-Historical results below describe successive revisions. See [audit ef1f6915 checks](#follow-up-audit-ef1f6915) for this revision.
+Historical results below describe successive revisions. See [audit 6b607200 checks](#follow-up-audit-6b607200) for this revision.
 
 The following checks completed locally with the pinned Solidity 0.8.26 compiler and the fuzz seed in `foundry.toml`:
 
@@ -315,3 +315,50 @@ invariants. This is contributor self-verification, not a new independent securit
 Slither, Mythril, public-chain fork, live pilot, deployment or paid request was performed. The
 owner-supplied mapping and absence of a pending callback are not independently authenticated
 onchain; live evidence sources and owner availability remain operational blockers for paid use.
+
+## Follow-up: audit 6b607200
+
+The six low findings are addressed in [AUDIT_6B607200.md](AUDIT_6B607200.md). Source was built with
+the unchanged pinned **Solidity 0.8.26**, Cancun and optimizer configuration. No dependencies or
+build settings were edited. All tests run locally without remote RPC, credentials or network access.
+
+| Check | Result |
+|---|---|
+| `forge build` | Pass; pinned compiler 0.8.26 |
+| `forge test` | **228 passed**, 24 suites, zero failures/skips; repository-pinned seed |
+| `FOUNDRY_FUZZ_SEED=0x7b504948825fc356a810f67b6458a77924e9ee1fb1e4281a7e4787866c8d0c12 forge test` | **228 passed**, zero failures/skips |
+| `forge fmt --check` | Pass |
+| `node --test test/requester-abi.test.cjs test/listings-reader.test.cjs` | **11 passed**; built-in Node modules and local `cast` only |
+| `forge test --match-contract ReviewReceiptGasTest -vv` | **8 passed**, including cold exact-200k calls and binary-search gas measurements |
+| Requester compiled runtime size | **23,601 bytes**, below the 24,576-byte limit |
+
+Both the original ad conservation invariant and the listing-transfer/cancellation invariant pass
+**256 sequences / 128,000 calls / zero handler reverts each**, for both full-suite seeds. They
+preserve deposits, original-payer refunds, recipient proceeds, exact backing and complete withdrawal
+at wind-down. Registry, hook/pool, deployment, protocol-vector, receipt packing and previous audit
+regressions also remain in the full suite.
+
+`RequesterMvpAudit.t.sol` contributes 19 tests covering the six findings, including fuzzed transaction
+orders, every mismatched pre-binding context field, yes/no receipts, owner-only recovery, abandoned
+asks, epoch-wide compromise response, unchanged finalized verdicts, closed-ID replay, fresh-key retry,
+quote/spend rollback, donation isolation, caller limits and reentrant token callbacks. Existing test
+calls were migrated to the new mandatory maximum-price argument. Review packing still round-trips
+all full-width fields while isolating the newly packed epoch bits.
+
+`ReviewReceiptGas.t.sol` measures wrong-prebinding retention at **175,435** cold forwarded gas for
+its realistic 5-of-7 ERC-1271 verifier, and **192,598** for the audit's 22-extra-cold-read verifier.
+Unbound receipt measurements are **125,296** for EOA, **170,389** for 5-of-7 and **187,543** for the
+stress verifier. The excessive 64-read verifier still loses the one-shot callback without partial
+state, as expected. These fixtures do not qualify an arbitrary live signer or proxy.
+
+The published requester ABI exactly equals the compiled artifact. Site tests pin both paid selectors,
+reject obsolete uncapped signatures, compare every displayed event topic, and exercise pending,
+retained, revoked and malformed receipt reads. Build fingerprints were refreshed for the requester;
+the hook and factory fingerprints were checked unchanged.
+
+Foundry emits advisory lint warnings; compilation succeeds. No Slither/Mythril, independent audit,
+live Intake pilot, deployment, paid request or funded-wallet operation was performed. The unchanged
+optional Python SDK suite was not rerun. Real Intake requirements and operational trust are listed
+in [the pilot checklist](IMD_INTEGRATION.md#requires-a-live-ethereum-or-robinhood-chain-pilot), including
+asynchronous delivery, job callback ABI, quote/spend agreement, authenticated UUID/canonical question
+mapping, fresh signing on retries and actual signer gas under 200k.

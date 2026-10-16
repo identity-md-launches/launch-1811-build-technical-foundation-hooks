@@ -3,7 +3,8 @@
 Source-only fixes for [audit ef1f6915-b9df-441d-b2e5-db5e9d9e9b35](https://github.com/Identity-md/research/blob/main/jobs/ef1f6915-b9df-441d-b2e5-db5e9d9e9b35/files/AUDIT.md)
 against `cb6ca724441c9aebf9a38cb4d7426218e0712723`. No deployment, token change or paid Intake request.
 Compiler, build configuration and dependencies are unchanged. Earlier audit remediation notes are
-historical; this document and [IMD_INTEGRATION.md](IMD_INTEGRATION.md) describe the current behavior.
+historical. This document records the previous revision; [AUDIT_6B607200.md](AUDIT_6B607200.md)
+and [IMD_INTEGRATION.md](IMD_INTEGRATION.md) describe the current behavior.
 
 ## Four fixes
 

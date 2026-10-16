@@ -47,7 +47,7 @@ abstract contract HookJobRequesterFixture is Test {
 
     function _open() internal returns (bytes32 id) {
         vm.prank(creator);
-        id = requester.openJob(SPEC_HASH, "A swap cap hook for my USDC/WETH pool");
+        id = requester.openJob(SPEC_HASH, "A swap cap hook for my USDC/WETH pool", 0.5 ether);
     }
 
     function _delivered() internal returns (bytes32 id) {
@@ -100,7 +100,7 @@ abstract contract HookJobRequesterFixture is Test {
 
     function _requestReview(bytes32 jobId) internal returns (bytes32 intakeId) {
         vm.prank(creator);
-        intakeId = requester.requestReview(jobId);
+        intakeId = requester.requestReview(jobId, 0.5 ether);
         _bind(intakeId);
     }
 
@@ -126,14 +126,14 @@ contract HookJobRequesterTest is HookJobRequesterFixture {
         imd.approve(address(fresh), type(uint256).max);
         vm.prank(creator);
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.NotConfigured.selector, bytes32("jobTemplate")));
-        fresh.openJob(SPEC_HASH, "brief");
+        fresh.openJob(SPEC_HASH, "brief", 0.5 ether);
         vm.prank(creator);
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.NotConfigured.selector, bytes32("reviewTemplate")));
-        fresh.requestReview(bytes32(uint256(1)));
+        fresh.requestReview(bytes32(uint256(1)), 0.5 ether);
         vm.prank(owner);
         fresh.setJobTemplate(JOB_ACTION, ImdTemplates.JOB_PREFIX, ImdTemplates.JOB_MIDDLE, ImdTemplates.JOB_SUFFIX);
         vm.prank(creator);
-        bytes32 id = fresh.openJob(SPEC_HASH, "brief");
+        bytes32 id = fresh.openJob(SPEC_HASH, "brief", 0.5 ether);
         assertEq(uint8(fresh.getJob(id).status), uint8(HookJobRequester.JobStatus.Open));
     }
 
@@ -156,7 +156,7 @@ contract HookJobRequesterTest is HookJobRequesterFixture {
         uint256 before = imd.balanceOf(creator);
         vm.prank(creator);
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.PriceAboveCeiling.selector, PRICE + 1, PRICE));
-        requester.openJob(SPEC_HASH, "brief");
+        requester.openJob(SPEC_HASH, "brief", 0.5 ether);
         assertEq(imd.balanceOf(creator), before, "nothing pulled");
         // A lower price is pulled as is, never the ceiling.
         intake.setPrice(JOB_ACTION, address(imd), PRICE / 2);
@@ -168,14 +168,16 @@ contract HookJobRequesterTest is HookJobRequesterFixture {
         vm.expectEmit(true, false, false, true, address(requester));
         emit HookJobRequester.PaymentSet(address(imd), PRICE + 1);
         requester.setPayment(address(imd), PRICE + 1);
-        _open();
+        vm.prank(creator);
+        requester.openJob(SPEC_HASH, "brief", PRICE + 1);
         assertEq(imd.balanceOf(creator), before - PRICE / 2 - PRICE - 1);
         // The review ask is under the same ceiling.
         intake.setPrice(ORACLE_ACTION, address(imd), 2 * PRICE);
+        intake.setPrice(JOB_ACTION, address(imd), PRICE);
         bytes32 id = _delivered();
         vm.prank(creator);
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.PriceAboveCeiling.selector, 2 * PRICE, PRICE + 1));
-        requester.requestReview(id);
+        requester.requestReview(id, 0.5 ether);
     }
 
     function testVersion1IntakeWorksWithTheFailureHookOff() public {
@@ -205,7 +207,7 @@ contract HookJobRequesterTest is HookJobRequesterFixture {
         assertEq(uint8(_status(id2)), uint8(HookJobRequester.JobStatus.Delivered));
         // The review ask on a version 1 intake is a plain request too.
         vm.prank(creator);
-        bytes32 oracleId = requester.requestReview(id2);
+        bytes32 oracleId = requester.requestReview(id2, 0.5 ether);
         (,,,,, bytes4 reviewFailure,) = intake.reqs(oracleId);
         assertEq(reviewFailure, bytes4(0));
         // Back on, the version 1 intake refuses the whole call and nothing is spent.
@@ -214,7 +216,7 @@ contract HookJobRequesterTest is HookJobRequesterFixture {
         uint256 before = imd.balanceOf(creator);
         vm.prank(creator);
         vm.expectRevert("v1 has no requestWithFailure");
-        requester.openJob(SPEC_HASH, "brief");
+        requester.openJob(SPEC_HASH, "brief", 0.5 ether);
         assertEq(imd.balanceOf(creator), before);
     }
 
@@ -224,7 +226,7 @@ contract HookJobRequesterTest is HookJobRequesterFixture {
         assertEq(intake.lastRequestId(), oracleId);
         vm.prank(creator);
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.DuplicateRequestId.selector, oracleId));
-        requester.openJob(SPEC_HASH, "would share the review ask's id");
+        requester.openJob(SPEC_HASH, "would share the review ask's id", 0.5 ether);
     }
 
     function testOwnerSettersAreOwnerOnlyAndValidated() public {
@@ -335,13 +337,13 @@ contract HookJobRequesterTest is HookJobRequesterFixture {
         imd.approve(address(requester), PRICE - 1);
         vm.prank(creator);
         vm.expectRevert(HookJobRequester.TokenCallFailed.selector);
-        requester.openJob(SPEC_HASH, "brief");
+        requester.openJob(SPEC_HASH, "brief", 0.5 ether);
         address poor = makeAddr("poor");
         vm.prank(poor);
         imd.approve(address(requester), PRICE);
         vm.prank(poor);
         vm.expectRevert(HookJobRequester.TokenCallFailed.selector);
-        requester.openJob(SPEC_HASH, "brief");
+        requester.openJob(SPEC_HASH, "brief", 0.5 ether);
         assertEq(requester.jobCount(), 0);
     }
 
@@ -349,13 +351,13 @@ contract HookJobRequesterTest is HookJobRequesterFixture {
         intake.setPrice(JOB_ACTION, address(imd), 0);
         vm.prank(creator);
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.ActionNotPriced.selector, JOB_ACTION));
-        requester.openJob(SPEC_HASH, "brief");
+        requester.openJob(SPEC_HASH, "brief", 0.5 ether);
         intake.setPrice(JOB_ACTION, address(imd), PRICE);
         intake.setV1(true);
         uint256 before = imd.balanceOf(creator);
         vm.prank(creator);
         vm.expectRevert("v1 has no requestWithFailure");
-        requester.openJob(SPEC_HASH, "brief");
+        requester.openJob(SPEC_HASH, "brief", 0.5 ether);
         assertEq(imd.balanceOf(creator), before, "whole call reverted, nothing spent");
     }
 
@@ -365,7 +367,7 @@ contract HookJobRequesterTest is HookJobRequesterFixture {
         bytes32 id = intake.lastRequestId();
         vm.prank(creator);
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.DuplicateRequestId.selector, id));
-        requester.openJob(SPEC_HASH, "again");
+        requester.openJob(SPEC_HASH, "again", 0.5 ether);
     }
 
     function testBriefValidation() public {
@@ -385,7 +387,7 @@ contract HookJobRequesterTest is HookJobRequesterFixture {
         for (uint256 i; i < bad.length; ++i) {
             vm.prank(creator);
             vm.expectRevert();
-            requester.openJob(SPEC_HASH, bad[i]);
+            requester.openJob(SPEC_HASH, bad[i], 0.5 ether);
         }
         bytes memory tooLong = new bytes(2001);
         for (uint256 i; i < tooLong.length; ++i) {
@@ -393,13 +395,13 @@ contract HookJobRequesterTest is HookJobRequesterFixture {
         }
         vm.prank(creator);
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.BriefLength.selector, uint256(2001)));
-        requester.openJob(SPEC_HASH, tooLong);
+        requester.openJob(SPEC_HASH, tooLong, 0.5 ether);
         vm.prank(creator);
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.InvalidBrief.selector, uint256(4)));
-        requester.openJob(SPEC_HASH, 'abcd"');
+        requester.openJob(SPEC_HASH, 'abcd"', 0.5 ether);
         // Multi-byte UTF-8 (é, €, 😀) and ordinary punctuation are fine.
         vm.prank(creator);
-        requester.openJob(SPEC_HASH, hex"c3a920e282ac20f09f98802c2e3a2f");
+        requester.openJob(SPEC_HASH, hex"c3a920e282ac20f09f98802c2e3a2f", 0.5 ether);
         assertEq(requester.jobCount(), 1);
     }
 
@@ -414,7 +416,7 @@ contract HookJobRequesterTest is HookJobRequesterFixture {
         }
         vm.prank(creator);
         if (reserved) vm.expectRevert();
-        requester.openJob(SPEC_HASH, brief);
+        requester.openJob(SPEC_HASH, brief, 0.5 ether);
     }
 
     // ---------------------------------------------------------------- result / failure
@@ -456,8 +458,8 @@ contract HookJobRequesterTest is HookJobRequesterFixture {
         requester.onJobFailure(id, 2, "disagreed", 0, 0, "");
         vm.stopPrank();
         vm.prank(creator);
-        vm.expectRevert(abi.encodeWithSelector(HookJobRequester.NotReviewable.selector, id));
-        requester.requestReview(id);
+        requester.requestReview(id, PRICE);
+        assertEq(uint8(_review(id)), uint8(HookJobRequester.ReviewStatus.Pending));
     }
 
     function testUnknownRequestIdRefused() public {
@@ -493,8 +495,8 @@ contract HookJobRequesterTest is HookJobRequesterFixture {
         requester.expireJob(id);
         assertEq(uint8(_status(id)), uint8(HookJobRequester.JobStatus.Expired));
         vm.prank(address(intake));
-        vm.expectRevert(abi.encodeWithSelector(HookJobRequester.UnknownOrSettled.selector, id));
-        requester.onJobResult(id, "too late");
+        requester.onJobResult(id, "late authenticated result");
+        assertEq(uint8(_status(id)), uint8(HookJobRequester.JobStatus.Delivered));
         vm.prank(creator);
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.UnknownOrSettled.selector, id));
         requester.expireJob(id);
@@ -536,7 +538,7 @@ contract HookJobRequesterTest is HookJobRequesterFixture {
         // A settled verdict cannot be re-asked.
         vm.prank(creator);
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.NotReviewable.selector, jobId));
-        requester.requestReview(jobId);
+        requester.requestReview(jobId, 0.5 ether);
     }
 
     function testReviewNotPassedIsStoredNotReverted() public {
@@ -553,7 +555,7 @@ contract HookJobRequesterTest is HookJobRequesterFixture {
         assertTrue(intake.complete(oracleId, abi.encode(oracleId, a, sig)));
         (bytes32 otherJob, bytes32 otherAsk) = _reviewPending();
         vm.prank(address(intake));
-        vm.expectRevert(abi.encodeWithSelector(HookJobRequester.ReviewAttestationMismatch.selector, otherAsk));
+        vm.expectRevert(abi.encodeWithSelector(OracleAttestationConsumer.AlreadyConsumed.selector, a.requestId));
         requester.onReviewResult(otherAsk, a, sig);
         assertEq(uint8(_review(otherJob)), uint8(HookJobRequester.ReviewStatus.Pending));
         assertEq(requester.reviewOf(otherAsk), otherJob);
@@ -670,10 +672,10 @@ contract HookJobRequesterTest is HookJobRequesterFixture {
         bytes32 id = _open();
         vm.prank(creator);
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.NotReviewable.selector, id));
-        requester.requestReview(id);
+        requester.requestReview(id, 0.5 ether);
         vm.prank(stranger);
         vm.expectRevert(HookJobRequester.NotRequester.selector);
-        requester.requestReview(id);
+        requester.requestReview(id, 0.5 ether);
         vm.warp(block.timestamp + 7 days + 1);
         vm.prank(creator);
         requester.expireJob(id);
@@ -681,7 +683,7 @@ contract HookJobRequesterTest is HookJobRequesterFixture {
         bytes32 oracleId = _requestReview(id);
         vm.prank(creator);
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.NotReviewable.selector, id));
-        requester.requestReview(id);
+        requester.requestReview(id, 0.5 ether);
         OracleAttestation.Attestation memory a = _attestation(oracleId, false);
         assertTrue(intake.complete(oracleId, abi.encode(oracleId, a, _sign(a, signerKey))));
         assertEq(uint8(_review(id)), uint8(HookJobRequester.ReviewStatus.NotPassed));

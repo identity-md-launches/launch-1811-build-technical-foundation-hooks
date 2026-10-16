@@ -12,7 +12,7 @@ contract ReviewRecoveryTest is HookJobRequesterFixture {
     function _unbound() internal returns (bytes32 jobId, bytes32 askId) {
         jobId = _delivered();
         vm.prank(creator);
-        askId = requester.requestReview(jobId);
+        askId = requester.requestReview(jobId, 0.5 ether);
     }
 
     function _deliver(bytes32 askId, OracleAttestation.Attestation memory a) internal returns (bool) {
@@ -52,7 +52,7 @@ contract ReviewRecoveryTest is HookJobRequesterFixture {
         requester.expireReview(jobId);
         vm.prank(creator);
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.NotReviewable.selector, jobId));
-        requester.requestReview(jobId);
+        requester.requestReview(jobId, 0.5 ether);
         _confirm(askId, a);
         assertEq(uint8(_review(jobId)), uint8(HookJobRequester.ReviewStatus.NotPassed));
         assertTrue(requester.consumed(a.requestId));
@@ -240,7 +240,7 @@ contract ReviewRecoveryTest is HookJobRequesterFixture {
             _confirmExpiry(askId);
         }
         vm.prank(creator);
-        bytes32 retry = requester.requestReview(jobId);
+        bytes32 retry = requester.requestReview(jobId, 0.5 ether);
         OracleAttestation.Attestation memory a = _attestation(retry, false);
         a.requestId = old.requestId; // Simulate authenticated protocol UUID reuse for this retry.
         bytes32 retryBody = requester.getReviewAsk(retry).bodyHash;
@@ -325,16 +325,16 @@ contract ReviewRecoveryTest is HookJobRequesterFixture {
         vm.prank(creator);
         requester.expireJob(jobId);
         vm.prank(creator);
-        bytes32 askId = requester.requestReview(jobId);
+        bytes32 askId = requester.requestReview(jobId, 0.5 ether);
         OracleAttestation.Attestation memory a = _attestation(askId, false);
         assertTrue(_deliver(askId, a));
         _confirm(askId, a);
         vm.prank(creator);
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.NotReviewable.selector, jobId));
-        requester.requestReview(jobId);
+        requester.requestReview(jobId, 0.5 ether);
         vm.prank(address(intake));
-        vm.expectRevert(abi.encodeWithSelector(HookJobRequester.UnknownOrSettled.selector, jobId));
         requester.onJobResult(jobId, "later review passed");
+        assertEq(uint8(_status(jobId)), uint8(HookJobRequester.JobStatus.Delivered));
         assertEq(uint8(_review(jobId)), uint8(HookJobRequester.ReviewStatus.NotPassed));
         assertEq(imd.balanceOf(address(intake)), 2 * PRICE);
     }

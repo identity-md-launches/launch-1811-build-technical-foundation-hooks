@@ -67,3 +67,35 @@ These are documentation variable names, not provided credentials or environment 
 Use separate states for draft, validated spec, mined plan, wallet approval, submitted transaction, confirmed transaction and verified deployment. Preserve errors and permit explicit retries. Schema/chain/code mismatches require correcting inputs; search exhaustion resumes at the reported nonce; stale builds require a new plan; occupied addresses require verification or re-mining. A failed transaction has not deployed a hook. A successful IMD checker or backend request is never the `verified deployment` transition.
 
 The Store must implement authentication, wallet UX, rate limits, approved RPC selection, confirmation depth, storage of transaction hashes and plans, and monitoring. Do not expose this adapter as a public URL-fetching service without restricting RPC destinations. None of those hosted components is delivered or claimed as operational here.
+
+## Paid IMD requester API
+
+Use [`site/HookJobRequester.abi.json`](../site/HookJobRequester.abi.json) for this revision's
+full ABI. It is generated from the pinned compiler artifact and tested for exact equality.
+The requester's constructor parameters are unchanged. These paid selectors **replace** the old
+calls; there is no overload that omits the caller's maximum:
+
+| Call | Selector | Behavior |
+|---|---|---|
+| `openJob(bytes32 specHash, bytes brief, uint256 userMaxPrice)` | `0x3574ac96` | Buy one job, subject to both caller and owner price ceilings |
+| `requestReview(bytes32 jobRequestId, uint256 userMaxPrice)` | `0x86304ddd` | Buy a review for a Delivered, Failed or Expired job; a terminal verdict cannot retry |
+
+Read the configured `asset`, action and `intake`, obtain the quote, show the exact asset/amount to
+the caller, approve only that amount, and encode the caller-approved limit in the transaction.
+Do not replace that limit with an unlimited integer or the owner's mutable ceiling. A price move
+above either ceiling reverts before payment. An Intake spend below the quote also reverts the
+whole transaction. The quote is in the token's base units; it is not a fiat quote or an asset pin.
+The owner still controls the asset and request templates, so exact approval and configuration
+verification remain wallet responsibilities.
+
+The 15-word `getJob` and ten-word `getReviewAsk` / `getReviewReceipt` ABIs are unchanged. New
+owner operations are `resetReviewBinding(bytes32,bytes32)`, `revokeSignerEpoch(uint32,bytes32)`
+and `closeRevokedReviewReceipt(bytes32)`. `confirmReviewExpiry(bytes32)` now accepts any exact
+pending, receipt-free ask strictly past its deadline, with or without a requester expiry flag.
+A wrong pre-binding now retains a valid mismatched answer as Pending instead of burning delivery.
+
+Readers must distinguish receipt history from current verdicts. Query `reviewReceiptSignerEpoch`
+and `revokedSignerEpochs` for pending receipts; `revokedReviewReceipts` records individual incident
+closure. `ReviewBindingReset` and `ReviewReceiptRevoked` are job-indexed history events.
+`OracleSignerEpochStarted` and `OracleSignerEpochRevoked` are global authority events and must be
+monitored separately. See [operator recovery and incident response](IMD_INTEGRATION.md).

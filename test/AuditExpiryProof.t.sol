@@ -144,10 +144,10 @@ contract ExpiryFrontRunShoppingTest is Test {
 
     function testRequesterFrontRunsLateNotPassedWithExpiryAndReasks() public {
         vm.prank(creator);
-        bytes32 jobId = requester.openJob(keccak256("spec"), "hook brief");
+        bytes32 jobId = requester.openJob(keccak256("spec"), "hook brief", 0.5 ether);
         assertTrue(intake.complete(jobId, abi.encode(jobId, bytes("ipfs://result"))));
         vm.prank(creator);
-        bytes32 askId = requester.requestReview(jobId);
+        bytes32 askId = requester.requestReview(jobId, 0.5 ether);
 
         // The oracle's answer is produced after the 1-day local deadline. It is a valid, fresh,
         // correctly signed NotPassed for this exact ask; the Intake's completion tx is pending.

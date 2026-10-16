@@ -88,10 +88,10 @@ contract OracleConformanceTest is Test {
 
     function testProtocolSignatureVerifiesBeforeItsNonBoolAnswerIsRefused() public {
         vm.prank(creator);
-        bytes32 jobId = consumer.openJob(keccak256("spec"), "brief");
+        bytes32 jobId = consumer.openJob(keccak256("spec"), "brief", 0.5 ether);
         assertTrue(intake.complete(jobId, abi.encode(jobId, bytes("result"))));
         vm.prank(creator);
-        bytes32 askId = consumer.requestReview(jobId);
+        bytes32 askId = consumer.requestReview(jobId, 0.5 ether);
         OracleAttestation.Attestation memory a = vector();
         consumer.bindReview(
             askId, keccak256(intake.bodyOf(askId)), a.requestId, a.questionHash, a.chainId, a.fromBlock, a.toBlock
@@ -115,10 +115,10 @@ contract OracleConformanceTest is Test {
     /// answer with the vector key, as the reference prescribes for consumers refusing its type.
     function test_acceptsAFreshSignatureFromTheVectorKeyAsDelivered() public {
         vm.prank(creator);
-        bytes32 jobId = consumer.openJob(keccak256("spec"), "brief");
+        bytes32 jobId = consumer.openJob(keccak256("spec"), "brief", 0.5 ether);
         assertTrue(intake.complete(jobId, abi.encode(jobId, bytes("result"))));
         vm.prank(creator);
-        bytes32 oracleId = consumer.requestReview(jobId);
+        bytes32 oracleId = consumer.requestReview(jobId, 0.5 ether);
         OracleAttestation.Attestation memory a = vector();
         a.answerType = OracleAttestation.ANSWER_BOOL;
         a.answer = abi.encode(true);

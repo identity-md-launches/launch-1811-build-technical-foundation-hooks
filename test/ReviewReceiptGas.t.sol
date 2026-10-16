@@ -14,6 +14,8 @@ contract ReviewReceiptGasTest is HookJobRequesterFixture {
     bytes32 private retryJob;
     bytes32 private retryAsk;
     bytes32 private reservedUuid;
+    bytes32 private mismatchJob;
+    bytes32 private mismatchAsk;
     ThresholdReceiptSigner private multisigner;
     ColdReadReceiptSigner private auditSigner;
     ColdReadReceiptSigner private overBudgetSigner;
@@ -25,14 +27,21 @@ contract ReviewReceiptGasTest is HookJobRequesterFixture {
         // measured test. Otherwise the metadata SSTORE could be unrealistically cheap (dirty).
         earlyJob = _delivered();
         vm.prank(creator);
-        earlyAsk = requester.requestReview(earlyJob);
+        earlyAsk = requester.requestReview(earlyJob, 0.5 ether);
         (boundJob, boundAsk) = _reviewPending();
         bytes32 oldAsk;
         (retryJob, oldAsk) = _reviewPending();
         reservedUuid = requester.getReviewAsk(oldAsk).oracleRequestId;
         assertTrue(intake.fail(oldAsk, 2, "no answer", 0, 0));
         vm.prank(creator);
-        retryAsk = requester.requestReview(retryJob);
+        retryAsk = requester.requestReview(retryJob, 0.5 ether);
+        mismatchJob = _delivered();
+        vm.prank(creator);
+        mismatchAsk = requester.requestReview(mismatchJob, PRICE);
+        OracleAttestation.Attestation memory wrong = _attestation(mismatchAsk, false);
+        // Last compared field differs, forcing every cold binding field to be read.
+        ++wrong.toBlock;
+        _confirm(mismatchAsk, wrong);
         address[] memory members = new address[](7);
         for (uint256 i; i < 7; ++i) {
             memberKeys.push(uint256(keccak256(abi.encode("gas test member", i))));
@@ -176,7 +185,7 @@ contract ReviewReceiptGasTest is HookJobRequesterFixture {
         assertEq(uint8(_review(retryJob)), uint8(HookJobRequester.ReviewStatus.NotPassed));
         assertTrue(requester.consumed(reservedUuid));
         assertEq(requester.intakeReviewOfOracle(reservedUuid), retryAsk);
-        assertEq(imd.balanceOf(address(intake)), 7 * PRICE, "retained callback needs no new paid ask");
+        assertEq(imd.balanceOf(address(intake)), 9 * PRICE, "retained callback needs no new paid ask");
     }
 
     function testAudit22ColdReadsNowRetainsOneShotReceiptAndBoundVerdict() public {
@@ -196,7 +205,7 @@ contract ReviewReceiptGasTest is HookJobRequesterFixture {
         assertTrue(_complete(boundAsk, b, signature, address(auditSigner)));
         assertEq(uint8(_review(earlyJob)), uint8(HookJobRequester.ReviewStatus.Passed));
         assertEq(uint8(_review(boundJob)), uint8(HookJobRequester.ReviewStatus.NotPassed));
-        assertEq(imd.balanceOf(address(intake)), 7 * PRICE, "no second fee");
+        assertEq(imd.balanceOf(address(intake)), 9 * PRICE, "no second fee");
     }
 
     function testOverBudgetSignerStillFailsClosedAndLosesSingleAttemptWithoutPartialReceipt() public {
@@ -217,8 +226,33 @@ contract ReviewReceiptGasTest is HookJobRequesterFixture {
         vm.prank(creator);
         requester.expireReview(earlyJob);
         _confirmExpiry(earlyAsk);
-        assertEq(imd.balanceOf(address(intake)), 7 * PRICE, "gas failure has no refund");
+        assertEq(imd.balanceOf(address(intake)), 9 * PRICE, "gas failure has no refund");
         assertEq(uint8(_review(earlyJob)), uint8(HookJobRequester.ReviewStatus.Unanswered));
+    }
+
+    function testColdWrongPrebindingRetainsReceiptWithFiveOfSevenAndAuditSigner() public {
+        OracleAttestation.Attestation memory a = _attestation(mismatchAsk, false);
+        _useSigner(address(multisigner));
+        bytes memory signature = _multisig(a);
+        uint256 gasUsed = _minimumGas(mismatchAsk, a, signature, address(multisigner));
+        emit log_named_uint("Cold 5-of-7 mismatched pre-binding minimum forwarded gas", gasUsed);
+        assertLt(gasUsed, 190_000);
+        uint256 snapshot = vm.snapshotState();
+        assertTrue(_complete(mismatchAsk, a, signature, address(multisigner)));
+        assertEq(uint8(_review(mismatchJob)), uint8(HookJobRequester.ReviewStatus.Pending));
+        assertTrue(vm.revertToStateAndDelete(snapshot));
+        _useSigner(address(auditSigner));
+        signature = _sign(a, signerKey);
+        gasUsed = _minimumGas(mismatchAsk, a, signature, address(auditSigner));
+        emit log_named_uint("Cold audit +22 reads mismatched pre-binding minimum forwarded gas", gasUsed);
+        assertLt(gasUsed, 200_000);
+        assertTrue(_complete(mismatchAsk, a, signature, address(auditSigner)));
+        bytes32 body = requester.getReviewAsk(mismatchAsk).bodyHash;
+        vm.prank(owner);
+        requester.resetReviewBinding(mismatchAsk, body);
+        _confirm(mismatchAsk, a);
+        assertEq(uint8(_review(mismatchJob)), uint8(HookJobRequester.ReviewStatus.NotPassed));
+        assertEq(imd.balanceOf(address(intake)), 9 * PRICE);
     }
 
     function testFuzzMultisignerRefusesWrongKeyDuplicateRevokedExpiredOrInsufficientSignatures(uint8 fault) public {

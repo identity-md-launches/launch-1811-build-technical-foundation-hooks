@@ -13,7 +13,7 @@ contract ReviewDeliveryTest is HookJobRequesterFixture {
     function _unboundReview() internal returns (bytes32 jobId, bytes32 askId) {
         jobId = _delivered();
         vm.prank(creator);
-        askId = requester.requestReview(jobId);
+        askId = requester.requestReview(jobId, 0.5 ether);
     }
 
     /// @dev Tests supply independently chosen expected fields. This is NOT a live mapping source
@@ -103,7 +103,7 @@ contract ReviewDeliveryTest is HookJobRequesterFixture {
         assertEq(imd.allowance(address(requester), address(intake)), 0);
         vm.prank(creator);
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.NotReviewable.selector, jobId));
-        requester.requestReview(jobId);
+        requester.requestReview(jobId, 0.5 ether);
     }
 
     function testEarlyErc1271ReceiptFitsColdStipendAndSurvivesLaterRevocation() public {
@@ -309,7 +309,7 @@ contract ReviewDeliveryTest is HookJobRequesterFixture {
         requester.expireReview(jobId);
         vm.prank(creator);
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.NotReviewable.selector, jobId));
-        requester.requestReview(jobId);
+        requester.requestReview(jobId, 0.5 ether);
         assertEq(requester.reviewOf(askId), jobId);
         assertEq(requester.getReviewReceipt(askId).oracleRequestId, answer.requestId);
         assertEq(requester.getReviewReceipt(askId).passed, passed);

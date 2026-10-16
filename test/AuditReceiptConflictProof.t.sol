@@ -124,10 +124,10 @@ contract StuckReceiptProofTest is Test {
 
     function _unboundAsk() internal returns (bytes32 jobId, bytes32 askId) {
         vm.prank(creator);
-        jobId = requester.openJob(keccak256("spec"), "A swap cap hook");
+        jobId = requester.openJob(keccak256("spec"), "A swap cap hook", 0.5 ether);
         assertTrue(intake.complete(jobId, abi.encode(jobId, bytes("ipfs://result"))));
         vm.prank(creator);
-        askId = requester.requestReview(jobId);
+        askId = requester.requestReview(jobId, 0.5 ether);
     }
 
     function _attestation(bytes32 askId, bytes32 uuid, bool passed)
@@ -192,6 +192,6 @@ contract StuckReceiptProofTest is Test {
         requester.discardReviewReceipt(askB, bodyB, uuid, b.questionHash, b.chainId, b.fromBlock, b.toBlock);
         assertEq(uint8(requester.getJob(jobB).review), uint8(HookJobRequester.ReviewStatus.Unanswered));
         vm.prank(creator);
-        requester.requestReview(jobB);
+        requester.requestReview(jobB, 0.5 ether);
     }
 }
