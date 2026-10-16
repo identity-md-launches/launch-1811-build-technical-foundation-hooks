@@ -1,5 +1,11 @@
 # Re-audit 5f43f94d remediation
 
+**Historical implementation record.** Audit 1053af02 found that retained-answer expiry allowed
+verdict shopping and identified recovery and callback-gas limitations. Those behaviors are
+superseded by [AUDIT_1053AF02.md](AUDIT_1053AF02.md). Requesters can no longer expire a receipt;
+the owner has guarded misdelivery/reservation recovery, and callback storage costs are reduced.
+Use [IMD_INTEGRATION.md](IMD_INTEGRATION.md) for current operating instructions.
+
 This source-only follow-up addresses all four findings in
 [re-audit 5f43f94d-4f44-4255-a8c2-e0a2605c4897](https://github.com/Identity-md/research/blob/6bc8133de6a0d7509e1c2d71f7919a0e7531ff0f/jobs/5f43f94d-4f44-4255-a8c2-e0a2605c4897/files/AUDIT.md)
 against commit `684c3da344f8f9f3a34ed810e55c243eec485090`. No deployment, paid request, token change,

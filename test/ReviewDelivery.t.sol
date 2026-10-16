@@ -287,11 +287,10 @@ contract ReviewDeliveryTest is HookJobRequesterFixture {
         assertTrue(requester.consumed(a.requestId));
     }
 
-    function testExplicitExpiryDiscardsReceiptAuthorityAndOldAnswerCannotSettleRetry() public {
+    function testFuzzRequesterCannotDiscardRetainedAnswerOrBuyAnotherReview(bool passed) public {
         (bytes32 jobId, bytes32 askId) = _unboundReview();
-        OracleAttestation.Attestation memory oldAnswer = _attestation(askId, true);
-        oldAnswer.expiresAt += 7 days;
-        assertTrue(_deliver(askId, oldAnswer));
+        OracleAttestation.Attestation memory answer = _attestation(askId, passed);
+        assertTrue(_deliver(askId, answer));
         uint64 deadline = requester.getReviewAsk(askId).deadline;
         vm.prank(creator);
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.DeadlineNotReached.selector, deadline));
@@ -301,21 +300,17 @@ contract ReviewDeliveryTest is HookJobRequesterFixture {
         vm.expectRevert(HookJobRequester.NotRequester.selector);
         requester.expireReview(jobId);
         vm.prank(creator);
+        vm.expectRevert(abi.encodeWithSelector(HookJobRequester.ReviewAlreadyReceived.selector, askId));
         requester.expireReview(jobId);
-        bytes32 bodyHash = requester.getReviewAsk(askId).bodyHash;
-        vm.prank(owner);
-        vm.expectRevert(abi.encodeWithSelector(HookJobRequester.UnknownOrSettled.selector, askId));
-        requester.bindReview(askId, bodyHash, oldAnswer.requestId, oldAnswer.questionHash, oldAnswer.chainId, 1, 2);
-        assertFalse(requester.consumed(oldAnswer.requestId));
-        bytes32 retry = _requestReview(jobId);
-        bytes memory oldSignature = _sign(oldAnswer, signerKey);
-        vm.prank(address(intake));
-        vm.expectRevert(abi.encodeWithSelector(HookJobRequester.UnknownOrSettled.selector, askId));
-        requester.onReviewResult(askId, oldAnswer, oldSignature);
-        assertFalse(_deliver(retry, oldAnswer), "old answer cannot match the retry's UUID");
-        assertEq(uint8(_review(jobId)), uint8(HookJobRequester.ReviewStatus.Pending));
-        assertFalse(requester.consumed(oldAnswer.requestId));
-        assertEq(requester.getReviewReceipt(retry).oracleRequestId, bytes32(0));
+        vm.prank(creator);
+        vm.expectRevert(abi.encodeWithSelector(HookJobRequester.NotReviewable.selector, jobId));
+        requester.requestReview(jobId);
+        assertEq(requester.reviewOf(askId), jobId);
+        assertEq(requester.getReviewReceipt(askId).oracleRequestId, answer.requestId);
+        assertEq(requester.getReviewReceipt(askId).passed, passed);
+        _confirm(askId, answer);
+        _assertVerdict(jobId, askId, answer);
+        assertEq(imd.balanceOf(address(intake)), 2 * PRICE, "no second review fee");
     }
 
     function testInvalidOneAttemptCallbackLosesFeeAndCannotRetryOrCreateReceipt() public {

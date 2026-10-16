@@ -170,7 +170,7 @@ or pre-delivery binding availability.
 
 ## Follow-up: re-audit 5f43f94d
 
-Current results for the receipt-first callback repair described in
+Historical results for the receipt-first callback repair described in
 [AUDIT_5F43F94D.md](AUDIT_5F43F94D.md). Compiler **Solidity 0.8.26**, existing Cancun/optimizer
 settings, dependencies and build configuration are unchanged.
 
@@ -209,3 +209,59 @@ No new library, network-dependent fixture or runtime installation is required. N
 live pilot, deployment, paid request, new independent audit, Slither or Mythril was run for this
 follow-up. Passing the local one-attempt model does not establish live Intake ABI, authenticated
 post-delivery mapping, canonicalization, actual signer gas or review-evidence availability.
+
+## Follow-up: audit 1053af02
+
+Checks for [AUDIT_1053AF02.md](AUDIT_1053AF02.md), against the existing pinned Solidity **0.8.26**,
+Cancun target, optimizer 200, dependency tree and build configuration. No compiler setting or
+dependency was changed, installed or fetched to run the suite.
+
+| Check | Result |
+|---|---|
+| `forge build` | Pass; compiler advisory lints remain, no errors |
+| `forge test --summary` | **197 passed**, zero failures/skips, 19 suites, repository-pinned seed `0x936d89b088020ddf36122a88c4c9aed7130c7a410f5c44680a7d121950c99345` |
+| `FOUNDRY_FUZZ_SEED=0xc5bf18a4df77c5e8edab03e022ca2da2c37fe246ae0a377a0087f77fcf90bf32 forge test --summary` | **197 passed**, zero failures/skips; new signer failure assertions also rerun with this seed |
+| `forge test --isolate --match-contract ReviewReceiptGasTest -vv` | Pass; gas figures below also match normal test mode |
+| `forge fmt --check` | Pass |
+| `TMPDIR="$PWD/test/scratch" sh script/verify-vendored.sh` | 96 files verified, existing 24 formatting-only differences; no vendored changes |
+| Status-page JavaScript extracted into `node --check -` | Pass; Solidity test pins the added discard-event topic |
+| Report's literal NotPassed-expiry proof, run in scratch | Pass; regression delivered in `ReviewDelivery.t.sol` / `ReviewRecovery.t.sol` |
+| Requester compiled runtime | **19,965 bytes**, below 24,576; fingerprints updated, hook/factory fingerprints verified unchanged |
+
+The 19 new tests are in `ReviewRecovery.t.sol` (11), `ReviewReceiptGas.t.sol` (5), and
+`ReviewReceiptPacking.t.sol` (3). Two prior tests that allowed receipt expiry now assert the
+repaired behavior, including both bools under fuzzing. The static-reader topic assertion is
+extended. Existing exact-binding, replay, protocol-vector, signer, clock-skew, one-attempt,
+ownership, hook, pool, listing and ad tests remain. Both escrow invariants pass **256 sequences /
+128,000 calls / zero reverts each** under both seeds.
+
+The cold minimum forwarded gas measurements are:
+
+| Callback/signature fixture | Receipt-first | Pre-bound |
+|---|---:|---:|
+| ECDSA, 65 bytes | 125,266 | — |
+| ERC-1271 5-of-7, 325 bytes | 170,359 | 135,137 |
+| ERC-1271 audit fixture, +22 cold reads, 65 bytes | 187,513 | 152,310 |
+
+Each binary-search trial restores state and cools the consumer and signer. Successful delivery
+then uses the actual mock's exact 200,000-gas call. Asks are prepared before the measured test;
+`--isolate` checks and `--opcodes SSTORE -vvvvv` traces confirm the metadata update costs 5,000 gas.
+The 5-of-7 fixture performs five ECDSA recoveries and eleven cold membership/expiry/threshold
+reads; its signature validation fits a separate cold 60k execution cap. It rejects wrong,
+duplicate, revoked, expired and insufficient signers; those cases assert `BadSignature` on a
+fresh attestation before testing the failed one-shot callback. A 64-cold-read fixture shows an
+over-budget callback losing its attempt/fee with no partial receipt, reservation or consumption.
+These are forwarded callback measurements, not transaction gas/refund figures or live-chain claims.
+
+The preallocated metadata bit is hidden from the unchanged receipt ABI; fuzzing and maximum-value
+tests round-trip all fields, including full-width IDs/chain and packed block/timestamp/count/bool
+values, then finalize the exact bound answer. New recovery tests reject unauthorized/matching/
+malformed/terminal discard attempts, retain original receipt history, and exercise both expiry
+and failure before unused-reservation release. Consumed UUIDs stay immutable.
+
+No test reads or writes environment variables; the alternate seed is passed only to the runner.
+All fixtures are local ordinary source files and require no network for verification. No public
+RPC/fork, live pilot, deployment, paid request, Slither, Mythril or new independent audit was run.
+The remaining live mapping/ABI/evidence/gas assumptions, two retained informational choices,
+constructor parameters and owner recovery responsibilities are documented in
+[IMD_INTEGRATION.md](IMD_INTEGRATION.md).

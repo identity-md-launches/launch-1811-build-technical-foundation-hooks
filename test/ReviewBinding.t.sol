@@ -79,7 +79,12 @@ contract ReviewBindingTest is HookJobRequesterFixture {
         requester.bindReview(askId, bodyHash, expected.requestId, expected.questionHash, expected.chainId, 1, 2);
         vm.warp(requester.getJob(jobId).reviewDeadline + 1);
         vm.prank(creator);
+        vm.expectRevert(abi.encodeWithSelector(HookJobRequester.ReviewAlreadyReceived.selector, askId));
         requester.expireReview(jobId);
+        vm.prank(owner);
+        requester.discardReviewReceipt(
+            askId, bodyHash, expected.requestId, expected.questionHash, expected.chainId, 1, 2
+        );
         assertEq(uint8(_review(jobId)), uint8(HookJobRequester.ReviewStatus.Unanswered));
     }
 

@@ -155,14 +155,19 @@ abstract contract OracleAttestationConsumer is EIP712 {
     /// about the question, and whether it is the right one is for the consumer to decide alongside
     /// `questionHash`. A validator can nudge `block.timestamp` by seconds; the window is minutes
     /// to days wide and the tolerance absorbs the other end, so that is not a lever here.
-    function _verifyAttestation(OracleAttestation.Attestation calldata a, bytes calldata signature) internal view {
+    /// @return digest The verified digest, reusable by the caller without hashing a second time.
+    function _verifyAttestation(OracleAttestation.Attestation calldata a, bytes calldata signature)
+        internal
+        view
+        returns (bytes32 digest)
+    {
         // forge-lint: disable-next-line(block-timestamp)
         if (block.timestamp > a.expiresAt) revert AttestationExpired(a.expiresAt);
         // forge-lint: disable-next-line(block-timestamp)
         if (a.issuedAt > block.timestamp + ISSUED_AT_TOLERANCE) revert AttestationNotYetValid(a.issuedAt);
-        bytes32 digest = attestationDigest(a);
+        digest = attestationDigest(a);
         (address recovered, ECDSA.RecoverError err,) = ECDSA.tryRecoverCalldata(digest, signature);
-        if (err == ECDSA.RecoverError.NoError && recovered == oracleSigner) return;
+        if (err == ECDSA.RecoverError.NoError && recovered == oracleSigner) return digest;
         if (!SignatureChecker.isValidERC1271SignatureNow(oracleSigner, digest, signature)) {
             revert BadSignature();
         }
