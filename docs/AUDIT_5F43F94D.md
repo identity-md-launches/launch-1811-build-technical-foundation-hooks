@@ -1,5 +1,7 @@
 # Re-audit 5f43f94d remediation
 
+> Historical remediation record. Current expiry, receipt recovery, reservation and owner-trust rules are in [AUDIT_EF1F6915.md](AUDIT_EF1F6915.md) and [IMD_INTEGRATION.md](IMD_INTEGRATION.md); they supersede earlier behavior and gas figures below.
+
 **Historical implementation record.** Audit 1053af02 found that retained-answer expiry allowed
 verdict shopping and identified recovery and callback-gas limitations. Those behaviors are
 superseded by [AUDIT_1053AF02.md](AUDIT_1053AF02.md). Requesters can no longer expire a receipt;

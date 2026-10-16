@@ -209,12 +209,17 @@ contract ReviewDeliveryTest is HookJobRequesterFixture {
         assertEq(requester.intakeReviewOfOracle(a.requestId), askA);
     }
 
-    function testReservedOrConsumedUuidCannotBeDeliveredToAnotherUnboundAsk() public {
+    function testReservedUuidRetainedWithoutVerdictButConsumedUuidRefused() public {
         (, bytes32 askA) = _reviewPending();
         (bytes32 jobB, bytes32 askB) = _unboundReview();
         OracleAttestation.Attestation memory a = _attestation(askA, true);
-        assertFalse(_deliver(askB, a), "pre-bound UUID belongs only to ask A");
-        assertEq(requester.getReviewReceipt(askB).oracleRequestId, bytes32(0));
+        assertTrue(_deliver(askB, a), "reservation cannot burn receipt-only delivery");
+        assertEq(requester.getReviewReceipt(askB).oracleRequestId, a.requestId);
+        assertEq(requester.intakeReviewOfOracle(a.requestId), askA);
+        bytes32 bodyB = requester.getReviewAsk(askB).bodyHash;
+        vm.prank(owner);
+        vm.expectRevert(abi.encodeWithSelector(HookJobRequester.DuplicateRequestId.selector, a.requestId));
+        requester.bindReview(askB, bodyB, a.requestId, a.questionHash, a.chainId, a.fromBlock, a.toBlock);
         assertEq(uint8(_review(jobB)), uint8(HookJobRequester.ReviewStatus.Pending));
         assertTrue(_deliver(askA, a));
         (bytes32 jobC, bytes32 askC) = _unboundReview();
@@ -332,6 +337,7 @@ contract ReviewDeliveryTest is HookJobRequesterFixture {
         vm.warp(requester.getReviewAsk(askId).deadline + 1);
         vm.prank(creator);
         requester.expireReview(jobId);
+        _confirmExpiry(askId);
         assertEq(imd.balanceOf(creator), initialBalance - 2 * PRICE, "no refund on invalid delivery");
         assertEq(imd.balanceOf(address(intake)), 2 * PRICE);
         _requestReview(jobId);
@@ -456,15 +462,15 @@ contract ReviewDeliveryTest is HookJobRequesterFixture {
         requester.expireReview(jobId);
     }
 
-    function testFreshLateAnswerRejectedIfRequesterExpiresFirst() public {
+    function testFreshLateAnswerAcceptedIfRequesterRequestsExpiryFirst() public {
         (bytes32 jobId, bytes32 askId) = _reviewPending();
         vm.warp(requester.getReviewAsk(askId).deadline + 1);
         vm.prank(creator);
         requester.expireReview(jobId);
         OracleAttestation.Attestation memory a = _attestation(askId, true);
-        assertFalse(_deliver(askId, a));
-        assertFalse(requester.consumed(a.requestId));
-        assertEq(uint8(_review(jobId)), uint8(HookJobRequester.ReviewStatus.Unanswered));
+        assertTrue(_deliver(askId, a));
+        assertTrue(requester.consumed(a.requestId));
+        assertEq(uint8(_review(jobId)), uint8(HookJobRequester.ReviewStatus.Passed));
     }
 
     function testSignatureExpiryStillControlsArrivalEvenAfterAskDeadline() public {

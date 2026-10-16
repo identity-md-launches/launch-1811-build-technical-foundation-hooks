@@ -1,5 +1,7 @@
 # Local verification
 
+Historical results below describe successive revisions. See [audit ef1f6915 checks](#follow-up-audit-ef1f6915) for this revision.
+
 The following checks completed locally with the pinned Solidity 0.8.26 compiler and the fuzz seed in `foundry.toml`:
 
 | Check | Result |
@@ -265,3 +267,51 @@ RPC/fork, live pilot, deployment, paid request, Slither, Mythril or new independ
 The remaining live mapping/ABI/evidence/gas assumptions, two retained informational choices,
 constructor parameters and owner recovery responsibilities are documented in
 [IMD_INTEGRATION.md](IMD_INTEGRATION.md).
+
+## Follow-up: audit ef1f6915
+
+Checks for [AUDIT_EF1F6915.md](AUDIT_EF1F6915.md), against commit
+`cb6ca724441c9aebf9a38cb4d7426218e0712723`. Configuration and dependencies remain unchanged:
+Solidity **0.8.26**, Cancun, optimizer 200, no via-IR, no FFI or test filesystem permissions.
+
+| Check | Result |
+|---|---|
+| `forge build` | Pass; advisory lints remain, no compiler errors |
+| `forge test --summary` | **208 passed**, zero failures/skips, 22 suites; repository-pinned seed `0x936d89b088020ddf36122a88c4c9aed7130c7a410f5c44680a7d121950c99345` |
+| `forge test --fuzz-seed 0x6d967c2de7363601e4857550190128b5c78ed7519ccbde73e1f146db4f3b111f --summary` | **208 passed**, zero failures/skips; assignment-supplied seed |
+| Report's two literal Solidity proofs | Both reproduced their reported failures on the original source; both pass after the fix and are delivered in `AuditExpiryProof.t.sol` / `AuditReceiptConflictProof.t.sol` |
+| `forge test --isolate --match-contract ReviewReceiptGasTest -vv` | All 7 pass, with gas figures matching normal execution |
+| `forge fmt --check` | Pass |
+| `TMPDIR="$PWD/test/scratch" sh script/verify-vendored.sh` | 96 files verified; existing 24 formatting-only differences, no dependency changes |
+| Status-page JavaScript via `node --check -` | Pass; updated lifecycle event topic also pinned in the Solidity reader test |
+| `node --test test/listings-reader.test.cjs` | 6 passed |
+| Compiled requester runtime | **20,497 bytes**, below 24,576; requester fingerprints updated; hook/factory fingerprints unchanged |
+
+Eleven tests are added: two literal report proofs, seven expiry/conflict/recovery regressions,
+and two ERC-1271 gas tests for expiry-request and reserved-retry delivery. Existing tests are
+updated where expiry now needs owner confirmation or where an unbound reserved UUID now retains
+a receipt. The final reservation-release assertion also verifies that requesting expiry alone
+does not make a holder terminal; it passes under the pinned seed and in the supplied-seed full run.
+No test uses environment variables, network, a live signer or a paid Intake request.
+
+Both full runs include all existing listing/ad suites: registry (11), featured placements (21),
+adversarial escrow (11), ownership transfer (5), and both stateful escrow invariants. Each invariant
+executes **256 sequences / 128,000 calls / zero reverts per seed**, including accounting, original
+payer refunds and complete wind-down. No listing/ad contract or test source was changed.
+
+Cold minimum forwarded callback gas is **123,013** for ECDSA receipt, **168,106** for the 5-of-7
+ERC-1271 receipt (**132,880** bound), and **185,260** for the audit's +22-cold-read stressor
+(**150,053** bound). The expiry-request and reserved-retry 5-of-7 paths also use **168,106**.
+The receipt allocation is created in `setUp`, before the measured transaction; every binary-search
+trial restores state and cools consumer/signer. Each then succeeds through MockIntake's exact
+200k one-shot call. The realistic signer uses five recoveries and real threshold/membership/expiry/
+revocation checks, not an always-accepting mock. Invalid and over-budget signatures still fail
+without a partial receipt or consumption. See the source tests and current audit remediation for
+the compatibility ceiling and operator qualification requirements.
+
+Manual review covered the new expiry request/confirmation transitions, stale approval isolation,
+receipt preservation, exact conflict versus misdelivery guards, and reservation/consumption
+invariants. This is contributor self-verification, not a new independent security audit. No
+Slither, Mythril, public-chain fork, live pilot, deployment or paid request was performed. The
+owner-supplied mapping and absence of a pending callback are not independently authenticated
+onchain; live evidence sources and owner availability remain operational blockers for paid use.

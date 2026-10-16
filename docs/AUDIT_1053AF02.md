@@ -1,5 +1,7 @@
 # Audit 1053af02 remediation
 
+> Historical remediation record. Current expiry, receipt recovery, reservation and owner-trust rules are in [AUDIT_EF1F6915.md](AUDIT_EF1F6915.md) and [IMD_INTEGRATION.md](IMD_INTEGRATION.md); they supersede earlier behavior and gas figures below.
+
 Source-only remediation of [audit 1053af02-a430-49b3-a914-75620c17c801](https://api.imd.fun/jobs/1053af02-a430-49b3-a914-75620c17c801/report.md)
 against `64e40684e68c84c21e770bca63206ec9d292f063`. All four actionable findings are addressed;
 the two informational choices are retained and explicitly documented. Nothing was deployed and

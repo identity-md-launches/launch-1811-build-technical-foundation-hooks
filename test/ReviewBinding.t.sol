@@ -141,6 +141,7 @@ contract ReviewBindingTest is HookJobRequesterFixture {
             vm.warp(requester.getJob(jobId).reviewDeadline + 1);
             vm.prank(creator);
             requester.expireReview(jobId);
+            _confirmExpiry(askId);
         } else {
             assertTrue(intake.complete(askId, abi.encode(askId, a, _sign(a, signerKey))));
         }
@@ -195,6 +196,7 @@ contract ReviewBindingTest is HookJobRequesterFixture {
         vm.warp(requester.getJob(jobId).reviewDeadline + 1);
         vm.prank(creator);
         requester.expireReview(jobId);
+        _confirmExpiry(askId);
         bytes32 retry = _requestReview(jobId);
         OracleAttestation.Attestation memory fresh = _attestation(retry, false);
         assertEq(fresh.questionHash, oldAnswer.questionHash, "same question still requires its own request ID");
@@ -218,6 +220,7 @@ contract ReviewBindingTest is HookJobRequesterFixture {
             vm.warp(requester.getJob(jobId).reviewDeadline + 1);
             vm.prank(creator);
             requester.expireReview(jobId);
+            _confirmExpiry(askId);
         } else {
             OracleAttestation.Attestation memory a = _attestation(askId, true);
             assertTrue(intake.complete(askId, abi.encode(askId, a, _sign(a, signerKey))));

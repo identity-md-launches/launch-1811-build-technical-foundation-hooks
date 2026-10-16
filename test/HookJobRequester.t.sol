@@ -104,6 +104,11 @@ abstract contract HookJobRequesterFixture is Test {
         _bind(intakeId);
     }
 
+    function _confirmExpiry(bytes32 intakeId) internal {
+        vm.prank(owner);
+        requester.confirmReviewExpiry(intakeId);
+    }
+
     function _bind(bytes32 intakeId) internal {
         OracleAttestation.Attestation memory a = _attestation(intakeId, true);
         bytes32 bodyHash = keccak256(intake.bodyOf(intakeId));
@@ -638,7 +643,7 @@ contract HookJobRequesterTest is HookJobRequesterFixture {
         assertEq(uint8(_review(jobId)), uint8(HookJobRequester.ReviewStatus.Passed));
     }
 
-    function testReviewExpiryByRequesterOnly() public {
+    function testReviewExpiryRequestedByRequesterAndConfirmedByOwner() public {
         (bytes32 jobId, bytes32 oracleId) = _reviewPending();
         vm.prank(creator);
         vm.expectRevert(
@@ -651,6 +656,8 @@ contract HookJobRequesterTest is HookJobRequesterFixture {
         requester.expireReview(jobId);
         vm.prank(creator);
         requester.expireReview(jobId);
+        assertEq(uint8(_review(jobId)), uint8(HookJobRequester.ReviewStatus.Pending));
+        _confirmExpiry(oracleId);
         assertEq(uint8(_review(jobId)), uint8(HookJobRequester.ReviewStatus.Unanswered));
         OracleAttestation.Attestation memory a = _attestation(oracleId, true);
         a.issuedAt = uint64(block.timestamp);
@@ -713,7 +720,11 @@ contract HookJobRequesterTest is HookJobRequesterFixture {
         bytes32[] memory ids = abi.decode(ret, (bytes32[]));
         assertEq(ids.length, 1);
         assertEq(ids[0], id);
-        // Event topics the page filters eth_getLogs with; the request id is always topic 1.
+        // Event topics the page filters eth_getLogs with; the job id is always topic 1.
+        assertEq(
+            HookJobRequester.ReviewExpiryRequested.selector,
+            0xa7024fcc5fd62012d81f0e16c29223c201804a965e2bdb516254ed5a4b138d2a
+        );
         assertEq(
             HookJobRequester.JobOpened.selector, 0x95e6cf60266f65ecf4a509b236fccd720bc64ef7099f4a859a49d18cab89334c
         );

@@ -146,18 +146,30 @@ contract ReviewRecoveryTest is HookJobRequesterFixture {
         _confirm(askId, a);
     }
 
-    function testFuzzOwnerCanRecoverMismatchInAnyContextField(uint8 field) public {
-        field = uint8(bound(field, 0, 4));
+    function testFuzzSameUuidFieldMismatchCannotDiscardReceipt(uint8 field) public {
+        field = uint8(bound(field, 1, 4));
         (bytes32 jobId, bytes32 askId) = _unbound();
         OracleAttestation.Attestation memory misdelivered = _attestation(askId, false);
-        if (field == 0) misdelivered.requestId ^= bytes32(uint256(1));
         if (field == 1) misdelivered.questionHash ^= bytes32(uint256(1));
         if (field == 2) misdelivered.chainId++;
         if (field == 3) misdelivered.fromBlock--;
         if (field == 4) misdelivered.toBlock++;
         assertTrue(_deliver(askId, misdelivered));
-        _discard(askId, _attestation(askId, false));
-        assertEq(uint8(_review(jobId)), uint8(HookJobRequester.ReviewStatus.Unanswered));
+        OracleAttestation.Attestation memory authentic = _attestation(askId, false);
+        bytes32 bodyHash = requester.getReviewAsk(askId).bodyHash;
+        vm.prank(owner);
+        vm.expectRevert(abi.encodeWithSelector(HookJobRequester.ReviewAttestationMismatch.selector, askId));
+        requester.discardReviewReceipt(
+            askId,
+            bodyHash,
+            authentic.requestId,
+            authentic.questionHash,
+            authentic.chainId,
+            authentic.fromBlock,
+            authentic.toBlock
+        );
+        assertEq(uint8(_review(jobId)), uint8(HookJobRequester.ReviewStatus.Pending));
+        assertFalse(requester.discardedReviewReceipts(askId));
         assertFalse(requester.consumed(misdelivered.requestId));
         assertEq(requester.getReviewReceipt(askId).oracleRequestId, misdelivered.requestId);
     }
@@ -225,6 +237,7 @@ contract ReviewRecoveryTest is HookJobRequesterFixture {
             vm.warp(requester.getReviewAsk(askId).deadline + 1);
             vm.prank(creator);
             requester.expireReview(jobId);
+            _confirmExpiry(askId);
         }
         vm.prank(creator);
         bytes32 retry = requester.requestReview(jobId);
@@ -232,9 +245,8 @@ contract ReviewRecoveryTest is HookJobRequesterFixture {
         a.requestId = old.requestId; // Simulate authenticated protocol UUID reuse for this retry.
         bytes32 retryBody = requester.getReviewAsk(retry).bodyHash;
         bytes memory signature = _sign(a, signerKey);
-        vm.prank(address(intake));
-        vm.expectRevert(abi.encodeWithSelector(HookJobRequester.DuplicateRequestId.selector, a.requestId));
-        requester.onReviewResult(retry, a, signature);
+        // An unreleased reservation must not consume the retry's sole callback attempt.
+        if (receiptFirst) assertTrue(_deliver(retry, a));
         vm.prank(owner);
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.DuplicateRequestId.selector, a.requestId));
         requester.bindReview(retry, retryBody, a.requestId, a.questionHash, a.chainId, a.fromBlock, a.toBlock);
@@ -259,9 +271,8 @@ contract ReviewRecoveryTest is HookJobRequesterFixture {
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.UnknownOrSettled.selector, askId));
         requester.onReviewResult(askId, a, signature);
 
-        if (!receiptFirst) _confirm(retry, a);
-        assertTrue(_deliver(retry, a));
-        if (receiptFirst) _confirm(retry, a);
+        _confirm(retry, a);
+        if (!receiptFirst) assertTrue(_deliver(retry, a));
         assertEq(uint8(_review(jobId)), uint8(HookJobRequester.ReviewStatus.NotPassed));
         assertEq(requester.intakeReviewOfOracle(a.requestId), retry);
         assertTrue(requester.consumed(a.requestId));
@@ -276,9 +287,13 @@ contract ReviewRecoveryTest is HookJobRequesterFixture {
 
     function testReservationReleaseRejectsUnknownUnboundAndPendingHolderEvenPastDeadline() public {
         (, bytes32 unbound) = _unbound();
-        (, bytes32 boundAsk) = _reviewPending();
+        (bytes32 jobId, bytes32 boundAsk) = _reviewPending();
         bytes32 boundId = requester.getReviewAsk(boundAsk).oracleRequestId;
         vm.warp(requester.getReviewAsk(boundAsk).deadline + 1);
+        vm.prank(creator);
+        requester.expireReview(jobId);
+        assertTrue(requester.reviewExpiryRequested(boundAsk));
+        assertEq(requester.reviewOf(boundAsk), jobId, "requesting expiry does not make a reservation releasable");
         bytes32[3] memory ids = [bytes32(0), _attestation(unbound, true).requestId, boundId];
         vm.startPrank(owner);
         for (uint256 i; i < ids.length; ++i) {

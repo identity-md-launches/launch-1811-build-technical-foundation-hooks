@@ -11,6 +11,9 @@ contract ReviewReceiptGasTest is HookJobRequesterFixture {
     bytes32 private earlyAsk;
     bytes32 private boundJob;
     bytes32 private boundAsk;
+    bytes32 private retryJob;
+    bytes32 private retryAsk;
+    bytes32 private reservedUuid;
     ThresholdReceiptSigner private multisigner;
     ColdReadReceiptSigner private auditSigner;
     ColdReadReceiptSigner private overBudgetSigner;
@@ -24,6 +27,12 @@ contract ReviewReceiptGasTest is HookJobRequesterFixture {
         vm.prank(creator);
         earlyAsk = requester.requestReview(earlyJob);
         (boundJob, boundAsk) = _reviewPending();
+        bytes32 oldAsk;
+        (retryJob, oldAsk) = _reviewPending();
+        reservedUuid = requester.getReviewAsk(oldAsk).oracleRequestId;
+        assertTrue(intake.fail(oldAsk, 2, "no answer", 0, 0));
+        vm.prank(creator);
+        retryAsk = requester.requestReview(retryJob);
         address[] memory members = new address[](7);
         for (uint256 i; i < 7; ++i) {
             memberKeys.push(uint256(keccak256(abi.encode("gas test member", i))));
@@ -131,6 +140,45 @@ contract ReviewReceiptGasTest is HookJobRequesterFixture {
         assertEq(uint8(_review(boundJob)), uint8(HookJobRequester.ReviewStatus.Passed));
     }
 
+    function testColdFiveOfSevenReceiptAfterExpiryRequestFitsStipend() public {
+        _useSigner(address(multisigner));
+        vm.warp(requester.getReviewAsk(earlyAsk).deadline + 1);
+        vm.prank(creator);
+        requester.expireReview(earlyJob);
+        OracleAttestation.Attestation memory a = _attestation(earlyAsk, false);
+        bytes memory signature = _multisig(a);
+        uint256 gasUsed = _minimumGas(earlyAsk, a, signature, address(multisigner));
+        emit log_named_uint("Cold 5-of-7 receipt after expiry request minimum forwarded gas", gasUsed);
+        assertLt(gasUsed, 190_000);
+        assertTrue(_complete(earlyAsk, a, signature, address(multisigner)));
+        _confirm(earlyAsk, a);
+        assertEq(uint8(_review(earlyJob)), uint8(HookJobRequester.ReviewStatus.NotPassed));
+    }
+
+    function testColdFiveOfSevenRetryReceiptBeforeReservationReleaseFitsStipend() public {
+        _useSigner(address(multisigner));
+        OracleAttestation.Attestation memory a = _attestation(retryAsk, false);
+        a.requestId = reservedUuid;
+        bytes memory signature = _multisig(a);
+        uint256 gasUsed = _minimumGas(retryAsk, a, signature, address(multisigner));
+        emit log_named_uint("Cold 5-of-7 reserved retry receipt minimum forwarded gas", gasUsed);
+        assertLt(gasUsed, 190_000);
+        assertTrue(_complete(retryAsk, a, signature, address(multisigner)));
+        assertFalse(requester.consumed(reservedUuid));
+        assertEq(uint8(_review(retryJob)), uint8(HookJobRequester.ReviewStatus.Pending));
+        bytes32 bodyHash = requester.getReviewAsk(retryAsk).bodyHash;
+        vm.prank(owner);
+        vm.expectRevert(abi.encodeWithSelector(HookJobRequester.DuplicateRequestId.selector, reservedUuid));
+        requester.bindReview(retryAsk, bodyHash, a.requestId, a.questionHash, a.chainId, a.fromBlock, a.toBlock);
+        vm.prank(owner);
+        requester.releaseReservation(reservedUuid);
+        _confirm(retryAsk, a);
+        assertEq(uint8(_review(retryJob)), uint8(HookJobRequester.ReviewStatus.NotPassed));
+        assertTrue(requester.consumed(reservedUuid));
+        assertEq(requester.intakeReviewOfOracle(reservedUuid), retryAsk);
+        assertEq(imd.balanceOf(address(intake)), 7 * PRICE, "retained callback needs no new paid ask");
+    }
+
     function testAudit22ColdReadsNowRetainsOneShotReceiptAndBoundVerdict() public {
         _useSigner(address(auditSigner));
         OracleAttestation.Attestation memory a = _attestation(earlyAsk, true);
@@ -148,7 +196,7 @@ contract ReviewReceiptGasTest is HookJobRequesterFixture {
         assertTrue(_complete(boundAsk, b, signature, address(auditSigner)));
         assertEq(uint8(_review(earlyJob)), uint8(HookJobRequester.ReviewStatus.Passed));
         assertEq(uint8(_review(boundJob)), uint8(HookJobRequester.ReviewStatus.NotPassed));
-        assertEq(imd.balanceOf(address(intake)), 4 * PRICE, "no second fee");
+        assertEq(imd.balanceOf(address(intake)), 7 * PRICE, "no second fee");
     }
 
     function testOverBudgetSignerStillFailsClosedAndLosesSingleAttemptWithoutPartialReceipt() public {
@@ -168,7 +216,8 @@ contract ReviewReceiptGasTest is HookJobRequesterFixture {
         vm.warp(requester.getReviewAsk(earlyAsk).deadline + 1);
         vm.prank(creator);
         requester.expireReview(earlyJob);
-        assertEq(imd.balanceOf(address(intake)), 4 * PRICE, "gas failure has no refund");
+        _confirmExpiry(earlyAsk);
+        assertEq(imd.balanceOf(address(intake)), 7 * PRICE, "gas failure has no refund");
         assertEq(uint8(_review(earlyJob)), uint8(HookJobRequester.ReviewStatus.Unanswered));
     }
 

@@ -136,8 +136,11 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
     mapping(bytes32 intakeRequestId => bytes32 jobRequestId) public reviewOf;
     mapping(bytes32 intakeRequestId => ReviewAsk) private _reviewAsks;
     mapping(bytes32 intakeRequestId => StoredReviewReceipt) private _reviewReceipts;
-    /// @notice Historical receipt was closed by the owner on an authenticated context mismatch.
+    /// @notice Historical receipt was closed for owner-reported misdelivery or an onchain UUID conflict.
     mapping(bytes32 intakeRequestId => bool) public discardedReviewReceipts;
+    /// @notice Requester asked for expiry; delivery and binding remain open until owner confirmation.
+    /// Historical flags are never cleared and cannot authorize expiry of a later ask.
+    mapping(bytes32 intakeRequestId => bool) public reviewExpiryRequested;
     /// @notice Never cleared, including on failure/expiry: an Intake ID cannot be recycled.
     mapping(bytes32 intakeRequestId => bool) public usedIntakeRequestIds;
     /// @notice Bound UUIDs stay reserved unless the owner releases an unused, terminal reservation.
@@ -168,6 +171,8 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
     error ReviewAlreadyReceived(bytes32 requestId);
     error ReviewNotReceived(bytes32 requestId);
     error ReviewReceiptMatches(bytes32 requestId);
+    error ReviewExpiryAlreadyRequested(bytes32 requestId);
+    error ReviewExpiryNotRequested(bytes32 requestId);
     error ReservationNotReleasable(bytes32 oracleRequestId);
     error ReviewAlreadyBound(bytes32 requestId);
     error InvalidReviewBinding();
@@ -216,6 +221,7 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
         uint16 agreed
     );
     event ReviewUnanswered(bytes32 indexed jobRequestId, bytes32 indexed intakeRequestId, uint8 status, bytes32 reason);
+    event ReviewExpiryRequested(bytes32 indexed jobRequestId, bytes32 indexed intakeRequestId);
     event ReviewReceiptDiscarded(
         bytes32 indexed jobRequestId,
         bytes32 indexed intakeRequestId,
@@ -370,7 +376,8 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
     /// the canonical question hash from this ask's body and resolved window. Neither ID equality nor
     /// keccak256(body) == questionHash is assumed. A relay/caller cannot choose these expectations.
     /// An unbound receipt is never itself authority for this mapping. No deadline cutoff: the
-    /// requester may explicitly expire an unanswered ask after its deadline, but never a receipt.
+    /// requester may request expiry after its deadline, but closure needs owner confirmation.
+    /// The contract checks consistency with owner-supplied context, not its offchain authenticity.
     function bindReview(
         bytes32 intakeRequestId,
         bytes32 expectedBodyHash,
@@ -425,9 +432,11 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
         }
     }
 
-    /// @notice Closes a misdelivered, unconfirmed receipt as Unanswered, retaining all history.
-    /// @dev Supply the ask's independently authenticated TRUE context, just as for bindReview.
-    /// It must differ from the receipt: neither a negative value nor elapsed time permits discard.
+    /// @notice Closes an unconfirmed misdelivery or conflicting UUID as Unanswered, retaining history.
+    /// @dev Supply the ask's true context, independently checked OFFCHAIN by the trusted owner.
+    /// Misdelivery requires a different, available UUID. A same-UUID context must match every
+    /// field and have an onchain conflict (consumed or reserved by another ask). A field typo,
+    /// negative value or elapsed time alone cannot justify discard. No mapping proof is verified.
     /// This does not retry Intake, refund its fee, reserve a UUID, or change any consumed marker.
     function discardReviewReceipt(
         bytes32 intakeRequestId,
@@ -447,8 +456,19 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
         );
         ReviewReceipt memory receipt = getReviewReceipt(intakeRequestId);
         if (receipt.oracleRequestId == bytes32(0)) revert ReviewNotReceived(intakeRequestId);
-        if (_receiptMatches(receipt, oracleRequestId, questionHash, questionChainId, fromBlock, toBlock)) {
-            revert ReviewReceiptMatches(intakeRequestId);
+        bytes32 reason;
+        bytes32 holder = intakeReviewOfOracle[oracleRequestId];
+        if (oracleRequestId == receipt.oracleRequestId) {
+            if (!_receiptMatches(receipt, oracleRequestId, questionHash, questionChainId, fromBlock, toBlock)) {
+                revert ReviewAttestationMismatch(intakeRequestId);
+            }
+            if (!consumed[oracleRequestId] && (holder == bytes32(0) || holder == intakeRequestId)) {
+                revert ReviewReceiptMatches(intakeRequestId);
+            }
+            reason = "receipt UUID conflict";
+        } else {
+            if (consumed[oracleRequestId] || holder != bytes32(0)) revert DuplicateRequestId(oracleRequestId);
+            reason = "misdelivered receipt";
         }
         discardedReviewReceipts[intakeRequestId] = true;
         delete reviewOf[intakeRequestId];
@@ -463,7 +483,7 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
             fromBlock,
             toBlock
         );
-        emit ReviewUnanswered(jobRequestId, intakeRequestId, 0, "misdelivered receipt");
+        emit ReviewUnanswered(jobRequestId, intakeRequestId, 0, reason);
     }
 
     /// @notice Releases an unused UUID only after its holder ask is closed without a receipt.
@@ -544,11 +564,11 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
         bytes32 digest = _verifyAttestation(a, signature);
         bool passed = decodeBool(a);
         if (consumed[a.requestId]) revert AlreadyConsumed(a.requestId);
-        bytes32 reservedFor = intakeReviewOfOracle[a.requestId];
-        if (reservedFor != bytes32(0) && reservedFor != requestId) revert DuplicateRequestId(a.requestId);
         if (!bound) {
             // Do not reserve a UUID on unconfirmed delivery: a swapped answer must not prevent
-            // its actual ask from binding. Only the independently verified owner binding reserves.
+            // its actual ask from binding. Nor may another ask's reservation burn this one-shot
+            // delivery. Binding still requires an available UUID; only the owner can release a
+            // terminal reservation or close a conflicting receipt. Consumed UUIDs stay rejected.
             _reviewReceipts[requestId] = StoredReviewReceipt({
                 oracleRequestId: a.requestId,
                 questionHash: a.questionHash,
@@ -596,9 +616,9 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
         emit ReviewUnanswered(jobRequestId, requestId, status, reason);
     }
 
-    /// @notice After the deadline the requester may abandon a pending ask with NO retained answer.
-    /// A retained answer awaits owner confirmation (or owner recovery of a misdelivery), never
-    /// requester selection by verdict. Expiry is terminal for the old Intake ID.
+    /// @notice Requests owner-assisted expiry after the deadline, only without a retained answer.
+    /// The ask stays Pending and accepts delivery/binding. A requester cannot front-run a visible
+    /// NotPassed callback by expiring or buying a retry. See confirmReviewExpiry for actual closure.
     function expireReview(bytes32 jobRequestId) external {
         Job storage job = jobs[jobRequestId];
         if (job.review != ReviewStatus.Pending) revert UnknownOrSettled(jobRequestId);
@@ -609,9 +629,26 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
         if (_reviewReceipts[intakeRequestId].oracleRequestId != bytes32(0)) {
             revert ReviewAlreadyReceived(intakeRequestId);
         }
+        if (reviewExpiryRequested[intakeRequestId]) revert ReviewExpiryAlreadyRequested(intakeRequestId);
+        reviewExpiryRequested[intakeRequestId] = true;
+        emit ReviewExpiryRequested(jobRequestId, intakeRequestId);
+    }
+
+    /// @notice Closes an expiry-requested ask with no receipt; only then may its requester retry.
+    /// @dev The owner must independently check that Intake will not deliver a valid answer.
+    /// That absence is NOT proven onchain. Never confirm based only on the deadline or requester
+    /// assertion. A mistaken/hostile confirmation can still burn a later callback. Use the exact
+    /// Intake ID so an approval for an old ask cannot close its retry. Receipts always block closure.
+    function confirmReviewExpiry(bytes32 intakeRequestId) external onlyOwner {
+        bytes32 jobRequestId = reviewOf[intakeRequestId];
+        if (jobRequestId == bytes32(0)) revert UnknownOrSettled(intakeRequestId);
+        if (!reviewExpiryRequested[intakeRequestId]) revert ReviewExpiryNotRequested(intakeRequestId);
+        if (_reviewReceipts[intakeRequestId].oracleRequestId != bytes32(0)) {
+            revert ReviewAlreadyReceived(intakeRequestId);
+        }
         delete reviewOf[intakeRequestId];
-        job.review = ReviewStatus.Unanswered;
-        emit ReviewUnanswered(jobRequestId, intakeRequestId, 0, "expired");
+        jobs[jobRequestId].review = ReviewStatus.Unanswered;
+        emit ReviewUnanswered(jobRequestId, intakeRequestId, 0, "owner confirmed expiry");
     }
 
     // ---------------------------------------------------------------- reads for a static site
