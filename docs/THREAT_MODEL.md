@@ -27,7 +27,12 @@ The creator, transaction caller, pool initializer, routers, hookData, RPC result
 | Salt exhaustion or arithmetic wrap | Bounded paginated search and checked range; explicit exhaustion result | Empty page, successful page, resume index and overflow tests |
 | Unexpected ETH or tokens | Nonpayable methods, no payable fallback; unsolicited/forced funds are not part of logic and cannot be recovered | Prefunded CREATE2 address deploys identically |
 | Unsettled swap | PoolManager's unlock accounting reverts the transaction; hook count and events roll back too | Deliberately missing settlement and subsequent successful swap |
-| Mainnet broadcast | Factory constructor/deploy, shared integration and adapter allow only local/named test chains | Named mainnets and unknown chain IDs rejected |
+| Mainnet broadcast | This release's factory constructor/deploy, scripts, shared integration and adapter allow only local/named test chains. The hook template is chain-agnostic by design, and a direct deployment outside the factory is not recognised by `verify` | Named mainnets and fuzzed unknown chain IDs rejected on every release path; direct template deployment on chain 1 shown unregistered |
+| Exact-output input exceeds limit | By design: the limit caps only `amountSpecified`. Users bound input with router slippage limits | `testLimitCapsOnlySpecifiedSideNotUnspecifiedSide` |
+| Salt mining fails under RPC gas caps | Pages stop early on low gas and return a resume nonce; `InsufficientGas` when no progress is possible | Capped-gas walk equals uncapped result |
+| Forged IMD result, review verdict or replay | Intake-only callbacks, own pending ids only, one-time state transitions, oracle EIP-712 signature in this contract's domain, panel minimums, consumed attestation ids, deadlines | `HookJobRequester.t.sol`, `OracleConformance.t.sol` |
+| Prompt injection via creator brief | Strict UTF-8, no JSON-significant or delimiter characters, quoted as untrusted data inside the owner template | Brief validation and fuzz tests |
+| Malicious requester owner | Trust assumption: owner can change intake, signer and templates. Use a multisig | Documented in IMD_INTEGRATION.md |
 
 The factory emits after verifying freshly created code. Foundry's generic `reentrancy-events` lint flags this sequence; the verification calls are static reads of the fixed hook whose runtime was just checked, and its constructor has no external calls. There is no untrusted state-changing callback in that sequence. This is reviewed reasoning, not an external audit finding.
 

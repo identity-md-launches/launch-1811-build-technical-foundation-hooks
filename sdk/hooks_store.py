@@ -242,7 +242,8 @@ class StoreClient:
                 if self.rpc.code(plan["predictedAddress"]) != "0x":
                     raise StoreError("predicted address is already occupied")
                 return plan
-            if found != 0 or next_nonce != start + page_size:
+            # A page cut short by the RPC's eth_call gas cap reports the first unchecked nonce.
+            if found != 0 or not start < next_nonce <= start + page_size:
                 raise StoreError("invalid exhausted-page response")
             start = next_nonce
         raise StoreError(f"search exhausted; resume with start_nonce={start}")

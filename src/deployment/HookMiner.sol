@@ -5,6 +5,8 @@ import {Hooks} from "v4-core/src/libraries/Hooks.sol";
 
 library HookMiner {
     uint256 internal constant MAX_ATTEMPTS = 131072;
+    /// @dev Gas kept back so a page cut short by its gas budget can still return its resume point.
+    uint256 internal constant GAS_RESERVE = 50_000;
 
     struct Result {
         bool found;
@@ -15,6 +17,7 @@ library HookMiner {
 
     error InvalidSearchRange();
     error InvalidFlags();
+    error InsufficientGas();
 
     function predict(address deployer, bytes32 salt, bytes32 initCodeHash) internal pure returns (address) {
         address predicted;
@@ -31,6 +34,10 @@ library HookMiner {
     }
 
     /// @dev Paginated and bounded. Run via eth_call or a local script, never a paid mining transaction.
+    /// A page also stops early, before `attempts`, when gas runs low (RPC providers cap eth_call gas,
+    /// commonly 25-50M). It then returns `found == false` with `nextNonce` at the first unchecked
+    /// nonce, so a caller resumes there and no candidate is skipped. A call with too little gas for
+    /// even one candidate reverts `InsufficientGas` instead of reporting no progress.
     function mine(address deployer, bytes32 initCodeHash, uint160 flags, uint256 start, uint256 attempts)
         internal
         view
@@ -42,6 +49,10 @@ library HookMiner {
         }
         uint256 end = start + attempts;
         for (uint256 nonce = start; nonce < end; ++nonce) {
+            if (gasleft() < GAS_RESERVE) {
+                if (nonce == start) revert InsufficientGas();
+                return Result(false, bytes32(0), address(0), nonce);
+            }
             address candidate = predict(deployer, bytes32(nonce), initCodeHash);
             if (uint160(candidate) & Hooks.ALL_HOOK_MASK == flags && candidate.code.length == 0) {
                 return Result(true, bytes32(nonce), candidate, nonce + 1);

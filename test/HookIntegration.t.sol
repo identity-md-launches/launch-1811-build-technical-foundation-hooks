@@ -103,6 +103,27 @@ contract HookIntegrationTest is Fixture {
         assertEq(hook.swapCount((secondPool ? poolA : poolB).toId()), 0);
     }
 
+    /// @dev Decision: the limit caps only `amountSpecified`. The unspecified side (input of an
+    /// exact-output swap, output of an exact-input swap) is not capped by the hook; see README.
+    function testLimitCapsOnlySpecifiedSideNotUnspecifiedSide() public {
+        int256 limit = int256(uint256(spec.maxSpecifiedAmount));
+        // Exact output of exactly the limit: the input paid includes the 0.3% fee and price impact.
+        BalanceDelta exactOut = _swap(poolA, true, limit);
+        assertEq(int256(exactOut.amount1()), limit);
+        assertGt(-int256(exactOut.amount0()), limit, "input side exceeds the limit and is still accepted");
+        // Exact input of exactly the limit: the output is whatever the pool gives, below the limit here.
+        BalanceDelta exactIn = _swap(poolA, false, -limit);
+        assertEq(-int256(exactIn.amount1()), limit);
+        assertLt(int256(exactIn.amount0()), limit);
+        assertEq(hook.swapCount(poolA.toId()), 2);
+        // One raw unit more on the specified side is refused in both modes.
+        _expectWrapped(
+            IHooks.beforeSwap.selector,
+            abi.encodeWithSelector(BoundedSwapHook.AmountOutsideLimit.selector, limit + 1, spec.maxSpecifiedAmount)
+        );
+        _swap(poolA, true, limit + 1);
+    }
+
     function testOverLimitRevertsThroughManagerInAllModes() public {
         int256 over = int256(uint256(spec.maxSpecifiedAmount)) + 1;
         for (uint256 i; i < 4; ++i) {

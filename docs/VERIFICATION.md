@@ -36,6 +36,23 @@ forge test --match-test testPredictionDeploymentPermissionsSettingsAndBytecodeAg
 forge test --match-test testTwoNewPoolsReuseOneDeployedHook -vvvv
 ```
 
-[build-fingerprints.json](build-fingerprints.json) records creation/runtime hashes for this build. Creation hashes there exclude constructor arguments; each plan's `initCodeHash` includes the full constructor ABI. The hashes are build fingerprints, not live chain evidence. `lib/SHA256SUMS` provides file-level checksums of the retained dependency sources and licenses.
+[build-fingerprints.json](build-fingerprints.json) records creation/runtime hashes for this build. Creation hashes there exclude constructor arguments; each plan's `initCodeHash` includes the full constructor ABI. The hashes are build fingerprints, not live chain evidence. `lib/SHA256SUMS` holds the *upstream* hashes, not the committed tree's; see [dependency provenance](DEPENDENCIES.md) and `script/verify-vendored.sh` for the corrected, verified evidence.
 
 These are contributor self-check results, not independent verification or an audit. Live Ethereum, Base and Robinhood execution, public testnet deployments, production router/native currency/hostile token integrations, hosted wallet flows and external adversarial review remain untested. No claim of a working hosted deployment is based on IMD's checker.
+
+## Follow-up (audit 0baee611 and IMD integration)
+
+| Check | Result |
+|---|---|
+| `forge build` | Pass |
+| `forge test` (also with `FOUNDRY_FUZZ_SEED=0x5f44…733b`) | 80 tests pass: 25 deployment, 15 hook/pool, 11 audit follow-up, 26 IMD requester, 3 oracle conformance |
+| `forge fmt --check` | Pass |
+| `sh script/verify-vendored.sh` | Pass: 96 files, 24 formatting-only differences from upstream |
+
+The original 39 tests are unchanged and still pass. `AuditFixes.t.sol` covers:
+- the 3 named mainnets and fuzzed unknown chains, on every release path: factory constructor, `deploy` with a matching spec, `DeployStore.run`, `DeployHook.prepare/execute/run`;
+- end-to-end deploys on the allowed testnet ids, as local simulation;
+- the chain-agnostic hook template;
+- capped-gas mining.
+
+The swap-limit decision is tested in `HookIntegration.t.sol`. `HookJobRequester.t.sol` and `OracleConformance.t.sol` cover the IMD flow against a mock Intake. These are self-checks, not an audit.

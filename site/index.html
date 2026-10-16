@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hooks Store: IMD job status</title>
+<style>
+  body { font: 16px/1.5 system-ui, sans-serif; max-width: 46rem; margin: 2rem auto; padding: 0 1rem; }
+  label { display: block; margin-top: .75rem; }
+  input { width: 100%; font: inherit; padding: .3rem; box-sizing: border-box; }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: .25rem 1rem; }
+  dt { font-weight: 600; }
+  .note { color: #555; font-size: .9rem; }
+</style>
+</head>
+<body>
+<h1>IMD job status</h1>
+<p class="note">Read directly from the HookJobRequester contract over JSON-RPC <code>eth_call</code>. No backend, and no request to api.imd.fun.
+"Review passed" appears only when the IdentityMD oracle's signed panel answer was verified on chain. It is not an audit.</p>
+<form id="f">
+  <label>JSON-RPC URL (a public node of the chain; leave empty to use your wallet's provider)<input id="rpc" placeholder="https://..."></label>
+  <label>HookJobRequester address<input id="addr" required pattern="0x[0-9a-fA-F]{40}"></label>
+  <label>Intake request id<input id="job" required pattern="0x[0-9a-fA-F]{64}"></label>
+  <p><button>Show status</button></p>
+</form>
+<dl id="out"></dl>
+<script>
+// getJob(bytes32) selector, from `cast sig "getJob(bytes32)"`.
+const GET_JOB = "0xf729cf0d";
+const JOB = ["None", "Open", "Delivered (reported by the Intake, unsigned)", "Failed (reported by the Intake)", "Expired (no answer before the deadline)"];
+const REVIEW = ["No verified review result", "No verified review result (oracle answer pending)",
+  "Review step passed: attested by an IMD oracle panel", "Review step did not pass: attested by an IMD oracle panel",
+  "No verified review result (oracle gave no answer)"];
+
+async function rpc(url, method, params) {
+  if (!url) {
+    if (!window.ethereum) throw new Error("no RPC URL and no wallet provider");
+    return window.ethereum.request({ method, params });
+  }
+  const r = await fetch(url, { method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }) });
+  const j = await r.json();
+  if (j.error) throw new Error(j.error.message || "RPC error");
+  return j.result;
+}
+
+function words(hex) {
+  const h = hex.slice(2), w = [];
+  for (let i = 0; i < h.length; i += 64) w.push(h.slice(i, i + 64));
+  return w;
+}
+const num = (w) => BigInt("0x" + w);
+const ascii = (w) => w.replace(/(00)+$/, "").match(/../g)?.map((b) => String.fromCharCode(parseInt(b, 16))).join("") ?? "";
+
+function show(rows) {
+  const out = document.getElementById("out");
+  out.replaceChildren();
+  for (const [k, v] of rows) {
+    const dt = document.createElement("dt"), dd = document.createElement("dd");
+    dt.textContent = k; dd.textContent = v; out.append(dt, dd);
+  }
+}
+
+document.getElementById("f").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const url = document.getElementById("rpc").value.trim();
+  const addr = document.getElementById("addr").value.trim();
+  const job = document.getElementById("job").value.trim().toLowerCase();
+  try {
+    const res = await rpc(url, "eth_call", [{ to: addr, data: GET_JOB + job.slice(2) }, "latest"]);
+    // Job is a static struct: 15 words in declaration order.
+    const w = words(res);
+    if (w.length !== 15) throw new Error("unexpected response; is this a HookJobRequester?");
+    const status = Number(num(w[3])), review = Number(num(w[4]));
+    if (status === 0) return show([["Job", "Unknown to this contract"]]);
+    const rows = [
+      ["Requester", "0x" + w[0].slice(24)],
+      ["Opened", new Date(Number(num(w[1])) * 1000).toISOString()],
+      ["Deadline", new Date(Number(num(w[2])) * 1000).toISOString()],
+      ["Job status", JOB[status] ?? "?"],
+      ["HookSpec hash", "0x" + w[9]],
+      ["Body hash", "0x" + w[10]],
+    ];
+    if (status === 2) rows.push(["Result hash", "0x" + w[11]]);
+    if (status === 3) rows.push(["Failure", `status ${num(w[5])}, ${ascii(w[12])}`]);
+    rows.push(["Review", REVIEW[review] ?? "No verified review result"]);
+    if (review === 2 || review === 3) {
+      rows.push(["Panel", `${num(w[7])} of ${num(w[6])} members agreed`]);
+      rows.push(["Panel job id", "0x" + w[14]]);
+    }
+    if (review === 1) rows.push(["Oracle request", "0x" + w[13]]);
+    show(rows);
+  } catch (err) {
+    show([["Error", err.message]]);
+  }
+});
+</script>
+</body>
+</html>
