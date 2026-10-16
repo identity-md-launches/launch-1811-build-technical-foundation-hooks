@@ -68,6 +68,23 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
         uint16 minAgreed;
     }
 
+    /// @notice A signature-verified answer received before binding, NOT a review verdict.
+    /// Freshness and signer authority are checked at receipt. The immutable fields below are
+    /// sufficient to check the owner's subsequent binding and finalize without another callback.
+    /// Packed into five slots to fit the Intake's 200,000-gas callback stipend.
+    struct ReviewReceipt {
+        bytes32 oracleRequestId;
+        bytes32 questionHash;
+        uint256 questionChainId;
+        bytes32 panelJobId;
+        uint64 fromBlock;
+        uint64 toBlock;
+        uint64 receivedAt;
+        uint16 panelSize;
+        uint16 agreed;
+        bool passed;
+    }
+
     /// @dev Markers the job template must contain, so every job names the three steps.
     bytes internal constant STEP_BUILD = "forge build";
     bytes internal constant STEP_TEST = "forge test";
@@ -103,6 +120,7 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
     /// @notice Intake request id of a pending review ask => the job's Intake request id.
     mapping(bytes32 intakeRequestId => bytes32 jobRequestId) public reviewOf;
     mapping(bytes32 intakeRequestId => ReviewAsk) private _reviewAsks;
+    mapping(bytes32 intakeRequestId => ReviewReceipt) private _reviewReceipts;
     /// @notice Never cleared, including on failure/expiry: an Intake ID cannot be recycled.
     mapping(bytes32 intakeRequestId => bool) public usedIntakeRequestIds;
     /// @notice Oracle IDs are reserved once, even if the bound ask expires without an answer.
@@ -129,8 +147,7 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
     error PanelTooWeak(uint16 panelSize, uint16 quorum, uint16 agreed);
     error NotReviewable(bytes32 jobRequestId);
     error DeadlineNotReached(uint64 deadline);
-    error ReviewDeadlinePassed(uint64 deadline);
-    error ReviewNotBound(bytes32 requestId);
+    error ReviewAlreadyReceived(bytes32 requestId);
     error ReviewAlreadyBound(bytes32 requestId);
     error InvalidReviewBinding();
     error ReviewBodyMismatch(bytes32 expected, bytes32 supplied);
@@ -161,6 +178,12 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
         uint256 questionChainId,
         uint64 fromBlock,
         uint64 toBlock
+    );
+    event ReviewReceived(
+        bytes32 indexed jobRequestId,
+        bytes32 indexed intakeRequestId,
+        bytes32 indexed oracleRequestId,
+        bytes32 attestationDigest
     );
     event ReviewAnswered(
         bytes32 indexed jobRequestId,
@@ -281,8 +304,8 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
     /// @notice Asks the IdentityMD oracle whether the job's adversarial-review step passed. The
     /// requester pays `intake.priceOf(reviewAction, asset)`. Allowed once the job was delivered or
     /// expired (a lost completion notice does not block a verdict), and again after an unanswered ask.
-    /// The owner must bind the returned Intake ID to the independently verified oracle context
-    /// before delivery. Until then, signed answers are refused with ReviewNotBound.
+    /// The owner must bind the returned Intake ID to the independently verified oracle context.
+    /// A valid answer arriving first is retained without setting a verdict or consuming its UUID.
     function requestReview(bytes32 jobRequestId) external nonReentrant returns (bytes32 intakeRequestId) {
         if (reviewAction == bytes32(0)) revert NotConfigured("reviewTemplate");
         Job storage job = jobs[jobRequestId];
@@ -308,11 +331,13 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
         emit ReviewRequested(jobRequestId, intakeRequestId, price, body);
     }
 
-    /// @notice Pins the exact oracle identity/question for an existing ask, once, before delivery.
+    /// @notice Pins the exact oracle identity/question for a pending ask, once. If an answer was
+    /// already received, the binding must match it exactly and finalizes it in this transaction.
     /// @dev The owner must independently verify the protocol's Intake-to-oracle mapping and compute
     /// the canonical question hash from this ask's body and resolved window. Neither ID equality nor
     /// keccak256(body) == questionHash is assumed. A relay/caller cannot choose these expectations.
-    /// Unbound asks fail closed. See docs/IMD_INTEGRATION.md for the unverified live workflow.
+    /// An unbound receipt is never itself authority for this mapping. No deadline cutoff: the
+    /// requester may explicitly expire a pending ask after its deadline, including a retained one.
     function bindReview(
         bytes32 intakeRequestId,
         bytes32 expectedBodyHash,
@@ -325,7 +350,6 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
         bytes32 jobRequestId = reviewOf[intakeRequestId];
         if (jobRequestId == bytes32(0)) revert UnknownOrSettled(intakeRequestId);
         ReviewAsk storage ask = _reviewAsks[intakeRequestId];
-        if (block.timestamp > ask.deadline) revert ReviewDeadlinePassed(ask.deadline);
         if (ask.oracleRequestId != bytes32(0)) revert ReviewAlreadyBound(intakeRequestId);
         if (expectedBodyHash != ask.bodyHash) revert ReviewBodyMismatch(ask.bodyHash, expectedBodyHash);
         if (oracleRequestId == bytes32(0) || questionHash == bytes32(0) || questionChainId == 0 || fromBlock > toBlock)
@@ -335,6 +359,15 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
         if (intakeReviewOfOracle[oracleRequestId] != bytes32(0) || consumed[oracleRequestId]) {
             revert DuplicateRequestId(oracleRequestId);
         }
+        ReviewReceipt storage receipt = _reviewReceipts[intakeRequestId];
+        if (
+            receipt.oracleRequestId != bytes32(0)
+                && (receipt.oracleRequestId != oracleRequestId
+                    || receipt.questionHash != questionHash
+                    || receipt.questionChainId != questionChainId
+                    || receipt.fromBlock != fromBlock
+                    || receipt.toBlock != toBlock)
+        ) revert ReviewAttestationMismatch(intakeRequestId);
         ask.oracleRequestId = oracleRequestId;
         ask.questionHash = questionHash;
         ask.questionChainId = questionChainId;
@@ -351,10 +384,23 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
             fromBlock,
             toBlock
         );
+        if (receipt.oracleRequestId != bytes32(0)) {
+            _consume(oracleRequestId);
+            _answerReview(
+                jobRequestId,
+                intakeRequestId,
+                receipt.passed,
+                questionHash,
+                receipt.panelJobId,
+                receipt.panelSize,
+                receipt.agreed
+            );
+        }
     }
 
-    /// @notice The `oracle.request` callback: a live, bound ask only, exact signed identity/question,
-    /// snapshotted panel minimums, the current Intake and signer, and one-time consumption.
+    /// @notice The `oracle.request` callback: verifies the current Intake/signer, freshness and
+    /// snapshotted panel minimums. A bound ask settles on an exact match; an unbound ask retains
+    /// the verified answer for later owner confirmation. Neither path requires an Intake retry.
     function onReviewResult(bytes32 requestId, OracleAttestation.Attestation calldata a, bytes calldata signature)
         external
         onlyIntake
@@ -362,13 +408,23 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
         bytes32 jobRequestId = reviewOf[requestId];
         if (jobRequestId == bytes32(0)) revert UnknownOrSettled(requestId);
         ReviewAsk storage ask = _reviewAsks[requestId];
-        if (block.timestamp > ask.deadline) revert ReviewDeadlinePassed(ask.deadline);
-        if (ask.oracleRequestId == bytes32(0)) revert ReviewNotBound(requestId);
+        if (_reviewReceipts[requestId].oracleRequestId != bytes32(0)) revert ReviewAlreadyReceived(requestId);
+        bool bound = ask.oracleRequestId != bytes32(0);
         if (
-            a.requestId != ask.oracleRequestId || a.questionHash != ask.questionHash || a.chainId != ask.questionChainId
-                || a.fromBlock != ask.fromBlock || a.toBlock != ask.toBlock
+            bound
+                && (a.requestId != ask.oracleRequestId
+                    || a.questionHash != ask.questionHash
+                    || a.chainId != ask.questionChainId
+                    || a.fromBlock != ask.fromBlock
+                    || a.toBlock != ask.toBlock)
         ) revert ReviewAttestationMismatch(requestId);
-        if (a.issuedAt < ask.askedAt) revert AttestationPredatesAsk(a.issuedAt, ask.askedAt);
+        if (a.requestId == bytes32(0) || a.questionHash == bytes32(0) || a.chainId == 0 || a.fromBlock > a.toBlock) {
+            revert InvalidReviewBinding();
+        }
+        // Widen before adding so even hostile uint64 timestamps cannot overflow this check.
+        if (uint256(a.issuedAt) + ISSUED_AT_TOLERANCE < ask.askedAt) {
+            revert AttestationPredatesAsk(a.issuedAt, ask.askedAt);
+        }
         if (
             a.panelSize < ask.minPanelSize || a.quorum < ask.minAgreed || a.agreed < ask.minAgreed
                 || a.agreed < a.quorum || a.agreed > a.panelSize
@@ -376,15 +432,48 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
             revert PanelTooWeak(a.panelSize, a.quorum, a.agreed);
         }
         _verifyAttestation(a, signature);
-        _consume(a.requestId);
         bool passed = decodeBool(a);
+        if (consumed[a.requestId]) revert AlreadyConsumed(a.requestId);
+        bytes32 reservedFor = intakeReviewOfOracle[a.requestId];
+        if (reservedFor != bytes32(0) && reservedFor != requestId) revert DuplicateRequestId(a.requestId);
+        if (!bound) {
+            // Do not reserve a UUID on unconfirmed delivery: a swapped answer must not prevent
+            // its actual ask from binding. Only the independently verified owner binding reserves.
+            _reviewReceipts[requestId] = ReviewReceipt({
+                oracleRequestId: a.requestId,
+                questionHash: a.questionHash,
+                questionChainId: a.chainId,
+                panelJobId: a.panelJobId,
+                fromBlock: a.fromBlock,
+                toBlock: a.toBlock,
+                receivedAt: uint64(block.timestamp),
+                panelSize: a.panelSize,
+                agreed: a.agreed,
+                passed: passed
+            });
+            emit ReviewReceived(jobRequestId, requestId, a.requestId, attestationDigest(a));
+            return;
+        }
+        _consume(a.requestId);
+        _answerReview(jobRequestId, requestId, passed, a.questionHash, a.panelJobId, a.panelSize, a.agreed);
+    }
+
+    function _answerReview(
+        bytes32 jobRequestId,
+        bytes32 requestId,
+        bool passed,
+        bytes32 questionHash,
+        bytes32 panelJobId,
+        uint16 panelSize,
+        uint16 agreed
+    ) internal {
         delete reviewOf[requestId];
         Job storage job = jobs[jobRequestId];
         job.review = passed ? ReviewStatus.Passed : ReviewStatus.NotPassed;
-        job.reviewPanelSize = a.panelSize;
-        job.reviewAgreed = a.agreed;
-        job.reviewPanelJobId = a.panelJobId;
-        emit ReviewAnswered(jobRequestId, requestId, passed, a.questionHash, a.panelJobId, a.panelSize, a.agreed);
+        job.reviewPanelSize = panelSize;
+        job.reviewAgreed = agreed;
+        job.reviewPanelJobId = panelJobId;
+        emit ReviewAnswered(jobRequestId, requestId, passed, questionHash, panelJobId, panelSize, agreed);
     }
 
     /// @notice The review ask was refused or the panel did not agree: no verdict. Unsigned; only clears.
@@ -394,12 +483,14 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
     {
         bytes32 jobRequestId = reviewOf[requestId];
         if (jobRequestId == bytes32(0)) revert UnknownOrSettled(requestId);
+        if (_reviewReceipts[requestId].oracleRequestId != bytes32(0)) revert ReviewAlreadyReceived(requestId);
         delete reviewOf[requestId];
         jobs[jobRequestId].review = ReviewStatus.Unanswered;
         emit ReviewUnanswered(jobRequestId, requestId, status, reason);
     }
 
-    /// @notice A review ask with no answer by its deadline can be cleared by the job's requester.
+    /// @notice After the deadline the requester may abandon a pending ask, including a retained
+    /// answer awaiting binding. This is terminal for that ask; later callbacks/bindings cannot revive it.
     function expireReview(bytes32 jobRequestId) external {
         Job storage job = jobs[jobRequestId];
         if (job.review != ReviewStatus.Pending) revert UnknownOrSettled(jobRequestId);
@@ -421,6 +512,12 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
 
     function getReviewAsk(bytes32 intakeRequestId) external view returns (ReviewAsk memory) {
         return _reviewAsks[intakeRequestId];
+    }
+
+    /// @notice An early verified receipt (zero oracleRequestId if none). It is NOT a verdict and
+    /// remains readable after finalization or explicit expiry; consult getJob for current status.
+    function getReviewReceipt(bytes32 intakeRequestId) external view returns (ReviewReceipt memory) {
+        return _reviewReceipts[intakeRequestId];
     }
 
     function jobCount() external view returns (uint256) {

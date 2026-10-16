@@ -136,7 +136,7 @@ it does not describe these additional contracts or a live deployment.
 
 ## Follow-up: audit d9970905
 
-This section supersedes earlier test counts for the current source. See
+Historical results for the previous follow-up; see the newer re-audit section below for current counts. See
 [AUDIT_D9970905.md](AUDIT_D9970905.md) for the finding-by-finding changes and unresolved live
 assumptions. The pinned compiler and all build/dependency configuration remain unchanged.
 
@@ -167,3 +167,45 @@ factory fingerprints were checked unchanged. `forge` lint continues to emit advi
 compilation succeeds. No Slither/Mythril, new independent audit, public-chain pilot or live EIP-7702
 transaction was run. Passing local mocks does not establish live Intake mapping/canonicalization
 or pre-delivery binding availability.
+
+## Follow-up: re-audit 5f43f94d
+
+Current results for the receipt-first callback repair described in
+[AUDIT_5F43F94D.md](AUDIT_5F43F94D.md). Compiler **Solidity 0.8.26**, existing Cancun/optimizer
+settings, dependencies and build configuration are unchanged.
+
+| Check | Result |
+|---|---|
+| `forge build` | Pass; compiler advisory lint warnings remain, no errors |
+| `forge test --summary` | **178 passed**, zero failures/skips, repository-pinned seed `0x936d89b088020ddf36122a88c4c9aed7130c7a410f5c44680a7d121950c99345` |
+| `FOUNDRY_FUZZ_SEED=0x662f5ad8fb23c9d700d6eae60c0eeff06f7539e06c5d4ac3ebfa01822301aa43 forge test --summary` | **178 passed**, zero failures/skips, assignment seed |
+| `forge fmt --check` | Pass |
+| `TMPDIR="$PWD/test/scratch" sh script/verify-vendored.sh` | 96 vendored files verified, existing 24 formatting-only differences; no dependency changed |
+| Status-page JavaScript, extracted `<script>` through `node --check -` | Pass; `testStaticSiteReadContract` pins the additional receipt-event topic |
+| Compiled requester runtime | **19,189 bytes**, below the 24,576-byte limit; build fingerprints refreshed, hook/factory fingerprints unchanged |
+
+`ReviewDelivery.t.sol` adds **24 tests**, including five fuzz tests at 256 cases each. Unlike the
+older bound-ask fixture, its early-answer paths do not bind before the sole mock Intake callback.
+The mock always records the attempt as terminal, even on callback failure, and keeps the fee.
+The tests assert successful early receipt and exact later confirmation without repayment; they
+also demonstrate invalid delivery's irrecoverable fee and the cost of a new ask.
+
+Cold-access ECDSA, EIP-7702 key and ERC-1271 receipt paths all succeed under the mock's 200,000-gas
+stipend. Adversarial cases cover swapped yes/no receipts, duplicate UUIDs, every context-field
+mismatch, unauthorized binding/delivery, replacement and failure after receipt, replay, expiry and
+identical-question retry, malformed callback/bool/signature, wrong domain, zero/invalid context,
+weak panels, timestamp extremes, tolerance boundaries, fresh late answers and expired signatures.
+Tests also establish the chosen semantics for confirmation after signature expiry, signer/Intake
+rotation, ERC-1271 revocation and requester abandonment.
+
+The previous 154 tests remain, with three binding/timing tests updated to assert the repaired
+behavior and the static-reader topic assertion extended. Protocol digest/signature conformance,
+two-step ownership, hook/pool/deployment tests and ad escrow protections still pass. Both escrow
+invariants execute **256 sequences / 128,000 calls / zero reverts per seed**, retaining their exact
+accounting, original-payer refund and complete wind-down assertions.
+
+No test reads or writes environment variables; the alternate seed is supplied only to the runner.
+No new library, network-dependent fixture or runtime installation is required. No public RPC,
+live pilot, deployment, paid request, new independent audit, Slither or Mythril was run for this
+follow-up. Passing the local one-attempt model does not establish live Intake ABI, authenticated
+post-delivery mapping, canonicalization, actual signer gas or review-evidence availability.

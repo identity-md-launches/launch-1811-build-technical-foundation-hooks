@@ -63,19 +63,23 @@ contract ReviewBindingTest is HookJobRequesterFixture {
         assertTrue(intake.complete(askId, abi.encode(askId, a, _sign(a, signerKey))));
     }
 
-    function testUnboundAskFailsClosedEvenWithCorrectlySignedMatchingIntakeIdAndRawBodyHash() public {
+    function testUnboundReceiptDoesNotTrustMatchingIntakeIdAndRawBodyHash() public {
         (bytes32 jobId, bytes32 askId) = _unbound();
         OracleAttestation.Attestation memory a = _attestation(askId, true);
         a.requestId = askId;
         a.questionHash = keccak256(intake.bodyOf(askId));
         bytes memory sig = _sign(a, signerKey);
-        vm.prank(address(intake));
-        vm.expectRevert(abi.encodeWithSelector(HookJobRequester.ReviewNotBound.selector, askId));
-        requester.onReviewResult(askId, a, sig);
+        assertTrue(intake.complete(askId, abi.encode(askId, a, sig)));
         assertEq(uint8(_review(jobId)), uint8(HookJobRequester.ReviewStatus.Pending));
         assertFalse(requester.consumed(a.requestId));
-        // An unsigned failure still only clears the pending ask; no pin is required for it.
-        assertTrue(intake.fail(askId, 1, "body_invalid", 0, 0));
+        OracleAttestation.Attestation memory expected = _attestation(askId, true);
+        bytes32 bodyHash = requester.getReviewAsk(askId).bodyHash;
+        vm.prank(owner);
+        vm.expectRevert(abi.encodeWithSelector(HookJobRequester.ReviewAttestationMismatch.selector, askId));
+        requester.bindReview(askId, bodyHash, expected.requestId, expected.questionHash, expected.chainId, 1, 2);
+        vm.warp(requester.getJob(jobId).reviewDeadline + 1);
+        vm.prank(creator);
+        requester.expireReview(jobId);
         assertEq(uint8(_review(jobId)), uint8(HookJobRequester.ReviewStatus.Unanswered));
     }
 
@@ -145,30 +149,28 @@ contract ReviewBindingTest is HookJobRequesterFixture {
         _bind(nextAsk);
     }
 
-    function testExpiredAskRejectsFreshAttestationBeforeExplicitExpiryAndCannotBeBoundLate() public {
+    function testLateValidAnswerAndLateBindingAllowedUntilExplicitExpiry() public {
         (bytes32 jobId, bytes32 askId) = _reviewPending();
         (, bytes32 unboundId) = _unbound();
         uint64 deadline = requester.getJob(jobId).reviewDeadline;
         vm.warp(deadline + 1);
         OracleAttestation.Attestation memory a = _attestation(askId, true);
         bytes memory sig = _sign(a, signerKey);
-        vm.prank(address(intake));
-        vm.expectRevert(abi.encodeWithSelector(HookJobRequester.ReviewDeadlinePassed.selector, deadline));
-        requester.onReviewResult(askId, a, sig);
-        bytes32 bodyHash = requester.getReviewAsk(unboundId).bodyHash;
-        vm.prank(owner);
-        vm.expectRevert(abi.encodeWithSelector(HookJobRequester.ReviewDeadlinePassed.selector, deadline));
-        requester.bindReview(unboundId, bodyHash, a.requestId, a.questionHash, a.chainId, 1, 2);
+        assertTrue(intake.complete(askId, abi.encode(askId, a, sig)));
+        _bind(unboundId);
+        OracleAttestation.Attestation memory b = _attestation(unboundId, false);
+        assertTrue(intake.complete(unboundId, abi.encode(unboundId, b, _sign(b, signerKey))));
         vm.prank(creator);
+        vm.expectRevert(abi.encodeWithSelector(HookJobRequester.UnknownOrSettled.selector, jobId));
         requester.expireReview(jobId);
-        assertFalse(requester.consumed(a.requestId));
+        assertTrue(requester.consumed(a.requestId));
     }
 
-    function testAnswerAtDeadlineAcceptedAndEarlierThanAskRefused() public {
+    function testAnswerAtDeadlineAcceptedAndExcessiveBackwardSkewRefused() public {
         (, bytes32 askId) = _reviewPending();
         HookJobRequester.ReviewAsk memory ask = requester.getReviewAsk(askId);
         OracleAttestation.Attestation memory a = _attestation(askId, true);
-        a.issuedAt = ask.askedAt - 1;
+        a.issuedAt = ask.askedAt - requester.ISSUED_AT_TOLERANCE() - 1;
         bytes memory sig = _sign(a, signerKey);
         vm.prank(address(intake));
         vm.expectRevert(

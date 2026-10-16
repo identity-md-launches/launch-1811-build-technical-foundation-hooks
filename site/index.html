@@ -21,7 +21,7 @@
 <nav><a href="listings.html">Listings and featured #ad placements</a></nav>
 <h1>IMD job status</h1>
 <p class="note">Read directly from the HookJobRequester contract over JSON-RPC (<code>eth_call</code> and <code>eth_getLogs</code>). No backend, and no request to api.imd.fun.
-"Review passed" means a signed panel answer matched the pending review's owner-pinned question and oracle identity. It is not an audit. The contract owner controls this binding and can replace the trusted Intake or signer even for pending requests.</p>
+"Review passed" means a signed panel answer matched the pending review's owner-pinned question and oracle identity. An answer received before owner confirmation stays pending. It is not an audit. The contract owner controls this binding and can replace the trusted Intake or signer for future deliveries, including pending requests. Already verified receipts retain their original verification.</p>
 <form id="f">
   <label>JSON-RPC URL (a public node of the chain; leave empty to use your wallet's provider)<input id="rpc" placeholder="https://..."></label>
   <label>HookJobRequester address<input id="addr" required pattern="0x[0-9a-fA-F]{40}"></label>
@@ -43,13 +43,14 @@ const EVENTS = {
   "0xc4b18028cd4e987c6f51b76fe353bf20701009babc05208e39e32044646b0557": "JobExpired (no answer by the deadline)",
   "0xcbcbb95076ab2e4932fc45c7613d06ad31955e4c5b283dbac36586c7a37c89a6": "ReviewRequested (oracle asked whether the review step passed)",
   "0x5d8ee2f21c4a5f065cce0842c0bc1b6cb0838886b1101420cec56054813a4b5e": "ReviewBound (owner pinned oracle identity and question)",
+  "0x61d368d8c6034f66f1814ed323248d8afc47b96ca585d93f7d458dd52666f7a3": "ReviewReceived (signed answer retained; awaiting owner confirmation, no verdict yet)",
   "0x80495876c6bc99afc83ec191e4b474b0b92cc26c5d47d78c10c1ec1706f02a5f": "ReviewAnswered (signed oracle panel answer verified on chain)",
   "0x3c2152c9ef2bb1c0a603d6af74cce504897849f75c6d98f1f11b23a94d179538": "ReviewUnanswered (no verdict; may be asked again)",
 };
 const JOB = ["None", "Open", "Delivered (reported by the Intake, unsigned)", "Failed (reported by the Intake)", "Expired (no answer before the deadline)"];
-const REVIEW = ["No verified review result", "No verified review result (oracle answer pending)",
+const REVIEW = ["No verified review result", "No verified review result (awaiting oracle answer or owner confirmation)",
   "Review step passed: attested by an IMD oracle panel", "Review step did not pass: attested by an IMD oracle panel",
-  "No verified review result (oracle gave no answer)"];
+  "No verified review result (ask closed without a finalized verdict)"];
 
 async function rpc(url, method, params) {
   if (!url) {

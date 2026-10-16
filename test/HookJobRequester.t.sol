@@ -734,6 +734,9 @@ contract HookJobRequesterTest is HookJobRequesterFixture {
             HookJobRequester.ReviewBound.selector, 0x5d8ee2f21c4a5f065cce0842c0bc1b6cb0838886b1101420cec56054813a4b5e
         );
         assertEq(
+            HookJobRequester.ReviewReceived.selector, 0x61d368d8c6034f66f1814ed323248d8afc47b96ca585d93f7d458dd52666f7a3
+        );
+        assertEq(
             HookJobRequester.ReviewAnswered.selector, 0x80495876c6bc99afc83ec191e4b474b0b92cc26c5d47d78c10c1ec1706f02a5f
         );
         assertEq(
