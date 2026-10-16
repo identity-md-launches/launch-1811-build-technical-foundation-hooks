@@ -362,3 +362,42 @@ optional Python SDK suite was not rerun. Real Intake requirements and operationa
 in [the pilot checklist](IMD_INTEGRATION.md#requires-a-live-ethereum-or-robinhood-chain-pilot), including
 asynchronous delivery, job callback ABI, quote/spend agreement, authenticated UUID/canonical question
 mapping, fresh signing on retries and actual signer gas under 200k.
+
+## Follow-up: audit 648ba2e5
+
+The three user-facing findings are addressed in [AUDIT_648BA2E5.md](AUDIT_648BA2E5.md). Source was
+built with the unchanged pinned **Solidity 0.8.26**, Cancun and optimizer configuration. No
+dependencies or build settings were edited. All tests run locally without remote RPC, credentials
+or network access.
+
+| Check | Result |
+|---|---|
+| `forge build --force` | Pass; pinned compiler 0.8.26 |
+| `forge test` | **240 passed**, 25 suites, zero failures/skips; repository-pinned seed |
+| `forge test --fuzz-seed 0xd3b03810437118b5eb03fea9f057693c246d8de98f04d3c8f34d5d3623702e5c` | **240 passed**, zero failures/skips |
+| `forge fmt --check` | Pass |
+| `node --test test/requester-abi.test.cjs test/listings-reader.test.cjs` | **11 passed**; built-in Node modules and local `cast` only |
+| `python3 -m unittest discover -s test -p 'test_*.py'` | **10 passed** against a disposable local Anvil |
+| `forge test --match-contract ReviewReceiptGasTest -vv` | **8 passed**; cold 5-of-7 receipt 170,077, bound 132,553, wrong pre-binding 175,123; 22-cold-read stressor receipt 187,231, wrong pre-binding 192,286; EOA receipt 124,984 |
+| Requester compiled runtime size | **24,081 bytes**, 495 bytes below the 24,576-byte limit |
+
+`AuditContextMismatchProof.t.sol` contributes 12 tests: the same-UUID/other-context reproduction
+fuzzed over every field and both verdicts, with every pre-existing path shown stuck and the new
+closure's events, history, UUID, fee and terminal-ID invariants; owner-only, matching-verdict,
+acknowledgment and precondition refusals; the quorum reproduction fuzzed over quorum and agreement,
+bound and unbound, plus weak answers still failing closed in the mock's one attempt; split step
+markers fuzzed over marker, boundary and cut; every assembled body fuzzed over spec hash and brief;
+and synchronous Intake refusal fuzzed over the error code and both Intake paths beside the
+asynchronous refusal. Two existing assertions that encoded the old quorum rule were changed as
+described in the remediation note. Listing, ad escrow, invariant, protocol-vector, packing and all
+earlier audit regressions remain in the suite.
+
+The published requester ABI was regenerated and exactly equals the compiled artifact; the site's
+event label for `ReviewReceiptDiscarded` names the third closure reason and the topic test still
+compares every displayed event. Build fingerprints were refreshed for the requester; the hook and
+factory fingerprints were checked unchanged.
+
+Foundry emits advisory lint warnings; compilation succeeds. No Slither/Mythril, independent audit,
+live Intake pilot, deployment, paid request or funded-wallet operation was performed. Whether the
+live Intake refuses synchronously or after payment is listed with the other pilot items in
+[the pilot checklist](IMD_INTEGRATION.md#requires-a-live-ethereum-or-robinhood-chain-pilot).

@@ -321,6 +321,49 @@
   },
   {
     "type": "function",
+    "name": "discardMismatchedReviewReceipt",
+    "inputs": [
+      {
+        "name": "intakeRequestId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "expectedBodyHash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "receiptHash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "questionHash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "questionChainId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "fromBlock",
+        "type": "uint64",
+        "internalType": "uint64"
+      },
+      {
+        "name": "toBlock",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "discardReviewReceipt",
     "inputs": [
       {
@@ -1289,6 +1332,25 @@
     "outputs": [
       {
         "name": "jobRequestId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "reviewReceiptHash",
+    "inputs": [
+      {
+        "name": "intakeRequestId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
         "type": "bytes32",
         "internalType": "bytes32"
       }
@@ -2622,6 +2684,22 @@
     "inputs": [
       {
         "name": "requestId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ReviewReceiptMismatch",
+    "inputs": [
+      {
+        "name": "expected",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "supplied",
         "type": "bytes32",
         "internalType": "bytes32"
       }

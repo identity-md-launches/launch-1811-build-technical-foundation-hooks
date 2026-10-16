@@ -269,10 +269,11 @@ contract ReviewBindingTest is HookJobRequesterFixture {
     function testSignedPanelQuorumAndCountsMustBeConsistent() public {
         (, bytes32 askId) = _reviewPending();
         OracleAttestation.Attestation memory a = _attestation(askId, true);
-        a.quorum = 1;
+        // Signed quorum above the panel size cannot have been met by any agreement.
+        a.quorum = 8;
         bytes memory sig = _sign(a, signerKey);
         vm.prank(address(intake));
-        vm.expectRevert(abi.encodeWithSelector(HookJobRequester.PanelTooWeak.selector, uint16(7), uint16(1), uint16(6)));
+        vm.expectRevert(abi.encodeWithSelector(HookJobRequester.PanelTooWeak.selector, uint16(7), uint16(8), uint16(6)));
         requester.onReviewResult(askId, a, sig);
         a.quorum = 5;
         a.agreed = 8;

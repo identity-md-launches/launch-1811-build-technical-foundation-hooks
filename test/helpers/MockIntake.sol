@@ -26,6 +26,11 @@ contract MockIntake is IIntake {
     bool public v1;
     bool public reuseIds;
     uint256 public unspent;
+    /// @dev Nonzero: every ask reverts synchronously with this error, as the live Intake does for
+    /// an unsold action (`ActionNotSold`) or a request it refuses before taking payment.
+    bytes4 public refusal;
+
+    error SynchronousRefusal(bytes4 code);
 
     event Requested(bytes32 indexed requestId, bytes32 action, bytes body);
     event Completed(bytes32 indexed requestId, bool called);
@@ -45,6 +50,10 @@ contract MockIntake is IIntake {
     /// @dev Adversarial quote/spend disagreement; zero preserves normal exact-payment behavior.
     function setUnspent(uint256 amount) external {
         unspent = amount;
+    }
+
+    function setRefusal(bytes4 code) external {
+        refusal = code;
     }
 
     function priceOf(bytes32 action, address asset) external view returns (uint256) {
@@ -79,6 +88,7 @@ contract MockIntake is IIntake {
         address asset,
         uint256 amount
     ) internal returns (bytes32 id) {
+        if (refusal != bytes4(0)) revert SynchronousRefusal(refusal);
         uint256 price = prices[action][asset];
         require(price != 0, "ActionNotSold");
         require(amount == price, "wrong amount");

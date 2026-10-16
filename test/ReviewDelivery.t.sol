@@ -359,7 +359,11 @@ contract ReviewDeliveryTest is HookJobRequesterFixture {
         if (fault == 8) a.chainId = 0;
         if (fault == 9) a.fromBlock = a.toBlock + 1;
         if (fault == 10) a.panelSize = 3;
-        if (fault == 11) a.quorum = 3;
+        if (fault == 11) {
+            // Agreement meets the signed quorum but not the configured minimum (4).
+            a.quorum = 3;
+            a.agreed = 3;
+        }
         if (fault == 12) a.agreed = 4;
         if (fault == 13) a.agreed = 8;
         bytes memory signature = _sign(a, signerKey);

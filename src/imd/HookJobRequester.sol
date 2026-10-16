@@ -181,6 +181,7 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
     error ReviewAlreadyReceived(bytes32 requestId);
     error ReviewNotReceived(bytes32 requestId);
     error ReviewReceiptMatches(bytes32 requestId);
+    error ReviewReceiptMismatch(bytes32 expected, bytes32 supplied);
     error ReviewExpiryAlreadyRequested(bytes32 requestId);
     error ReservationNotReleasable(bytes32 oracleRequestId);
     error ReviewAlreadyBound(bytes32 requestId);
@@ -562,13 +563,84 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
             if (consumed[oracleRequestId] || holder != bytes32(0)) revert DuplicateRequestId(oracleRequestId);
             reason = "misdelivered receipt";
         }
+        _discardReceipt(
+            jobRequestId,
+            intakeRequestId,
+            receipt.oracleRequestId,
+            oracleRequestId,
+            questionHash,
+            questionChainId,
+            fromBlock,
+            toBlock,
+            reason
+        );
+    }
+
+    /// @notice Closes a receipt whose UUID is this ask's own but whose signed question, chain or
+    /// window is not the ask's, as Unanswered, retaining the receipt and its verdict in history.
+    /// @dev The signed context is the oracle's; the supplied context is what the owner independently
+    /// established for this ask (bindReview's procedure). At least one of question/chain/window must
+    /// differ, so a receipt that matches the ask's true context (a genuine Passed or NotPassed) can
+    /// only be bound, never set aside here; a same-UUID typo in bindReview still reverts there.
+    /// `receiptHash` must equal `reviewReceiptHash(intakeRequestId)`: the owner acknowledges the
+    /// exact receipt, including its verdict, that this call sets aside. The UUID is neither reserved
+    /// nor consumed: a retry must still be bound and signature-verified normally. Only the owner can
+    /// call this; a requester cannot close any receipt. No fee is refunded or retried.
+    function discardMismatchedReviewReceipt(
+        bytes32 intakeRequestId,
+        bytes32 expectedBodyHash,
+        bytes32 receiptHash,
+        bytes32 questionHash,
+        uint256 questionChainId,
+        uint64 fromBlock,
+        uint64 toBlock
+    ) external onlyOwner {
+        bytes32 jobRequestId = reviewOf[intakeRequestId];
+        if (jobRequestId == bytes32(0)) revert UnknownOrSettled(intakeRequestId);
+        ReviewAsk storage ask = _reviewAsks[intakeRequestId];
+        if (ask.oracleRequestId != bytes32(0)) revert ReviewAlreadyBound(intakeRequestId);
+        ReviewReceipt memory receipt = getReviewReceipt(intakeRequestId);
+        bytes32 oracleRequestId = receipt.oracleRequestId;
+        if (oracleRequestId == bytes32(0)) revert ReviewNotReceived(intakeRequestId);
+        _validateReviewBinding(
+            ask, expectedBodyHash, oracleRequestId, questionHash, questionChainId, fromBlock, toBlock
+        );
+        bytes32 expectedReceiptHash = keccak256(abi.encode(receipt));
+        if (receiptHash != expectedReceiptHash) revert ReviewReceiptMismatch(expectedReceiptHash, receiptHash);
+        if (_receiptMatches(receipt, oracleRequestId, questionHash, questionChainId, fromBlock, toBlock)) {
+            revert ReviewReceiptMatches(intakeRequestId);
+        }
+        _discardReceipt(
+            jobRequestId,
+            intakeRequestId,
+            oracleRequestId,
+            oracleRequestId,
+            questionHash,
+            questionChainId,
+            fromBlock,
+            toBlock,
+            "receipt context mismatch"
+        );
+    }
+
+    function _discardReceipt(
+        bytes32 jobRequestId,
+        bytes32 intakeRequestId,
+        bytes32 receivedOracleRequestId,
+        bytes32 oracleRequestId,
+        bytes32 questionHash,
+        uint256 questionChainId,
+        uint64 fromBlock,
+        uint64 toBlock,
+        bytes32 reason
+    ) private {
         discardedReviewReceipts[intakeRequestId] = true;
         delete reviewOf[intakeRequestId];
         jobs[jobRequestId].review = ReviewStatus.Unanswered;
         emit ReviewReceiptDiscarded(
             jobRequestId,
             intakeRequestId,
-            receipt.oracleRequestId,
+            receivedOracleRequestId,
             oracleRequestId,
             questionHash,
             questionChainId,
@@ -641,10 +713,12 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
         if (uint256(a.issuedAt) + ISSUED_AT_TOLERANCE < ask.askedAt) {
             revert AttestationPredatesAsk(a.issuedAt, ask.askedAt);
         }
-        if (
-            a.panelSize < ask.minPanelSize || a.quorum < ask.minAgreed || a.agreed < ask.minAgreed
-                || a.agreed < a.quorum || a.agreed > a.panelSize
-        ) {
+        // Panel strength is the signed panel size and actual agreement against the minimums
+        // snapshotted at payment. The signed quorum is the oracle's own threshold, which the
+        // agreement must also meet; it is not compared with minAgreed, so a body quorum below
+        // the configured minimum cannot burn an answer whose agreement reaches that minimum.
+        if (a.panelSize < ask.minPanelSize || a.agreed < ask.minAgreed || a.agreed < a.quorum || a.agreed > a.panelSize)
+        {
             revert PanelTooWeak(a.panelSize, a.quorum, a.agreed);
         }
         bytes32 digest = _verifyAttestation(a, signature);
@@ -776,6 +850,13 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
         });
     }
 
+    /// @notice Acknowledgment value for `discardMismatchedReviewReceipt`: the hash of the exact
+    /// receipt tuple `getReviewReceipt` returns, verdict included. Read it, inspect the receipt, then
+    /// pass it, so the call names the specific signed answer being set aside.
+    function reviewReceiptHash(bytes32 intakeRequestId) external view returns (bytes32) {
+        return keccak256(abi.encode(getReviewReceipt(intakeRequestId)));
+    }
+
     function jobCount() external view returns (uint256) {
         return jobIds.length;
     }
@@ -819,16 +900,22 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
     /// @notice The `job.open` action id and body template. Body = prefix ++ "0x<specHash>" ++
     /// middle ++ brief ++ suffix. The template must name "forge build", "forge test" and
     /// "adversarial review", and quote the brief as untrusted text.
+    /// @dev Each marker must sit whole inside one fragment. The assembled body inserts the spec
+    /// hash and the untrusted brief between fragments, so a marker spanning a fragment boundary
+    /// would be absent from every real body; one inside the brief is the creator's, not the
+    /// template's. A marker whole inside a fragment is in every assembled body, so this check is
+    /// exactly "every body this template can assemble names all three steps".
     function setJobTemplate(bytes32 action, bytes calldata prefix, bytes calldata middle, bytes calldata suffix)
         external
         onlyOwner
     {
         if (action == bytes32(0)) revert NotConfigured("jobAction");
-        bytes memory all = bytes.concat(prefix, middle, suffix);
-        if (all.length > MAX_TEMPLATE_BYTES) revert TemplateTooLong(all.length);
-        if (!_contains(all, STEP_BUILD)) revert TemplateMissingStep(STEP_BUILD);
-        if (!_contains(all, STEP_TEST)) revert TemplateMissingStep(STEP_TEST);
-        if (!_contains(all, STEP_REVIEW)) revert TemplateMissingStep(STEP_REVIEW);
+        uint256 length = prefix.length + middle.length + suffix.length;
+        if (length > MAX_TEMPLATE_BYTES) revert TemplateTooLong(length);
+        bytes[3] memory fragments = [prefix, middle, suffix];
+        _requireStep(fragments, STEP_BUILD);
+        _requireStep(fragments, STEP_TEST);
+        _requireStep(fragments, STEP_REVIEW);
         jobAction = action;
         jobBodyPrefix = prefix;
         jobBodyMiddle = middle;
@@ -952,6 +1039,14 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
             if (len == 4 && (cp < 0x10000 || cp > 0x10ffff)) revert InvalidBrief(i);
             i += len;
         }
+    }
+
+    /// @dev The step marker must lie whole inside one template fragment (see setJobTemplate).
+    function _requireStep(bytes[3] memory fragments, bytes memory step) internal pure {
+        for (uint256 i; i < 3; ++i) {
+            if (_contains(fragments[i], step)) return;
+        }
+        revert TemplateMissingStep(step);
     }
 
     function _contains(bytes memory haystack, bytes memory needle) internal pure returns (bool) {

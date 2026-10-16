@@ -5,14 +5,14 @@
 ## Flow
 
 1. **Wallet-approved request.** The creator approves the quoted IMD amount to `HookJobRequester`, then calls `openJob(specHash, brief, userMaxPrice)`. Both paid functions require a caller-selected maximum in the configured asset's base units. The current quote must be nonzero and at most **both** this maximum and the owner's `maxPrice`; otherwise payment reverts before pulling funds. Raising the owner's ceiling cannot raise an already submitted caller limit. The contract checks the caller's exact debit and its own exact credit, approves only that amount, calls Intake v2 `requestWithFailure` (or v1 `request` when `failureHook` is off), clears the allowance, and checks its balance fell by exactly the quoted amount. A partial/no spend, fee-on-transfer token, or other discrepancy reverts the **whole transaction**, including the Intake request. No quoted-but-unspent balance remains available to `sweep`. Existing donations remain separate. A successful request spends the fee; a later refusal, expiry or callback failure gives no refund. Wallets should approve only the intended asset and amount, and verify the configured asset, Intake and template before signing.
-2. **Body.** The body is `jobBodyPrefix ++ "0x<specHash>" ++ jobBodyMiddle ++ brief ++ jobBodySuffix`. The owner's template must contain `forge build`, `forge test` and `adversarial review`, so every job names the build, test and adversarial-review steps. `setJobTemplate` refuses a template without them. The brief is untrusted: it must be 1–2000 bytes of strict UTF-8, with no `"`, `\`, `<`, `>`, control characters or DEL. It sits between `<brief>`…`</brief>`, which the template declares to be data, not instructions. The whole body is capped at 16 KiB.
+2. **Body.** The body is `jobBodyPrefix ++ "0x<specHash>" ++ jobBodyMiddle ++ brief ++ jobBodySuffix`. The owner's template must contain `forge build`, `forge test` and `adversarial review`, so every job names the build, test and adversarial-review steps. `setJobTemplate` requires each marker to sit **whole inside one fragment**, which is exactly the condition under which every assembled body contains it: the spec hash and the untrusted brief are inserted at every fragment boundary, so a marker split across fragments would appear in the joined template but in no real body, and a marker only a creator's brief could supply is not the template's. The earlier check on the joined fragments accepted such split templates. The brief is untrusted: it must be 1–2000 bytes of strict UTF-8, with no `"`, `\`, `<`, `>`, control characters or DEL. It sits between `<brief>`…`</brief>`, which the template declares to be data, not instructions. The whole body is capped at 16 KiB.
 3. **Request-ID tracking.** The Intake's returned id keys `getJob(id)`, `jobIds[]`, `jobsOf(wallet)` and the `JobOpened(requestId, requester, specHash, price, body)` event. A zero id or any Intake id previously used by a job or review ask is refused, including failed, expired, discarded and settled reviews. The used-ID record is never deleted. Job/review lifecycle events carry the job ID as their first indexed topic; configuration and reservation-release events are monitored separately.
 4. **Result or failure: authenticated and one-time.** `onJobResult` and `onJobFailure` accept the first notice from the configured Intake for an `Open` **or locally `Expired`** job. The callback changes it to `Delivered` or `Failed`; further notices revert. Expiry is a local timeout, not suppression of later authenticated evidence. `Delivered`, `Failed` and `Expired` jobs are all reviewable by their requester, so failure/expiry ordering cannot change eligibility. A failure records unsigned status/reason and never clears, finalizes or resets a review. A late completion likewise cannot erase a `NotPassed` verdict.
 5. **Review receipt and verdict.** A job delivery is not a review verdict. `requestReview(jobId, userMaxPrice)`, by the job's requester and allowed once the job is `Delivered`, `Failed` or `Expired`, buys an `oracle.request` asking whether that job's adversarial-review step passed. The answer arrives in `onReviewResult` as the protocol's `OracleAttestation`, signed by the IdentityMD oracle signer in **this contract's** EIP-712 domain. Receipt requires:
    - it comes from the Intake,
    - its Intake ID names a still-pending ask with no previous receipt; an expiry request alone does not close it,
    - nonzero signed oracle UUID, question hash and question chain, with `fromBlock <= toBlock`,
-   - the panel meets the minimum size and quorum/agreement snapshotted when the ask was paid for, with `minAgreed ≤ quorum ≤ agreed ≤ panelSize`,
+   - the panel meets the minimums snapshotted when the ask was paid for: `minPanelSize ≤ panelSize`, `minAgreed ≤ agreed ≤ panelSize`, and the signed agreement meets the oracle's own signed threshold, `quorum ≤ agreed`. The signed `quorum` is the body's threshold, not a measure of agreement, so it is **not** compared with `minAgreed`: a body quorum below the configured minimum no longer burns an answer whose actual agreement reaches that minimum,
    - the signature is valid on arrival, `now <= expiresAt`, `issuedAt <= now + 300`, and `issuedAt + 300 >= askedAt`,
    - the answer decodes as bool and the oracle UUID is not consumed. Another ask's reservation does not block a retained receipt; it still blocks binding/finalization.
 
@@ -150,9 +150,44 @@ A same-UUID field typo reverts `ReviewAttestationMismatch`, even if that UUID co
 A same-UUID exact match without a conflict reverts `ReviewReceiptMatches`. A different supplied
 UUID that is consumed or reserved reverts `DuplicateRequestId`; even a terminal reservation must
 be released before using that UUID as a proposed true context. Negative value, age, signer rotation
-or signature expiry alone never justify discarding a receipt through this mapping-recovery function. Incorrect same-UUID signed fields
-cannot be waved away as a misdelivery: resolve the protocol inconsistency, rather than invent a
-replacement UUID. Signer compromise uses the separate explicit incident workflow below.
+or signature expiry alone never justify discarding a receipt through this mapping-recovery function.
+Incorrect same-UUID signed fields cannot be waved away as a misdelivery, and never justify inventing
+a replacement UUID. Signer compromise uses the separate explicit incident workflow below.
+
+### Same UUID, other signed question, chain or window
+
+A third case has its own explicit path. The receipt carries the ask's own UUID, but the signed
+question hash, question chain or resolved window is not what the owner independently established
+for this ask (for example the plane paired the UUID with another question document). Before this
+change nothing could close such an ask: binding and discard both reverted `ReviewAttestationMismatch`,
+expiry paths reverted `ReviewAlreadyReceived`, and the job could never be reviewed again. Now:
+
+```solidity
+discardMismatchedReviewReceipt(intakeId, bodyHash, reviewReceiptHash(intakeId), questionHash, chainId, fromBlock, toBlock)
+```
+
+- Owner only; a requester or stranger reverts `NotOwner`. The ask must be pending and unbound
+  (reset a wrong pre-binding first), with a receipt, and the body fingerprint must match.
+- The supplied context is the ask's **true** context, established exactly as for `bindReview`, and
+  must be well formed. The UUID is implied: it is the receipt's own.
+- If the true context matches the receipt in every field the call reverts `ReviewReceiptMatches`:
+  a receipt that answers the ask's own question is a genuine `Passed` or `NotPassed` and can only be
+  bound. There is no field-by-field override of a matching verdict.
+- `receiptHash` must equal `reviewReceiptHash(intakeId)`, the hash of the exact `getReviewReceipt`
+  tuple including its bool value. The owner's tooling must read the receipt it is setting aside and
+  name it, verdict included; a hash computed for the opposite answer reverts `ReviewReceiptMismatch`.
+- Closure sets `Unanswered`, marks `discardedReviewReceipts`, emits `ReviewReceiptDiscarded` with the
+  receipt's UUID as both IDs and the owner's true context, then `ReviewUnanswered` with reason
+  `receipt context mismatch`. The receipt stays readable with its signed context and verdict, so
+  anyone can compare the signed question against the ask's body and the published canonicalization.
+  The UUID is neither reserved nor consumed, the fee is not refunded, nothing is retried, and the
+  old Intake ID stays terminal. A retry is a new paid ask with its own binding; replaying the
+  set-aside answer to it is retained as a mismatch and cannot settle it.
+
+This is an owner trust power, like the other recovery paths: a dishonest owner could assert a
+different question for a genuine negative. It is deliberately explicit and logged rather than
+silent, requires naming the exact receipt and verdict, and is never available to the requester.
+Owners should publish the independently computed canonical question for every such closure.
 
 A matching receipt whose UUID was consumed/reserved by another ask can thus be closed honestly,
 without inventing a mismatch, clearing consumption or stealing the other reservation. If the holder
@@ -308,6 +343,7 @@ Until the owner calls these setters, `openJob` reverts `NotConfigured("jobTempla
 | `setReviewTemplate(action, prefix, suffix, minPanel, minAgreed)` | `bytes32("oracle.request@oracle-1")`, the review question with the right `chainId`, and panel minimums matching the body (7 seats / 5 agreement in the example). Relative `window.hours:1` uses receipt-first confirmation; `validForSeconds:3600` limits arrival | Oracle-consumer reference. Fix `chainId` and the definitions for the launch chain. Confirm the wording with `POST /requests/check` from an operator machine. |
 | `bindReview(intakeId, bodyHash, oracleId, questionHash, chainId, fromBlock, toBlock)` | Once per pending review, normally **after receipt**: independently verify the exact UUID/canonical question/window and confirm the body fingerprint. A matching retained receipt finalizes immediately; no additional Intake fee | Authenticated protocol mapping and canonical question document; live post-delivery availability not yet verified |
 | `discardReviewReceipt(intakeId, bodyHash, oracleId, questionHash, chainId, fromBlock, toBlock)` | Close an unbound misdelivery with a different available true UUID, or an exact matching receipt with an onchain UUID conflict. Preserve history and UUID state | Check mapping offchain as for binding; no mapping proof is verified onchain |
+| `discardMismatchedReviewReceipt(intakeId, bodyHash, receiptHash, questionHash, chainId, fromBlock, toBlock)` | Close an unbound receipt carrying this ask's own UUID but another signed question/chain/window. A receipt matching the true context cannot be closed this way | True context as for binding; `receiptHash` from `reviewReceiptHash(intakeId)` after inspecting the receipt and its verdict |
 | `releaseReservation(oracleId)` | Recovery only: release an unconsumed UUID whose holder ask is terminal with no receipt or with an explicitly revoked-and-closed receipt, before or after an unbound retry's callback but before retry binding | Authenticate protocol retry/UUID-reuse records, inspect `reviewOf`, `getReviewReceipt` and `consumed`; retain the original binding history |
 | `confirmReviewExpiry(intakeId)` | Close that exact overdue ask only if it still has no receipt, with or without requester cooperation; permits a paid retry | Owner must establish Intake will not deliver a valid answer, not just observe a deadline. If uncertain, keep pending; absence is not proven onchain |
 | `resetReviewBinding(intakeId, bodyHash)` | Clear a pending incorrect binding and release only its own unused reservation; preserve any receipt | Authenticate the corrected mapping independently, then bind again |
@@ -331,9 +367,10 @@ rotations; a status badge alone does not explain them. A rotation can also stran
 The deadline, paid body and panel minimums are snapshotted per review; template/timeout changes
 apply to later asks. Pending bindings can be explicitly reset with history retained; signer control still permits forging their
 matching fields before receipt. The current owner may confirm a retained receipt, but cannot rewrite it.
-An owner who invents a different available true UUID can also close a receipt as Unanswered; this
-recovery power remains inside the existing owner-trust boundary and must not be delegated to a
-requester. Use a multisig, monitor configuration/recovery events, and disclose these powers to users.
+An owner who invents a different available true UUID, or asserts a different true question for a
+receipt carrying the ask's own UUID, can also close a receipt as Unanswered; both recovery powers
+are logged with the receipt kept readable, remain inside the existing owner-trust boundary and must
+not be delegated to a requester. Use a multisig, monitor configuration/recovery events, and disclose these powers to users.
 Two-step ownership protects against accidental loss of control; it does not restrict an accepted
 owner's powers or recover an already accepted wrong handover.
 
@@ -341,6 +378,7 @@ owner's powers or recover an already accepted wrong handover.
 
 - The `job.open` action id, body schema, price and **callback ABI**. `onJobResult(bytes32,bytes)` is this contract's assumption. If the live callback has another shape, it reverts inside the Intake's try, the job stays Open, and the requester expires it after the deadline. That path is tested, and it fails safe, but delivery then never shows.
 - Callbacks must be asynchronous, after `request`/`requestWithFailure` returns and this contract records its Intake ID. A synchronous callback during payment is unsupported.
+- A **synchronous refusal**, where `request`/`requestWithFailure` itself reverts (an unsold action, `ActionNotSold`, or a body the Intake refuses before taking payment), is handled: the revert propagates, the whole ask rolls back, and the caller keeps the fee with no job, ask, Intake ID or allowance recorded (`AuditContextMismatchProofTest`). An **asynchronous refusal** after payment (status 1 through the failure function) closes the ask as `Unanswered` and the fee is spent. Which shape the live Intake uses for which refusal, and whether it ever refuses after pulling the price without calling the failure function, is behavior only a live pilot can prove; the contract is compatible with both shapes, but the fee outcome differs between them and the mock's choice is not evidence of the live one.
 - Exact IMD transfer and Intake spend behavior at the quoted price, including price changes between quoting and requesting. Any net underspend now reverts the entire transaction; verify this against both configured Intake paths.
 - Whether `job.open` accepts this contract as the callback target and calls `onJobFailure` on status 1 or 2.
 - Whether an oracle panel can answer the review question reliably from public job evidence, and how fast.

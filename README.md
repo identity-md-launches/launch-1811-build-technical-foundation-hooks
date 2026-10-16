@@ -115,14 +115,24 @@ affected retained receipts as `Unanswered`. Ordinary rotation preserves verifica
 revocation blocks confirmation. Receipt history and consumed UUIDs remain intact; finalized verdicts
 cannot be reset. These are logged owner powers requiring independent offchain evidence.
 
-Cold one-shot callback tests fit 200k gas, including wrong-prebinding retention: **175,435 gas** with
-a realistic 5-of-7 ERC-1271 signer and **192,598** with the 22-cold-read stress signer. Arbitrary live
+A retained answer carrying the ask's own UUID but another signed question, chain or window can now
+be set aside by the owner alone, explicitly and logged, naming the exact receipt and its verdict; a
+receipt matching the ask's true context can only be bound, so a genuine `NotPassed` cannot be
+discarded this way and a requester cannot discard anything. The panel check compares the signed
+panel size and actual agreement with the configured minimums and the oracle's own signed quorum; a
+body quorum below the configured minimum no longer burns an agreed answer. Job templates must carry
+each step marker whole inside one fragment, which is exactly what every assembled body contains.
+
+Cold one-shot callback tests fit 200k gas, including wrong-prebinding retention: **175,123 gas** with
+a realistic 5-of-7 ERC-1271 signer and **192,286** with the 22-cold-read stress signer. Arbitrary live
 registries still require qualification. The static status page shows receipt revocation and recovery
 history; `Passed` is a signed panel opinion about the review step, never an audited-hook badge.
 
 The full local suite includes listing/ad escrow, refunds, transfers and conservation invariants.
-See [audit 6b607200 remediation](docs/AUDIT_6B607200.md) and the
-[integration guide](docs/IMD_INTEGRATION.md) for deployment parameters and operator duties.
+See [audit 648ba2e5 remediation](docs/AUDIT_648BA2E5.md), [audit 6b607200 remediation](docs/AUDIT_6B607200.md)
+and the [integration guide](docs/IMD_INTEGRATION.md) for deployment parameters and operator duties.
+A synchronous Intake refusal rolls the whole ask back without debit; an asynchronous one spends the
+fee. Which shape the live Intake uses is something only a live pilot can prove.
 Real IMD Intake testing remains necessary for the job action/body/callback ABI, exact spending,
 authenticated post-delivery mapping and canonicalization, and production signer gas under 200k.
 No deployment, paid request or fund movement was performed.
