@@ -32,7 +32,10 @@ The creator, transaction caller, pool initializer, routers, hookData, RPC result
 | Salt mining fails under RPC gas caps | Pages stop early on low gas and return a resume nonce; `InsufficientGas` when no progress is possible | Capped-gas walk equals uncapped result |
 | Forged IMD result, review verdict or replay | Intake-only callbacks, own pending ids only, one-time state transitions, oracle EIP-712 signature in this contract's domain, panel minimums, consumed attestation ids, deadlines | `HookJobRequester.t.sol`, `OracleConformance.t.sol` |
 | Prompt injection via creator brief | Strict UTF-8, no JSON-significant or delimiter characters, quoted as untrusted data inside the owner template | Brief validation and fuzz tests |
-| Malicious requester owner | Trust assumption: owner can change intake, signer and templates. Use a multisig | Documented in IMD_INTEGRATION.md |
+| Malicious requester owner | Trust assumption: owner can change intake, signer, templates, payment ceiling and failure hook. Use a multisig | Documented in IMD_INTEGRATION.md |
+| Intake price move drains a wallet's standing allowance | `HookJobRequester` pulls the Intake's current price only up to the owner's `maxPrice` ceiling (constructor input, `setPayment`); above it the ask reverts before anything is pulled | `testPriceCeilingProtectsStandingAllowance` |
+| Version 1 Intake has no failure function | Owner-set `failureHook` (on by default) switches asks between `requestWithFailure` and `request`; with it off a refused job is closed only by its deadline | `testVersion1IntakeWorksWithTheFailureHookOff` |
+| Intake request id collides with a pending review ask | Both ask paths refuse an id already used as a job or a review ask | `testJobIdCollidingWithPendingReviewAskRefused` |
 
 The factory emits after verifying freshly created code. Foundry's generic `reentrancy-events` lint flags this sequence; the verification calls are static reads of the fixed hook whose runtime was just checked, and its constructor has no external calls. There is no untrusted state-changing callback in that sequence. This is reviewed reasoning, not an external audit finding.
 

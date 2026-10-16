@@ -66,6 +66,12 @@ contract HookJobRequester is OracleAttestationConsumer, Owned {
     IIntake public intake;
     /// @notice The asset paid in: the chain's IMD.
     address public asset;
+    /// @notice The most IMD one ask may cost. The Intake's current `priceOf` is pulled, never more
+    /// than this, so a wallet's standing allowance cannot be drained by a price move.
+    uint256 public maxPrice;
+    /// @notice Whether asks name the failure function (`requestWithFailure`, Intake version 2
+    /// only). Off, asks use `request` and a refused job can only be expired after its deadline.
+    bool public failureHook = true;
     bytes32 public jobAction;
     bytes public jobBodyPrefix;
     bytes public jobBodyMiddle;
@@ -97,6 +103,7 @@ contract HookJobRequester is OracleAttestationConsumer, Owned {
     error TemplateMissingStep(bytes step);
     error BodyTooLong(uint256 length);
     error ActionNotPriced(bytes32 action);
+    error PriceAboveCeiling(uint256 price, uint256 maxPrice);
     error InvalidTimeout(uint64 timeout);
     error InvalidPanelMinimums(uint16 panelSize, uint16 agreed);
     error PanelTooWeak(uint16 panelSize, uint16 quorum, uint16 agreed);
@@ -106,7 +113,8 @@ contract HookJobRequester is OracleAttestationConsumer, Owned {
     error Reentrancy();
 
     event IntakeSet(address indexed intake);
-    event AssetSet(address indexed asset);
+    event PaymentSet(address indexed asset, uint256 maxPrice);
+    event FailureHookSet(bool on);
     event JobTemplateSet(bytes32 indexed action, bytes32 templateHash);
     event ReviewTemplateSet(bytes32 indexed action, bytes32 templateHash, uint16 minPanelSize, uint16 minAgreed);
     event TimeoutsSet(uint64 jobTimeout, uint64 reviewTimeout);
@@ -132,15 +140,19 @@ contract HookJobRequester is OracleAttestationConsumer, Owned {
     /// @param intake_ The chain's Intake version 2.
     /// @param asset_ The chain's IMD token.
     /// @param oracleSigner_ The IdentityMD oracle signer (a key or an ERC-1271 registry).
-    constructor(address owner_, address intake_, address asset_, address oracleSigner_)
+    /// @param maxPrice_ The most `asset_` one ask may cost (0.5 IMD = 5e17 at the published price).
+    constructor(address owner_, address intake_, address asset_, address oracleSigner_, uint256 maxPrice_)
         OracleAttestationConsumer(oracleSigner_)
         Owned(owner_)
     {
         if (owner_ == address(0) || intake_ == address(0) || asset_ == address(0)) revert ZeroAddress();
+        if (maxPrice_ == 0) revert PriceAboveCeiling(0, 0);
         intake = IIntake(intake_);
         asset = asset_;
+        maxPrice = maxPrice_;
         emit IntakeSet(intake_);
-        emit AssetSet(asset_);
+        emit PaymentSet(asset_, maxPrice_);
+        emit FailureHookSet(true);
     }
 
     modifier nonReentrant() {
@@ -169,16 +181,10 @@ contract HookJobRequester is OracleAttestationConsumer, Owned {
         bytes memory body = bytes.concat(jobBodyPrefix, _hex(specHash), jobBodyMiddle, brief, jobBodySuffix);
         if (body.length > MAX_BODY_BYTES) revert BodyTooLong(body.length);
         uint256 price = _pull(jobAction);
-        requestId = intake.requestWithFailure(
-            jobAction,
-            body,
-            IIntake.Callback(address(this), this.onJobResult.selector),
-            this.onJobFailure.selector,
-            asset,
-            price
-        );
-        _approve(address(intake), 0);
-        if (requestId == bytes32(0) || jobs[requestId].status != JobStatus.None) revert DuplicateRequestId(requestId);
+        requestId = _ask(jobAction, body, this.onJobResult.selector, this.onJobFailure.selector, price);
+        if (requestId == bytes32(0) || jobs[requestId].status != JobStatus.None || reviewOf[requestId] != bytes32(0)) {
+            revert DuplicateRequestId(requestId);
+        }
         Job storage job = jobs[requestId];
         job.requester = msg.sender;
         job.openedAt = uint64(block.timestamp);
@@ -250,15 +256,7 @@ contract HookJobRequester is OracleAttestationConsumer, Owned {
         ) revert NotReviewable(jobRequestId);
         bytes memory body = bytes.concat(reviewBodyPrefix, _hex(jobRequestId), reviewBodySuffix);
         uint256 price = _pull(reviewAction);
-        oracleRequestId = intake.requestWithFailure(
-            reviewAction,
-            body,
-            IIntake.Callback(address(this), this.onReviewResult.selector),
-            this.onReviewFailure.selector,
-            asset,
-            price
-        );
-        _approve(address(intake), 0);
+        oracleRequestId = _ask(reviewAction, body, this.onReviewResult.selector, this.onReviewFailure.selector, price);
         if (
             oracleRequestId == bytes32(0) || reviewOf[oracleRequestId] != bytes32(0)
                 || jobs[oracleRequestId].status != JobStatus.None
@@ -344,10 +342,19 @@ contract HookJobRequester is OracleAttestationConsumer, Owned {
         emit IntakeSet(to);
     }
 
-    function setAsset(address to) external onlyOwner {
-        if (to == address(0)) revert ZeroAddress();
-        asset = to;
-        emit AssetSet(to);
+    /// @notice The asset and the price ceiling move together: a ceiling means nothing in another asset.
+    function setPayment(address asset_, uint256 maxPrice_) external onlyOwner {
+        if (asset_ == address(0)) revert ZeroAddress();
+        if (maxPrice_ == 0) revert PriceAboveCeiling(0, 0);
+        asset = asset_;
+        maxPrice = maxPrice_;
+        emit PaymentSet(asset_, maxPrice_);
+    }
+
+    /// @notice On only against an Intake version 2; a version 1 intake has no `requestWithFailure`.
+    function setFailureHook(bool on) external onlyOwner {
+        failureHook = on;
+        emit FailureHookSet(on);
     }
 
     function setOracleSigner(address to) external onlyOwner {
@@ -415,8 +422,23 @@ contract HookJobRequester is OracleAttestationConsumer, Owned {
     function _pull(bytes32 action) internal returns (uint256 price) {
         price = intake.priceOf(action, asset);
         if (price == 0) revert ActionNotPriced(action);
+        if (price > maxPrice) revert PriceAboveCeiling(price, maxPrice);
         _call(asset, abi.encodeWithSelector(0x23b872dd, msg.sender, address(this), price));
         _approve(address(intake), price);
+    }
+
+    /// @dev One ask, with the failure function when the hook is on, and no standing allowance after.
+    function _ask(bytes32 action, bytes memory body, bytes4 onResult, bytes4 onFailure, uint256 price)
+        internal
+        returns (bytes32 requestId)
+    {
+        IIntake.Callback memory callback = IIntake.Callback(address(this), onResult);
+        if (failureHook) {
+            requestId = intake.requestWithFailure(action, body, callback, onFailure, asset, price);
+        } else {
+            requestId = intake.request(action, body, callback, asset, price);
+        }
+        _approve(address(intake), 0);
     }
 
     function _approve(address spender, uint256 amount) internal {

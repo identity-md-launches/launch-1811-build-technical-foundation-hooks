@@ -56,3 +56,16 @@ The original 39 tests are unchanged and still pass. `AuditFixes.t.sol` covers:
 - capped-gas mining.
 
 The swap-limit decision is tested in `HookIntegration.t.sol`. `HookJobRequester.t.sol` and `OracleConformance.t.sol` cover the IMD flow against a mock Intake. These are self-checks, not an audit.
+
+## Follow-up (IMD requester hardening, job 17b4f2ef continuation)
+
+| Check | Result |
+|---|---|
+| `forge build` | Pass |
+| `forge test` (pinned seed, and `FOUNDRY_FUZZ_SEED=0x0a00…5885`) | 86 tests pass: 25 deployment, 15 hook/pool, 11 audit follow-up, 29 IMD requester, 3 oracle conformance, 3 requester deploy script |
+| `forge fmt --check` | Pass |
+| `sh script/verify-vendored.sh` | Pass: 96 files, 24 formatting-only differences from upstream |
+| `python3 -m unittest discover -s test -p 'test_*.py'` | 10 tests pass against a disposable local Anvil |
+| Static page RPC readback | The page's `eth_call` (`getJob`, `jobsOf`) and `eth_getLogs` calls replayed against a local Anvil after one job was opened, delivered and its review ask refused: 15 words, status Delivered, review Unanswered, one listed job, events in order |
+
+The original 39 tests are unchanged. The 80 tests of the previous follow-up are kept, with the requester's constructor now taking `maxPrice` and `setAsset` replaced by `setPayment`. `HookJobRequester` gained a price ceiling, a version 1 fallback (`failureHook`) and a job/review id collision check; `build-fingerprints.json` records its new hashes. Nothing was broadcast to a public chain and no paid request was submitted.

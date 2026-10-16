@@ -32,7 +32,7 @@ contract HookJobRequesterTest is Test {
         intake = new MockIntake();
         intake.setPrice(JOB_ACTION, address(imd), PRICE);
         intake.setPrice(ORACLE_ACTION, address(imd), PRICE);
-        requester = new HookJobRequester(owner, address(intake), address(imd), signer);
+        requester = new HookJobRequester(owner, address(intake), address(imd), signer, PRICE);
         vm.startPrank(owner);
         requester.setJobTemplate(JOB_ACTION, ImdTemplates.JOB_PREFIX, ImdTemplates.JOB_MIDDLE, ImdTemplates.JOB_SUFFIX);
         requester.setReviewTemplate(ORACLE_ACTION, ImdTemplates.REVIEW_PREFIX, ImdTemplates.REVIEW_SUFFIX, 5, 4);
@@ -96,7 +96,7 @@ contract HookJobRequesterTest is Test {
     // ---------------------------------------------------------------- configuration
 
     function testUnconfiguredRequesterRefusesUntilOwnerSetsTemplates() public {
-        HookJobRequester fresh = new HookJobRequester(owner, address(intake), address(imd), signer);
+        HookJobRequester fresh = new HookJobRequester(owner, address(intake), address(imd), signer, PRICE);
         vm.prank(creator);
         imd.approve(address(fresh), type(uint256).max);
         vm.prank(creator);
@@ -114,13 +114,92 @@ contract HookJobRequesterTest is Test {
 
     function testConstructorRefusesZeroAddresses() public {
         vm.expectRevert(HookJobRequester.ZeroAddress.selector);
-        new HookJobRequester(address(0), address(intake), address(imd), signer);
+        new HookJobRequester(address(0), address(intake), address(imd), signer, PRICE);
         vm.expectRevert(HookJobRequester.ZeroAddress.selector);
-        new HookJobRequester(owner, address(0), address(imd), signer);
+        new HookJobRequester(owner, address(0), address(imd), signer, PRICE);
         vm.expectRevert(HookJobRequester.ZeroAddress.selector);
-        new HookJobRequester(owner, address(intake), address(0), signer);
+        new HookJobRequester(owner, address(intake), address(0), signer, PRICE);
         vm.expectRevert(OracleAttestationConsumer.ZeroSigner.selector);
-        new HookJobRequester(owner, address(intake), address(imd), address(0));
+        new HookJobRequester(owner, address(intake), address(imd), address(0), PRICE);
+        vm.expectRevert(abi.encodeWithSelector(HookJobRequester.PriceAboveCeiling.selector, uint256(0), uint256(0)));
+        new HookJobRequester(owner, address(intake), address(imd), signer, 0);
+    }
+
+    function testPriceCeilingProtectsStandingAllowance() public {
+        // The creator gave an unlimited allowance in setUp. A price move above the ceiling is refused.
+        intake.setPrice(JOB_ACTION, address(imd), PRICE + 1);
+        uint256 before = imd.balanceOf(creator);
+        vm.prank(creator);
+        vm.expectRevert(abi.encodeWithSelector(HookJobRequester.PriceAboveCeiling.selector, PRICE + 1, PRICE));
+        requester.openJob(SPEC_HASH, "brief");
+        assertEq(imd.balanceOf(creator), before, "nothing pulled");
+        // A lower price is pulled as is, never the ceiling.
+        intake.setPrice(JOB_ACTION, address(imd), PRICE / 2);
+        _open();
+        assertEq(imd.balanceOf(creator), before - PRICE / 2);
+        // The owner raises the ceiling with the asset, and the higher price goes through.
+        intake.setPrice(JOB_ACTION, address(imd), PRICE + 1);
+        vm.prank(owner);
+        vm.expectEmit(true, false, false, true, address(requester));
+        emit HookJobRequester.PaymentSet(address(imd), PRICE + 1);
+        requester.setPayment(address(imd), PRICE + 1);
+        _open();
+        assertEq(imd.balanceOf(creator), before - PRICE / 2 - PRICE - 1);
+        // The review ask is under the same ceiling.
+        intake.setPrice(ORACLE_ACTION, address(imd), 2 * PRICE);
+        bytes32 id = _delivered();
+        vm.prank(creator);
+        vm.expectRevert(abi.encodeWithSelector(HookJobRequester.PriceAboveCeiling.selector, 2 * PRICE, PRICE + 1));
+        requester.requestReview(id);
+    }
+
+    function testVersion1IntakeWorksWithTheFailureHookOff() public {
+        intake.setV1(true);
+        vm.prank(owner);
+        vm.expectEmit(false, false, false, true, address(requester));
+        emit HookJobRequester.FailureHookSet(false);
+        requester.setFailureHook(false);
+        assertFalse(requester.failureHook());
+        bytes32 id = _open();
+        (,,, address target, bytes4 selector, bytes4 onFailure,) = intake.reqs(id);
+        assertEq(target, address(requester));
+        assertEq(selector, HookJobRequester.onJobResult.selector);
+        assertEq(onFailure, bytes4(0), "no failure function named on a version 1 ask");
+        assertEq(imd.allowance(address(requester), address(intake)), 0);
+        // A refused ask never reaches the contract: the version 1 intake has no failure call.
+        vm.expectRevert("not pending");
+        intake.fail(id, 1, "body_invalid", 0, 0);
+        // The requester still has the deadline path.
+        vm.warp(block.timestamp + 7 days + 1);
+        vm.prank(creator);
+        requester.expireJob(id);
+        assertEq(uint8(_status(id)), uint8(HookJobRequester.JobStatus.Expired));
+        // And a completion for a version 1 ask is accepted the same way.
+        bytes32 id2 = _open();
+        assertTrue(intake.complete(id2, abi.encode(id2, bytes("ipfs://result"))));
+        assertEq(uint8(_status(id2)), uint8(HookJobRequester.JobStatus.Delivered));
+        // The review ask on a version 1 intake is a plain request too.
+        vm.prank(creator);
+        bytes32 oracleId = requester.requestReview(id2);
+        (,,,,, bytes4 reviewFailure,) = intake.reqs(oracleId);
+        assertEq(reviewFailure, bytes4(0));
+        // Back on, the version 1 intake refuses the whole call and nothing is spent.
+        vm.prank(owner);
+        requester.setFailureHook(true);
+        uint256 before = imd.balanceOf(creator);
+        vm.prank(creator);
+        vm.expectRevert("v1 has no requestWithFailure");
+        requester.openJob(SPEC_HASH, "brief");
+        assertEq(imd.balanceOf(creator), before);
+    }
+
+    function testJobIdCollidingWithPendingReviewAskRefused() public {
+        (, bytes32 oracleId) = _reviewPending();
+        intake.setReuseIds(true);
+        assertEq(intake.lastRequestId(), oracleId);
+        vm.prank(creator);
+        vm.expectRevert(abi.encodeWithSelector(HookJobRequester.DuplicateRequestId.selector, oracleId));
+        requester.openJob(SPEC_HASH, "would share the review ask's id");
     }
 
     function testOwnerSettersAreOwnerOnlyAndValidated() public {
@@ -128,7 +207,9 @@ contract HookJobRequesterTest is Test {
         vm.expectRevert("UNAUTHORIZED");
         requester.setIntake(stranger);
         vm.expectRevert("UNAUTHORIZED");
-        requester.setAsset(stranger);
+        requester.setPayment(stranger, 1);
+        vm.expectRevert("UNAUTHORIZED");
+        requester.setFailureHook(false);
         vm.expectRevert("UNAUTHORIZED");
         requester.setOracleSigner(stranger);
         vm.expectRevert("UNAUTHORIZED");
@@ -162,6 +243,10 @@ contract HookJobRequesterTest is Test {
         requester.setTimeouts(1 days, 31 days);
         vm.expectRevert(HookJobRequester.ZeroAddress.selector);
         requester.setIntake(address(0));
+        vm.expectRevert(HookJobRequester.ZeroAddress.selector);
+        requester.setPayment(address(0), 1);
+        vm.expectRevert(abi.encodeWithSelector(HookJobRequester.PriceAboveCeiling.selector, uint256(0), uint256(0)));
+        requester.setPayment(address(imd), 0);
         vm.expectEmit(true, false, false, true, address(requester));
         emit HookJobRequester.TimeoutsSet(2 days, 2 hours);
         requester.setTimeouts(2 days, 2 hours);
@@ -510,7 +595,7 @@ contract HookJobRequesterTest is Test {
 
     function testAnswerSignedForAnotherConsumerRefused() public {
         (, bytes32 oracleId) = _reviewPending();
-        HookJobRequester other = new HookJobRequester(owner, address(intake), address(imd), signer);
+        HookJobRequester other = new HookJobRequester(owner, address(intake), address(imd), signer, PRICE);
         OracleAttestation.Attestation memory a = _attestation(true);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(signerKey, other.attestationDigest(a));
         vm.prank(address(intake));
@@ -607,6 +692,37 @@ contract HookJobRequesterTest is Test {
             status := mload(add(ret, 0x80))
         }
         assertEq(status, uint256(HookJobRequester.JobStatus.Delivered));
+        // The page lists a wallet's jobs with jobsOf(address) and reads the history from these events.
+        assertEq(HookJobRequester.jobsOf.selector, bytes4(0x6373d2ea));
+        (ok, ret) = address(requester).staticcall(abi.encodePacked(bytes4(0x6373d2ea), uint256(uint160(creator))));
+        assertTrue(ok);
+        bytes32[] memory ids = abi.decode(ret, (bytes32[]));
+        assertEq(ids.length, 1);
+        assertEq(ids[0], id);
+        // Event topics the page filters eth_getLogs with; the request id is always topic 1.
+        assertEq(
+            HookJobRequester.JobOpened.selector, 0x95e6cf60266f65ecf4a509b236fccd720bc64ef7099f4a859a49d18cab89334c
+        );
+        assertEq(
+            HookJobRequester.JobDelivered.selector, 0xcf3572188b51dfe2ff3d594bd6f949f6d927563dccd01a16ed91de08773031f3
+        );
+        assertEq(
+            HookJobRequester.JobFailed.selector, 0x109fbcdb2357a12dbc99347a26add088ce1785932ff8fd91290dd66e482e3f52
+        );
+        assertEq(
+            HookJobRequester.JobExpired.selector, 0xc4b18028cd4e987c6f51b76fe353bf20701009babc05208e39e32044646b0557
+        );
+        assertEq(
+            HookJobRequester.ReviewRequested.selector,
+            0xcbcbb95076ab2e4932fc45c7613d06ad31955e4c5b283dbac36586c7a37c89a6
+        );
+        assertEq(
+            HookJobRequester.ReviewAnswered.selector, 0x80495876c6bc99afc83ec191e4b474b0b92cc26c5d47d78c10c1ec1706f02a5f
+        );
+        assertEq(
+            HookJobRequester.ReviewUnanswered.selector,
+            0x3c2152c9ef2bb1c0a603d6af74cce504897849f75c6d98f1f11b23a94d179538
+        );
     }
 
     function testSweepRecoversStrayTokens() public {

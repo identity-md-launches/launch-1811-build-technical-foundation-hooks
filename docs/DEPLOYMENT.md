@@ -41,7 +41,16 @@ forge script script/DeployHook.s.sol:DeployHook \
   --rpc-url "$HOOKS_TEST_RPC"
 ```
 
-All `HOOKS_*` values are explicit operator inputs; there are no supplied keys or default addresses. `sdk.hooks_store.abi_tuple(spec)` produces the exact tuple. Simulation does not persist the factory, so it cannot supply a real deployed factory address for a subsequent run. An operator who later elects to submit a testnet transaction must use their own signing workflow and preserve the receipt; no such transaction was submitted in this assignment. The client in [STORE_API.md](STORE_API.md) instead gives the Store a complete unsigned transaction for its wallet integration.
+`DeployHookJobRequester` deploys and configures the IMD requester (see [IMD_INTEGRATION.md](IMD_INTEGRATION.md)). Its units are `check(config, jobAction, reviewAction)`, which refuses an Intake or IMD address without code and an action the Intake does not sell within the price ceiling; `deploy(config)`; and `configure(requester, templates)`, which must run as the owner. `run(broadcaster, config)` and `runConfigure(owner, requester, templates)` wrap them in a broadcast. `DeployHookJobRequester.t.sol` calls the units directly. The requester is not chain-gated by `DeploymentPolicy`: the Intake exists only on Ethereum, Robinhood Chain and Sepolia, and `check` is what refuses a chain without it. Nothing was broadcast in this assignment.
+
+```sh
+forge script script/DeployHookJobRequester.s.sol:DeployHookJobRequester \
+  --sig 'run(address,(address,address,address,address,uint256))' \
+  "$HOOKS_BROADCASTER" "($HOOKS_OWNER,$IMD_INTAKE,$IMD_TOKEN,$IMD_ORACLE_SIGNER,500000000000000000)" \
+  --rpc-url "$HOOKS_TEST_RPC"
+```
+
+All `HOOKS_*` and `IMD_*` values are explicit operator inputs; there are no supplied keys or default addresses. `sdk.hooks_store.abi_tuple(spec)` produces the exact tuple. Simulation does not persist the factory, so it cannot supply a real deployed factory address for a subsequent run. An operator who later elects to submit a testnet transaction must use their own signing workflow and preserve the receipt; no such transaction was submitted in this assignment. The client in [STORE_API.md](STORE_API.md) instead gives the Store a complete unsigned transaction for its wallet integration.
 
 ## Evidence and lifecycle
 

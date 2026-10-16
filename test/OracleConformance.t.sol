@@ -42,7 +42,7 @@ contract OracleConformanceTest is Test {
         intake.setPrice(ORACLE_ACTION, address(imd), 0.5 ether);
         deployCodeTo(
             "HookJobRequester.sol:HookJobRequester",
-            abi.encode(address(this), address(intake), address(imd), SIGNER),
+            abi.encode(address(this), address(intake), address(imd), SIGNER, 0.5 ether),
             VECTOR_CONSUMER
         );
         consumer = HookJobRequester(VECTOR_CONSUMER);

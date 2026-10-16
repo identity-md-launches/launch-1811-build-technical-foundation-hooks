@@ -26,7 +26,7 @@ python3 -m unittest discover -s test -p 'test_*.py' -v
 
 The requested fuzz seed is pinned in `foundry.toml`:
 `0x936d89b088020ddf36122a88c4c9aed7130c7a410f5c44680a7d121950c99345`.
-Tests do not read or mutate environment variables. Python integration tests start and stop their own disposable Anvil instance on loopback; they never use a remote RPC or a private key.
+Tests do not read or mutate environment variables. Python integration tests start and stop their own disposable Anvil instance on loopback; they never use a remote RPC or a private key. In this job all 10 of them passed locally (the previous job could not run them in its environment).
 
 The Foundry suite mines and deploys real CREATE2 hooks, creates a fresh real v4 PoolManager, and initializes two distinct new pools using the same hook. It exercises swaps, limits, both exact modes and directions, per-pool isolation, liquidity withdrawal, failed settlement rollback, permissions, malformed specs and deployment verification. Test tokens and the settlement router exist only in `test/`. Neither deployment script creates tokens, managers or pools.
 
@@ -42,7 +42,7 @@ The Foundry suite mines and deploys real CREATE2 hooks, creates a fresh real v4 
 | Configurable scripts | [DeployStore.s.sol](script/DeployStore.s.sol), [DeployHook.s.sol](script/DeployHook.s.sol) |
 | Read-only Store client and unsigned transaction builder | [hooks_store.py](sdk/hooks_store.py) |
 | Integration instructions | [Store API](docs/STORE_API.md), [deployment operations](docs/DEPLOYMENT.md) |
-| IMD job requests and review status | [HookJobRequester.sol](src/imd/HookJobRequester.sol), [integration guide](docs/IMD_INTEGRATION.md), [static status page](site/index.html) |
+| IMD job requests and review status | [HookJobRequester.sol](src/imd/HookJobRequester.sol), [deploy script](script/DeployHookJobRequester.s.sol), [integration guide](docs/IMD_INTEGRATION.md), [static status page](site/index.html) |
 | Evidence and limits | [verification](docs/VERIFICATION.md), [chain support](docs/CHAINS.md), [threat model](docs/THREAT_MODEL.md) |
 
 Both creator frontends emit the same structured spec. They call `normalize_spec` / `build_spec`, then `StoreClient.plan`; they do not generate arbitrary Solidity or supply arbitrary bytecode. The Store gets a reviewable unsigned transaction. A separately controlled wallet can submit it to an allowed test network, after which a fresh client calls `verify`. The Python adapter can be embedded in a backend; other languages can call the same ABI directly.
@@ -67,7 +67,9 @@ Project-authored code is MIT-licensed. Vendored files retain their original lice
 
 ## IMD request integration
 
-`HookJobRequester` lets a creator's wallet open an IdentityMD Intake v2 `job.open` for standalone-hook code. The job body always names `forge build`, `forge test` and an adversarial review, and the contract tracks the Intake request id. It accepts exactly one authenticated result or failure, from the Intake, for its own open request. Review status is set only by an IdentityMD oracle answer signed in this contract's EIP-712 domain, never by the unsigned job completion. A static page (`site/index.html`) reads status with `eth_call`, with no backend and no browser call to api.imd.fun.
+`HookJobRequester` lets a creator's wallet open an IdentityMD Intake v2 `job.open` for standalone-hook code. The job body always names `forge build`, `forge test` and an adversarial review, and the contract tracks the Intake request id. It accepts exactly one authenticated result or failure, from the Intake, for its own open request. Review status is set only by an IdentityMD oracle answer signed in this contract's EIP-712 domain, never by the unsigned job completion. A static page (`site/index.html`) reads one job's status with `eth_call`, lists a wallet's jobs, and shows the job's on-chain event history with `eth_getLogs`, with no backend and no browser call to api.imd.fun.
+
+The contract pulls the Intake's current price only up to an owner-set ceiling (`maxPrice`, a constructor argument), so a wallet's standing allowance cannot be drained by a price move. An owner-set `failureHook` (on by default) selects `requestWithFailure` for a version 2 Intake or plain `request` for version 1. `script/DeployHookJobRequester.s.sol` deploys and configures it from explicit arguments and is tested directly.
 
 The live `job.open` callback ABI, action id and body schema were not in this task's protocol references and must be confirmed in a live pilot. See [IMD_INTEGRATION.md](docs/IMD_INTEGRATION.md) for the blocker on static review status and the full list of pilot items. No paid request was submitted and nothing was deployed.
 
