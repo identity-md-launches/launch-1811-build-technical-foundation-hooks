@@ -3,6 +3,7 @@ pragma solidity 0.8.26;
 
 import {EIP712} from "../vendor/openzeppelin/utils/cryptography/EIP712.sol";
 import {SignatureChecker} from "../vendor/openzeppelin/utils/cryptography/SignatureChecker.sol";
+import {ECDSA} from "../vendor/openzeppelin/utils/cryptography/ECDSA.sol";
 
 /// @title The reasoning oracle's attestation, as a contract reads it
 /// @notice The oracle answers a typed question off chain — a panel of agents reads it, a deployer
@@ -110,9 +111,9 @@ library OracleAttestation {
 /// answer as many times as it is presented** — for as long as it is valid — and must want that.
 ///
 /// The signer is one address, so the natural rotation story is to point it at an
-/// `OracleSignerRegistry`, which answers ERC-1271 for the keys it lists; `SignatureChecker` takes
-/// that path for any signer with code. A consumer that prefers to hold a bare key overrides
-/// nothing and rotates through `_setOracleSigner`.
+/// `OracleSignerRegistry`, which answers ERC-1271 for the keys it lists. ECDSA recovery is tried
+/// first even for a signer with code, so EIP-7702 delegation does not disable the signer's key.
+/// If recovery does not match, ERC-1271 is tried. Rotate through `_setOracleSigner`.
 abstract contract OracleAttestationConsumer is EIP712 {
     using OracleAttestation for OracleAttestation.Attestation;
 
@@ -159,7 +160,10 @@ abstract contract OracleAttestationConsumer is EIP712 {
         if (block.timestamp > a.expiresAt) revert AttestationExpired(a.expiresAt);
         // forge-lint: disable-next-line(block-timestamp)
         if (a.issuedAt > block.timestamp + ISSUED_AT_TOLERANCE) revert AttestationNotYetValid(a.issuedAt);
-        if (!SignatureChecker.isValidSignatureNowCalldata(oracleSigner, attestationDigest(a), signature)) {
+        bytes32 digest = attestationDigest(a);
+        (address recovered, ECDSA.RecoverError err,) = ECDSA.tryRecoverCalldata(digest, signature);
+        if (err == ECDSA.RecoverError.NoError && recovered == oracleSigner) return;
+        if (!SignatureChecker.isValidERC1271SignatureNow(oracleSigner, digest, signature)) {
             revert BadSignature();
         }
     }

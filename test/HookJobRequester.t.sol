@@ -7,9 +7,10 @@ import {TestToken} from "./helpers/TestToken.sol";
 import {MockIntake} from "./helpers/MockIntake.sol";
 import {HookJobRequester} from "../src/imd/HookJobRequester.sol";
 import {OracleAttestation, OracleAttestationConsumer} from "../src/imd/OracleAttestation.sol";
+import {StoreAdmin} from "../src/store/StoreAdmin.sol";
 import {ImdTemplates} from "./helpers/ImdTemplates.sol";
 
-contract HookJobRequesterTest is Test {
+abstract contract HookJobRequesterFixture is Test {
     bytes32 internal constant JOB_ACTION = "job.open@test";
     bytes32 internal constant ORACLE_ACTION = "oracle.request@oracle-1";
     uint256 internal constant PRICE = 0.5 ether;
@@ -24,7 +25,7 @@ contract HookJobRequesterTest is Test {
     uint256 internal signerKey = uint256(keccak256("local test oracle key"));
     address internal signer;
 
-    function setUp() public {
+    function setUp() public virtual {
         vm.chainId(31337);
         vm.warp(1_800_000_000);
         signer = vm.addr(signerKey);
@@ -56,15 +57,19 @@ contract HookJobRequesterTest is Test {
 
     function _reviewPending() internal returns (bytes32 jobId, bytes32 oracleId) {
         jobId = _delivered();
-        vm.prank(creator);
-        oracleId = requester.requestReview(jobId);
+        oracleId = _requestReview(jobId);
     }
 
-    function _attestation(bool passed) internal view returns (OracleAttestation.Attestation memory a) {
+    function _attestation(bytes32 intakeId, bool passed)
+        internal
+        view
+        returns (OracleAttestation.Attestation memory a)
+    {
         a = OracleAttestation.Attestation({
-            requestId: keccak256("oracle uuid"),
+            requestId: bytes32(bytes16(keccak256(abi.encode("mock oracle UUID", intakeId)))),
             chainId: 31337,
-            questionHash: keccak256("question"),
+            // Local fixture only: NOT the protocol canonical hash algorithm.
+            questionHash: keccak256(abi.encode("mock canonical question", intake.bodyOf(intakeId))),
             answerType: OracleAttestation.ANSWER_BOOL,
             answer: abi.encode(passed),
             figure: 0,
@@ -93,6 +98,21 @@ contract HookJobRequesterTest is Test {
         return requester.getJob(id).review;
     }
 
+    function _requestReview(bytes32 jobId) internal returns (bytes32 intakeId) {
+        vm.prank(creator);
+        intakeId = requester.requestReview(jobId);
+        _bind(intakeId);
+    }
+
+    function _bind(bytes32 intakeId) internal {
+        OracleAttestation.Attestation memory a = _attestation(intakeId, true);
+        bytes32 bodyHash = keccak256(intake.bodyOf(intakeId));
+        vm.prank(owner);
+        requester.bindReview(intakeId, bodyHash, a.requestId, a.questionHash, a.chainId, a.fromBlock, a.toBlock);
+    }
+}
+
+contract HookJobRequesterTest is HookJobRequesterFixture {
     // ---------------------------------------------------------------- configuration
 
     function testUnconfiguredRequesterRefusesUntilOwnerSetsTemplates() public {
@@ -113,7 +133,7 @@ contract HookJobRequesterTest is Test {
     }
 
     function testConstructorRefusesZeroAddresses() public {
-        vm.expectRevert(HookJobRequester.ZeroAddress.selector);
+        vm.expectRevert(StoreAdmin.InvalidAddress.selector);
         new HookJobRequester(address(0), address(intake), address(imd), signer, PRICE);
         vm.expectRevert(HookJobRequester.ZeroAddress.selector);
         new HookJobRequester(owner, address(0), address(imd), signer, PRICE);
@@ -204,21 +224,21 @@ contract HookJobRequesterTest is Test {
 
     function testOwnerSettersAreOwnerOnlyAndValidated() public {
         vm.startPrank(stranger);
-        vm.expectRevert("UNAUTHORIZED");
+        vm.expectRevert(StoreAdmin.NotOwner.selector);
         requester.setIntake(stranger);
-        vm.expectRevert("UNAUTHORIZED");
+        vm.expectRevert(StoreAdmin.NotOwner.selector);
         requester.setPayment(stranger, 1);
-        vm.expectRevert("UNAUTHORIZED");
+        vm.expectRevert(StoreAdmin.NotOwner.selector);
         requester.setFailureHook(false);
-        vm.expectRevert("UNAUTHORIZED");
+        vm.expectRevert(StoreAdmin.NotOwner.selector);
         requester.setOracleSigner(stranger);
-        vm.expectRevert("UNAUTHORIZED");
+        vm.expectRevert(StoreAdmin.NotOwner.selector);
         requester.setJobTemplate(JOB_ACTION, "", "", "");
-        vm.expectRevert("UNAUTHORIZED");
+        vm.expectRevert(StoreAdmin.NotOwner.selector);
         requester.setReviewTemplate(ORACLE_ACTION, "", "", 5, 4);
-        vm.expectRevert("UNAUTHORIZED");
+        vm.expectRevert(StoreAdmin.NotOwner.selector);
         requester.setTimeouts(1 days, 1 days);
-        vm.expectRevert("UNAUTHORIZED");
+        vm.expectRevert(StoreAdmin.NotOwner.selector);
         requester.sweep(address(imd), stranger, 1);
         vm.stopPrank();
 
@@ -442,8 +462,9 @@ contract HookJobRequesterTest is Test {
         requester.onJobResult(unknown, "");
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.UnknownOrSettled.selector, unknown));
         requester.onJobFailure(unknown, 2, "disagreed", 0, 0, "");
+        OracleAttestation.Attestation memory a = _attestation(unknown, true);
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.UnknownOrSettled.selector, unknown));
-        requester.onReviewResult(unknown, _attestation(true), "");
+        requester.onReviewResult(unknown, a, "");
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.UnknownOrSettled.selector, unknown));
         requester.onReviewFailure(unknown, 2, "disagreed", 0, 0, "");
         vm.stopPrank();
@@ -491,7 +512,7 @@ contract HookJobRequesterTest is Test {
         assertEq(body, bytes.concat(ImdTemplates.REVIEW_PREFIX, bytes(vm.toString(jobId)), ImdTemplates.REVIEW_SUFFIX));
         assertEq(imd.balanceOf(address(intake)), 2 * PRICE);
 
-        OracleAttestation.Attestation memory a = _attestation(true);
+        OracleAttestation.Attestation memory a = _attestation(oracleId, true);
         bytes memory sig = _sign(a, signerKey);
         uint256 before = gasleft();
         assertTrue(intake.complete(oracleId, abi.encode(oracleId, a, sig)), "fits 200k stipend");
@@ -515,32 +536,27 @@ contract HookJobRequesterTest is Test {
 
     function testReviewNotPassedIsStoredNotReverted() public {
         (bytes32 jobId, bytes32 oracleId) = _reviewPending();
-        OracleAttestation.Attestation memory a = _attestation(false);
+        OracleAttestation.Attestation memory a = _attestation(oracleId, false);
         assertTrue(intake.complete(oracleId, abi.encode(oracleId, a, _sign(a, signerKey))));
         assertEq(uint8(_review(jobId)), uint8(HookJobRequester.ReviewStatus.NotPassed));
     }
 
     function testSameAttestationCannotSettleASecondAsk() public {
-        (bytes32 jobId, bytes32 oracleId) = _reviewPending();
-        OracleAttestation.Attestation memory a = _attestation(true);
+        (, bytes32 oracleId) = _reviewPending();
+        OracleAttestation.Attestation memory a = _attestation(oracleId, true);
         bytes memory sig = _sign(a, signerKey);
-        assertTrue(intake.fail(oracleId, 2, "disagreed", 2, 7));
-        vm.prank(creator);
-        bytes32 second = requester.requestReview(jobId);
-        // Consumed once on a different ask first.
-        bytes32 otherJob = _delivered();
-        vm.prank(creator);
-        bytes32 third = requester.requestReview(otherJob);
-        assertTrue(intake.complete(third, abi.encode(third, a, sig)));
+        assertTrue(intake.complete(oracleId, abi.encode(oracleId, a, sig)));
+        (bytes32 otherJob, bytes32 otherAsk) = _reviewPending();
         vm.prank(address(intake));
-        vm.expectRevert(abi.encodeWithSelector(OracleAttestationConsumer.AlreadyConsumed.selector, a.requestId));
-        requester.onReviewResult(second, a, sig);
-        assertEq(uint8(_review(jobId)), uint8(HookJobRequester.ReviewStatus.Pending));
+        vm.expectRevert(abi.encodeWithSelector(HookJobRequester.ReviewAttestationMismatch.selector, otherAsk));
+        requester.onReviewResult(otherAsk, a, sig);
+        assertEq(uint8(_review(otherJob)), uint8(HookJobRequester.ReviewStatus.Pending));
+        assertEq(requester.reviewOf(otherAsk), otherJob);
     }
 
     function testForgedExpiredWeakOrMistypedAnswersRefused() public {
         (bytes32 jobId, bytes32 oracleId) = _reviewPending();
-        OracleAttestation.Attestation memory a = _attestation(true);
+        OracleAttestation.Attestation memory a = _attestation(oracleId, true);
         bytes memory sig = _sign(a, signerKey);
         vm.startPrank(stranger);
         vm.expectRevert(HookJobRequester.NotTheIntake.selector);
@@ -553,11 +569,11 @@ contract HookJobRequesterTest is Test {
         vm.expectRevert(OracleAttestationConsumer.BadSignature.selector);
         requester.onReviewResult(oracleId, a, wrongKey);
         // Tampered answer under a valid signature.
-        OracleAttestation.Attestation memory t = _attestation(false);
+        OracleAttestation.Attestation memory t = _attestation(oracleId, false);
         vm.expectRevert(OracleAttestationConsumer.BadSignature.selector);
         requester.onReviewResult(oracleId, t, sig);
         // Weak panel, signed.
-        OracleAttestation.Attestation memory w = _attestation(true);
+        OracleAttestation.Attestation memory w = _attestation(oracleId, true);
         w.panelSize = 3;
         w.quorum = 2;
         w.agreed = 3;
@@ -565,14 +581,14 @@ contract HookJobRequesterTest is Test {
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.PanelTooWeak.selector, uint16(3), uint16(2), uint16(3)));
         requester.onReviewResult(oracleId, w, wsig);
         // Agreement below quorum, signed.
-        w = _attestation(true);
+        w = _attestation(oracleId, true);
         w.agreed = 4;
         w.quorum = 5;
         wsig = _sign(w, signerKey);
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.PanelTooWeak.selector, uint16(7), uint16(5), uint16(4)));
         requester.onReviewResult(oracleId, w, wsig);
         // Not a bool.
-        w = _attestation(true);
+        w = _attestation(oracleId, true);
         w.answerType = OracleAttestation.ANSWER_UINT256;
         wsig = _sign(w, signerKey);
         vm.expectRevert(
@@ -596,7 +612,7 @@ contract HookJobRequesterTest is Test {
     function testAnswerSignedForAnotherConsumerRefused() public {
         (, bytes32 oracleId) = _reviewPending();
         HookJobRequester other = new HookJobRequester(owner, address(intake), address(imd), signer, PRICE);
-        OracleAttestation.Attestation memory a = _attestation(true);
+        OracleAttestation.Attestation memory a = _attestation(oracleId, true);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(signerKey, other.attestationDigest(a));
         vm.prank(address(intake));
         vm.expectRevert(OracleAttestationConsumer.BadSignature.selector);
@@ -610,10 +626,9 @@ contract HookJobRequesterTest is Test {
         vm.prank(address(intake));
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.UnknownOrSettled.selector, oracleId));
         requester.onReviewFailure(oracleId, 2, "disagreed", 3, 7, "");
-        vm.prank(creator);
-        bytes32 retry = requester.requestReview(jobId);
+        bytes32 retry = _requestReview(jobId);
         assertNotEq(retry, oracleId);
-        OracleAttestation.Attestation memory a = _attestation(true);
+        OracleAttestation.Attestation memory a = _attestation(retry, true);
         bytes memory sig = _sign(a, signerKey);
         // The old ask's id no longer settles anything.
         vm.prank(address(intake));
@@ -637,7 +652,7 @@ contract HookJobRequesterTest is Test {
         vm.prank(creator);
         requester.expireReview(jobId);
         assertEq(uint8(_review(jobId)), uint8(HookJobRequester.ReviewStatus.Unanswered));
-        OracleAttestation.Attestation memory a = _attestation(true);
+        OracleAttestation.Attestation memory a = _attestation(oracleId, true);
         a.issuedAt = uint64(block.timestamp);
         a.expiresAt = uint64(block.timestamp + 1 hours);
         bytes memory sig = _sign(a, signerKey);
@@ -656,12 +671,11 @@ contract HookJobRequesterTest is Test {
         vm.prank(creator);
         requester.expireJob(id);
         // A lost completion notice does not block a verdict.
-        vm.prank(creator);
-        bytes32 oracleId = requester.requestReview(id);
+        bytes32 oracleId = _requestReview(id);
         vm.prank(creator);
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.NotReviewable.selector, id));
         requester.requestReview(id);
-        OracleAttestation.Attestation memory a = _attestation(false);
+        OracleAttestation.Attestation memory a = _attestation(oracleId, false);
         assertTrue(intake.complete(oracleId, abi.encode(oracleId, a, _sign(a, signerKey))));
         assertEq(uint8(_review(id)), uint8(HookJobRequester.ReviewStatus.NotPassed));
     }
@@ -671,7 +685,7 @@ contract HookJobRequesterTest is Test {
         uint256 newKey = uint256(keccak256("rotated local key"));
         vm.prank(owner);
         requester.setOracleSigner(vm.addr(newKey));
-        OracleAttestation.Attestation memory a = _attestation(true);
+        OracleAttestation.Attestation memory a = _attestation(oracleId, true);
         bytes memory oldSig = _sign(a, signerKey);
         vm.prank(address(intake));
         vm.expectRevert(OracleAttestationConsumer.BadSignature.selector);
@@ -715,6 +729,9 @@ contract HookJobRequesterTest is Test {
         assertEq(
             HookJobRequester.ReviewRequested.selector,
             0xcbcbb95076ab2e4932fc45c7613d06ad31955e4c5b283dbac36586c7a37c89a6
+        );
+        assertEq(
+            HookJobRequester.ReviewBound.selector, 0x5d8ee2f21c4a5f065cce0842c0bc1b6cb0838886b1101420cec56054813a4b5e
         );
         assertEq(
             HookJobRequester.ReviewAnswered.selector, 0x80495876c6bc99afc83ec191e4b474b0b92cc26c5d47d78c10c1ec1706f02a5f

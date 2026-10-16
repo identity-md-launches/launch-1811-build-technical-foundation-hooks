@@ -199,16 +199,13 @@ contract FeaturedPlacementsTest is StoreFixture {
         assertEq(registry.getMetadata(listingId, item.revision).name, "Bounded swap hook");
         assertEq(registry.getMetadata(listingId, 2).name, "Changed name");
         vm.prank(bob);
-        vm.expectRevert(FeaturedPlacements.NotPayer.selector);
-        ads.cancel(id);
-        vm.prank(alice);
         ads.cancel(id);
         assertEq(ads.available(alice), PRICE);
         assertEq(ads.available(bob), 0);
         _assertSolvent();
     }
 
-    function testOnlyOwnerCanBuyAndOnlyPayerCanCancelIncludingAdmin() public {
+    function testOnlyListingOwnerCanBuyAndUnrelatedAccountsCannotCancelIncludingAdmin() public {
         uint256 listingId = _create(alice);
         _deposit(bob, PRICE);
         vm.prank(bob);

@@ -109,7 +109,7 @@ contract FeaturedHandler is Test {
 contract FeaturedInvariantTest is StdInvariant, StoreFixture {
     FeaturedHandler internal handler;
 
-    function setUp() public override {
+    function setUp() public virtual override {
         super.setUp();
         _create(alice);
         _create(bob);

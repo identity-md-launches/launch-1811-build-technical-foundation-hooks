@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
+import {StoreAdmin} from "../src/store/StoreAdmin.sol";
 import {Test} from "forge-std/Test.sol";
 import {TestToken} from "./helpers/TestToken.sol";
 import {MockIntake} from "./helpers/MockIntake.sol";
@@ -57,7 +58,7 @@ contract DeployHookJobRequesterTest is Test {
         assertEq(requester.maxPrice(), PRICE);
         assertTrue(requester.failureHook());
         // Unconfigured until the owner applies the templates; anyone else (here the script itself) fails.
-        vm.expectRevert("UNAUTHORIZED");
+        vm.expectRevert(StoreAdmin.NotOwner.selector);
         script.configure(requester, _templates());
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.NotConfigured.selector, bytes32("jobTemplate")));
         requester.openJob(keccak256("spec"), "a hook");

@@ -62,7 +62,7 @@ rights until acceptance. Buyers of a listing should check the latest revision be
 | Duplicates | At most one live placement per listing; distinct claims can advertise the same hook |
 | Renewal | A new purchase after cancellation or expiry; fresh ID and seven-day period, no auto-renewal |
 | Commitment | Purchase pins listing revision, payer and proceeds recipient; immutable price/duration |
-| Cancellation | Original payer only, any time strictly before expiry |
+| Cancellation | Original payer or current listing owner, any time strictly before expiry; a proposed owner has no right until acceptance |
 | Refund | `PRICE - floor(PRICE * elapsedSeconds / DURATION)`, credited to the original payer |
 | Final settlement | Anyone calls `settle(id)` at/after expiry; all 0.1 IMD becomes the pinned recipient's proceeds |
 
@@ -80,8 +80,15 @@ third-party website. Buying an ad never changes organic search or audit status.
 
 An ad displays **its purchased metadata revision and its original payer**, including if the listing
 is later edited, transferred or archived. Changes cannot replace an already paid message. To remove
-an ad, its payer must cancel it separately. A later owner cannot cancel or receive the old payer's
-refund. Existing ads expire even without a keeper; `settle` only releases accounting balances.
+an ad, its payer or current listing owner must cancel it separately. After accepting a listing
+transfer, a buyer can call `cancel(oldPlacementId)` to clear the seller's live placement, then buy
+a new one using their own deposit and the current listing revision. **The entire pro-rata refund
+still credits the original payer**, never the cancelling buyer or the admin. The original payer
+keeps their cancellation right after transfer/archive. A proposed owner cannot cancel before
+accepting, and an intermediate owner loses that right on a later transfer unless they paid for
+the placement. A transfer alone does not cancel an ad; it can remain visible until either
+permitted caller cancels or it expires. Buyers should inspect `latestPlacement` and the pinned
+revision/payer before acceptance. Existing ads expire even without a keeper; `settle` only releases accounting balances.
 An expired but unsettled placement does not block a new purchase or later settlement of the old one.
 
 ## Custody, withdrawals and conservation
@@ -132,6 +139,7 @@ zero scan size and sizes above 100 revert. Use a fixed block for a multi-page sn
 | `labelKey(label)` | Exact `keccak256(bytes(label))` for the normalized label |
 | `getListing(id)` / `getMetadata(id, revision)` | Header and chosen metadata revision |
 | `featured(cursor, scanLimit)` | Active purchased snapshots in ascending ID order, each carrying #ad |
+| `cancel(id)` | Original payer or current listing owner removes an unexpired ad; refund credits only the original payer |
 | `getPlacement(id)` / `isActive(id)` | Historical record / time-aware visibility; unknown IDs are inactive |
 | `available(account)` / `proceeds(account)` | Independently owned withdrawal balances |
 
@@ -189,7 +197,8 @@ No launch manifest or broadcast script is added in this assignment.
   rotation. No price/duration/ranking changes, forced cancellation, user-balance access, asset
   migration, sweep, pause or upgrade.
 * **Depositor/payer:** can spend only their available credit on their own active listing; withdraw
-  their unused credit and refunds; cancel their own unexpired purchases.
+  their unused credit and refunds; cancel their own unexpired purchases. A current listing owner
+  may also cancel a previous owner's placement, but cannot receive or withdraw its refund.
 * **Recipient:** can withdraw only their own earned proceeds, including from before a rotation.
 * **Anyone:** can create a claim, read history, and settle expired placements.
 

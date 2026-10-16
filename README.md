@@ -6,7 +6,8 @@ The Store now also has a [free onchain listing registry and refundable featured 
 Listings record chain/address, owner, evidence references, callback/fee/admin disclosures and searchable
 labels. References remain unverified: supplying an audit URL never grants an audited badge. Optional
 **#ad** placements cost **0.1 IMD for seven days**, ordered by purchase ID, with pro-rata cancellation
-refunds and owner-only withdrawal of unused deposits. The [static reader](site/listings.html) displays
+refunds and depositor-only withdrawal of unused deposits. After a listing transfer, the buyer can
+cancel the seller's ad; its refund still belongs to the seller. The [static reader](site/listings.html) displays
 the purchased revision and the ad disclosure. No hosted deployment is claimed.
 
 `BoundedSwapHook` serves any number of **new static-fee pools on one PoolManager**. It rejects swaps whose requested `amountSpecified` is zero or outside an immutable raw-unit limit, then counts successful swap callbacks separately by PoolId. It neither holds swap funds nor changes fees or accounting deltas. Anyone may use it when initializing a new pool. A pool's hook is part of its PoolKey; this does not retrofit hooks onto existing pools.
@@ -92,11 +93,11 @@ Project-authored code is MIT-licensed. Vendored files retain their original lice
 
 ## IMD request integration
 
-`HookJobRequester` lets a creator's wallet open an IdentityMD Intake v2 `job.open` for standalone-hook code. The job body always names `forge build`, `forge test` and an adversarial review, and the contract tracks the Intake request id. It accepts exactly one authenticated result or failure, from the Intake, for its own open request. Review status is set only by an IdentityMD oracle answer signed in this contract's EIP-712 domain, never by the unsigned job completion. A static page (`site/index.html`) reads one job's status with `eth_call`, lists a wallet's jobs, and shows the job's on-chain event history with `eth_getLogs`, with no backend and no browser call to api.imd.fun.
+`HookJobRequester` lets a creator's wallet open an IdentityMD Intake v2 `job.open` for standalone-hook code. The job body always names `forge build`, `forge test` and an adversarial review, and the contract tracks the Intake request id. It accepts exactly one authenticated result or failure, from the Intake, for its own open request. Review status requires an oracle answer signed in this contract's EIP-712 domain whose identity and question exactly match the owner's one-time binding of that pending ask. Unbound/mismatched answers fail closed. The unsigned job completion sets no review verdict. A static page (`site/index.html`) reads one job's status with `eth_call`, lists a wallet's jobs, and shows the job's on-chain event history with `eth_getLogs`, with no backend and no browser call to api.imd.fun.
 
 The contract pulls the Intake's current price only up to an owner-set ceiling (`maxPrice`, a constructor argument), so a wallet's standing allowance cannot be drained by a price move. An owner-set `failureHook` (on by default) selects `requestWithFailure` for a version 2 Intake or plain `request` for version 1. `script/DeployHookJobRequester.s.sol` deploys and configures it from explicit arguments and is tested directly.
 
-The live `job.open` callback ABI, action id and body schema were not in this task's protocol references and must be confirmed in a live pilot. See [IMD_INTEGRATION.md](docs/IMD_INTEGRATION.md) for the blocker on static review status and the full list of pilot items. No paid request was submitted and nothing was deployed.
+Each review now needs an owner `bindReview` call with an independently verified Intake-to-oracle ID mapping and canonical question hash/window **before** the one-shot callback. Neither ID equality nor `keccak256(body)` as the canonical question hash is assumed. The live mapping/pre-delivery workflow, `job.open` callback ABI, action id and body schema must be confirmed in a live pilot; review delivery is not production-ready until then. The requester uses two-step ownership, but the owner's Intake/signer rotations still affect **already-pending** requests. See [IMD_INTEGRATION.md](docs/IMD_INTEGRATION.md) for the blocker on static review status and the full list of pilot items. No paid request was submitted and nothing was deployed.
 
 ## Salt mining under eth_call gas caps
 

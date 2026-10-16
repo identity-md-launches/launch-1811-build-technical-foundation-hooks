@@ -172,11 +172,13 @@ contract FeaturedPlacements is StoreAdmin {
         );
     }
 
-    /// @notice Payer cancels before expiry. Earned = floor(price * elapsed / duration); remainder is refunded.
-    /// Refunds become withdrawable deposit credit, without calling the token or the recipient.
+    /// @notice Payer or current listing owner cancels before expiry. Earned = floor(price * elapsed / duration).
+    /// Refunds always credit the original payer, including when a new owner removes the seller's ad.
     function cancel(uint256 id) external nonReentrant returns (uint256 refund) {
         Placement storage placement = _openPlacement(id);
-        if (msg.sender != placement.payer) revert NotPayer();
+        if (msg.sender != placement.payer && msg.sender != registry.getListing(placement.listingId).owner) {
+            revert NotPayer();
+        }
         if (block.timestamp >= placement.endsAt) revert PlacementExpired();
         uint256 earned = PRICE * (block.timestamp - placement.startsAt) / DURATION;
         refund = PRICE - earned;

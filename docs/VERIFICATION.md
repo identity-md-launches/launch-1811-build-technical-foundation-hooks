@@ -133,3 +133,37 @@ was performed. Recipient address approval, canonical IMD verification, deploymen
 verification and a separate contributor's adversarial review remain future launch responsibilities.
 The previous `build-fingerprints.json` remains evidence for the unchanged foundation/Intake build;
 it does not describe these additional contracts or a live deployment.
+
+## Follow-up: audit d9970905
+
+This section supersedes earlier test counts for the current source. See
+[AUDIT_D9970905.md](AUDIT_D9970905.md) for the finding-by-finding changes and unresolved live
+assumptions. The pinned compiler and all build/dependency configuration remain unchanged.
+
+| Check | Result |
+|---|---|
+| `forge build` / `forge build --sizes` | Pass, Solidity 0.8.26; requester runtime 17,869 bytes, ads runtime 8,232 bytes |
+| `forge test --summary` | 154 passed, zero failures/skips, repository-pinned seed |
+| `FOUNDRY_FUZZ_SEED=0x0d8a41f9f69a702181f07cf91a207e74720f4a2acdeec9de3481f66d7a9cc902 forge test --summary` | 154 passed, zero failures/skips |
+| `forge fmt --check` | Pass |
+| `TMPDIR="$PWD/test/scratch" sh script/verify-vendored.sh` | 96 vendored files verified; no dependency changed |
+| `python3 -m unittest discover -s test -p 'test_*.py' -v` | 10 passed, disposable local Anvil |
+| `node --test test/listings-reader.test.cjs` | 6 passed |
+
+The original escrow invariant and the added transfer/cancellation invariant each execute **256
+sequences, 128,000 handler calls, zero reverts** per seed. Both check exact token backing,
+aggregate credits/proceeds/escrow, per-placement rounding, cumulative conservation and complete
+withdrawal at wind-down. The new suite includes listing transfers, original-payer cancellation
+and current-owner cancellation. The original invariant assertions are reused unchanged.
+
+New tests cover exact oracle ID/question/chain/window matching, swapped answers, missing or bad
+owner bindings, immutable reservations after failure/expiry, repeated identical questions,
+attestation/ask expiry, two-step requester ownership and EIP-7702/ERC-1271 signature paths. Existing
+hook/pool, deployment, registry, hostile-token, stipend and protocol-vector checks remain green.
+No test reads or writes environment variables; the fuzz seed is supplied only to the test runner.
+
+Build fingerprints for the modified requester were refreshed from compiler artifacts; hook and
+factory fingerprints were checked unchanged. `forge` lint continues to emit advisory warnings;
+compilation succeeds. No Slither/Mythril, new independent audit, public-chain pilot or live EIP-7702
+transaction was run. Passing local mocks does not establish live Intake mapping/canonicalization
+or pre-delivery binding availability.

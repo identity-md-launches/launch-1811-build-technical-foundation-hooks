@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import {Owned} from "solmate/src/auth/Owned.sol";
+import {StoreAdmin} from "../store/StoreAdmin.sol";
 import {IIntake} from "./IIntake.sol";
 import {OracleAttestation, OracleAttestationConsumer} from "./OracleAttestation.sol";
 
@@ -18,7 +18,7 @@ import {OracleAttestation, OracleAttestationConsumer} from "./OracleAttestation.
 ///
 /// A static website reads `getJob(requestId)`, `jobIds` and the events through any JSON-RPC node of
 /// the chain (`eth_call`, `eth_getLogs`); it needs no backend and no browser access to api.imd.fun.
-contract HookJobRequester is OracleAttestationConsumer, Owned {
+contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
     enum JobStatus {
         None,
         Open,
@@ -53,6 +53,21 @@ contract HookJobRequester is OracleAttestationConsumer, Owned {
         bytes32 reviewPanelJobId;
     }
 
+    /// @notice Immutable ask context and a one-time, owner-verified protocol binding.
+    /// Intake IDs, oracle UUIDs and canonical question hashes are separate namespaces.
+    struct ReviewAsk {
+        bytes32 bodyHash;
+        bytes32 oracleRequestId;
+        bytes32 questionHash;
+        uint256 questionChainId;
+        uint64 askedAt;
+        uint64 deadline;
+        uint64 fromBlock;
+        uint64 toBlock;
+        uint16 minPanelSize;
+        uint16 minAgreed;
+    }
+
     /// @dev Markers the job template must contain, so every job names the three steps.
     bytes internal constant STEP_BUILD = "forge build";
     bytes internal constant STEP_TEST = "forge test";
@@ -85,8 +100,13 @@ contract HookJobRequester is OracleAttestationConsumer, Owned {
     uint64 public reviewTimeout = 1 days;
 
     mapping(bytes32 requestId => Job) internal jobs;
-    /// @notice Oracle request id of a pending review ask => the job's Intake request id.
-    mapping(bytes32 oracleRequestId => bytes32 jobRequestId) public reviewOf;
+    /// @notice Intake request id of a pending review ask => the job's Intake request id.
+    mapping(bytes32 intakeRequestId => bytes32 jobRequestId) public reviewOf;
+    mapping(bytes32 intakeRequestId => ReviewAsk) private _reviewAsks;
+    /// @notice Never cleared, including on failure/expiry: an Intake ID cannot be recycled.
+    mapping(bytes32 intakeRequestId => bool) public usedIntakeRequestIds;
+    /// @notice Oracle IDs are reserved once, even if the bound ask expires without an answer.
+    mapping(bytes32 oracleRequestId => bytes32 intakeRequestId) public intakeReviewOfOracle;
     bytes32[] public jobIds;
     mapping(address requester => bytes32[]) internal _jobsOf;
     bool private _locked;
@@ -109,6 +129,13 @@ contract HookJobRequester is OracleAttestationConsumer, Owned {
     error PanelTooWeak(uint16 panelSize, uint16 quorum, uint16 agreed);
     error NotReviewable(bytes32 jobRequestId);
     error DeadlineNotReached(uint64 deadline);
+    error ReviewDeadlinePassed(uint64 deadline);
+    error ReviewNotBound(bytes32 requestId);
+    error ReviewAlreadyBound(bytes32 requestId);
+    error InvalidReviewBinding();
+    error ReviewBodyMismatch(bytes32 expected, bytes32 supplied);
+    error ReviewAttestationMismatch(bytes32 requestId);
+    error AttestationPredatesAsk(uint64 issuedAt, uint64 askedAt);
     error TokenCallFailed();
     error Reentrancy();
 
@@ -124,17 +151,27 @@ contract HookJobRequester is OracleAttestationConsumer, Owned {
     event JobDelivered(bytes32 indexed requestId, bytes32 resultHash);
     event JobFailed(bytes32 indexed requestId, uint8 status, bytes32 reason, uint16 agreed, uint16 answered);
     event JobExpired(bytes32 indexed requestId);
-    event ReviewRequested(bytes32 indexed jobRequestId, bytes32 indexed oracleRequestId, uint256 price, bytes body);
+    event ReviewRequested(bytes32 indexed jobRequestId, bytes32 indexed intakeRequestId, uint256 price, bytes body);
+    event ReviewBound(
+        bytes32 indexed jobRequestId,
+        bytes32 indexed intakeRequestId,
+        bytes32 indexed oracleRequestId,
+        bytes32 bodyHash,
+        bytes32 questionHash,
+        uint256 questionChainId,
+        uint64 fromBlock,
+        uint64 toBlock
+    );
     event ReviewAnswered(
         bytes32 indexed jobRequestId,
-        bytes32 indexed oracleRequestId,
+        bytes32 indexed intakeRequestId,
         bool passed,
         bytes32 questionHash,
         bytes32 panelJobId,
         uint16 panelSize,
         uint16 agreed
     );
-    event ReviewUnanswered(bytes32 indexed jobRequestId, bytes32 indexed oracleRequestId, uint8 status, bytes32 reason);
+    event ReviewUnanswered(bytes32 indexed jobRequestId, bytes32 indexed intakeRequestId, uint8 status, bytes32 reason);
 
     /// @param owner_ The launch's owner; never the deploying factory.
     /// @param intake_ The chain's Intake version 2.
@@ -143,7 +180,7 @@ contract HookJobRequester is OracleAttestationConsumer, Owned {
     /// @param maxPrice_ The most `asset_` one ask may cost (0.5 IMD = 5e17 at the published price).
     constructor(address owner_, address intake_, address asset_, address oracleSigner_, uint256 maxPrice_)
         OracleAttestationConsumer(oracleSigner_)
-        Owned(owner_)
+        StoreAdmin(owner_)
     {
         if (owner_ == address(0) || intake_ == address(0) || asset_ == address(0)) revert ZeroAddress();
         if (maxPrice_ == 0) revert PriceAboveCeiling(0, 0);
@@ -182,9 +219,7 @@ contract HookJobRequester is OracleAttestationConsumer, Owned {
         if (body.length > MAX_BODY_BYTES) revert BodyTooLong(body.length);
         uint256 price = _pull(jobAction);
         requestId = _ask(jobAction, body, this.onJobResult.selector, this.onJobFailure.selector, price);
-        if (requestId == bytes32(0) || jobs[requestId].status != JobStatus.None || reviewOf[requestId] != bytes32(0)) {
-            revert DuplicateRequestId(requestId);
-        }
+        _recordIntakeId(requestId);
         Job storage job = jobs[requestId];
         job.requester = msg.sender;
         job.openedAt = uint64(block.timestamp);
@@ -246,7 +281,9 @@ contract HookJobRequester is OracleAttestationConsumer, Owned {
     /// @notice Asks the IdentityMD oracle whether the job's adversarial-review step passed. The
     /// requester pays `intake.priceOf(reviewAction, asset)`. Allowed once the job was delivered or
     /// expired (a lost completion notice does not block a verdict), and again after an unanswered ask.
-    function requestReview(bytes32 jobRequestId) external nonReentrant returns (bytes32 oracleRequestId) {
+    /// The owner must bind the returned Intake ID to the independently verified oracle context
+    /// before delivery. Until then, signed answers are refused with ReviewNotBound.
+    function requestReview(bytes32 jobRequestId) external nonReentrant returns (bytes32 intakeRequestId) {
         if (reviewAction == bytes32(0)) revert NotConfigured("reviewTemplate");
         Job storage job = jobs[jobRequestId];
         if (msg.sender != job.requester) revert NotRequester();
@@ -256,29 +293,86 @@ contract HookJobRequester is OracleAttestationConsumer, Owned {
         ) revert NotReviewable(jobRequestId);
         bytes memory body = bytes.concat(reviewBodyPrefix, _hex(jobRequestId), reviewBodySuffix);
         uint256 price = _pull(reviewAction);
-        oracleRequestId = _ask(reviewAction, body, this.onReviewResult.selector, this.onReviewFailure.selector, price);
-        if (
-            oracleRequestId == bytes32(0) || reviewOf[oracleRequestId] != bytes32(0)
-                || jobs[oracleRequestId].status != JobStatus.None
-        ) {
-            revert DuplicateRequestId(oracleRequestId);
-        }
-        reviewOf[oracleRequestId] = jobRequestId;
+        intakeRequestId = _ask(reviewAction, body, this.onReviewResult.selector, this.onReviewFailure.selector, price);
+        _recordIntakeId(intakeRequestId);
+        reviewOf[intakeRequestId] = jobRequestId;
         job.review = ReviewStatus.Pending;
-        job.reviewRequestId = oracleRequestId;
+        job.reviewRequestId = intakeRequestId;
         job.reviewDeadline = uint64(block.timestamp) + reviewTimeout;
-        emit ReviewRequested(jobRequestId, oracleRequestId, price, body);
+        ReviewAsk storage ask = _reviewAsks[intakeRequestId];
+        ask.bodyHash = keccak256(body);
+        ask.askedAt = uint64(block.timestamp);
+        ask.deadline = job.reviewDeadline;
+        ask.minPanelSize = minPanelSize;
+        ask.minAgreed = minAgreed;
+        emit ReviewRequested(jobRequestId, intakeRequestId, price, body);
     }
 
-    /// @notice The `oracle.request` callback: Intake only, a pending review ask of this contract
-    /// only, a panel at least the owner's minimums, a valid signature for this contract, once.
+    /// @notice Pins the exact oracle identity/question for an existing ask, once, before delivery.
+    /// @dev The owner must independently verify the protocol's Intake-to-oracle mapping and compute
+    /// the canonical question hash from this ask's body and resolved window. Neither ID equality nor
+    /// keccak256(body) == questionHash is assumed. A relay/caller cannot choose these expectations.
+    /// Unbound asks fail closed. See docs/IMD_INTEGRATION.md for the unverified live workflow.
+    function bindReview(
+        bytes32 intakeRequestId,
+        bytes32 expectedBodyHash,
+        bytes32 oracleRequestId,
+        bytes32 questionHash,
+        uint256 questionChainId,
+        uint64 fromBlock,
+        uint64 toBlock
+    ) external onlyOwner {
+        bytes32 jobRequestId = reviewOf[intakeRequestId];
+        if (jobRequestId == bytes32(0)) revert UnknownOrSettled(intakeRequestId);
+        ReviewAsk storage ask = _reviewAsks[intakeRequestId];
+        if (block.timestamp > ask.deadline) revert ReviewDeadlinePassed(ask.deadline);
+        if (ask.oracleRequestId != bytes32(0)) revert ReviewAlreadyBound(intakeRequestId);
+        if (expectedBodyHash != ask.bodyHash) revert ReviewBodyMismatch(ask.bodyHash, expectedBodyHash);
+        if (oracleRequestId == bytes32(0) || questionHash == bytes32(0) || questionChainId == 0 || fromBlock > toBlock)
+        {
+            revert InvalidReviewBinding();
+        }
+        if (intakeReviewOfOracle[oracleRequestId] != bytes32(0) || consumed[oracleRequestId]) {
+            revert DuplicateRequestId(oracleRequestId);
+        }
+        ask.oracleRequestId = oracleRequestId;
+        ask.questionHash = questionHash;
+        ask.questionChainId = questionChainId;
+        ask.fromBlock = fromBlock;
+        ask.toBlock = toBlock;
+        intakeReviewOfOracle[oracleRequestId] = intakeRequestId;
+        emit ReviewBound(
+            jobRequestId,
+            intakeRequestId,
+            oracleRequestId,
+            expectedBodyHash,
+            questionHash,
+            questionChainId,
+            fromBlock,
+            toBlock
+        );
+    }
+
+    /// @notice The `oracle.request` callback: a live, bound ask only, exact signed identity/question,
+    /// snapshotted panel minimums, the current Intake and signer, and one-time consumption.
     function onReviewResult(bytes32 requestId, OracleAttestation.Attestation calldata a, bytes calldata signature)
         external
         onlyIntake
     {
         bytes32 jobRequestId = reviewOf[requestId];
         if (jobRequestId == bytes32(0)) revert UnknownOrSettled(requestId);
-        if (a.panelSize < minPanelSize || a.agreed < minAgreed || a.agreed < a.quorum) {
+        ReviewAsk storage ask = _reviewAsks[requestId];
+        if (block.timestamp > ask.deadline) revert ReviewDeadlinePassed(ask.deadline);
+        if (ask.oracleRequestId == bytes32(0)) revert ReviewNotBound(requestId);
+        if (
+            a.requestId != ask.oracleRequestId || a.questionHash != ask.questionHash || a.chainId != ask.questionChainId
+                || a.fromBlock != ask.fromBlock || a.toBlock != ask.toBlock
+        ) revert ReviewAttestationMismatch(requestId);
+        if (a.issuedAt < ask.askedAt) revert AttestationPredatesAsk(a.issuedAt, ask.askedAt);
+        if (
+            a.panelSize < ask.minPanelSize || a.quorum < ask.minAgreed || a.agreed < ask.minAgreed
+                || a.agreed < a.quorum || a.agreed > a.panelSize
+        ) {
             revert PanelTooWeak(a.panelSize, a.quorum, a.agreed);
         }
         _verifyAttestation(a, signature);
@@ -312,10 +406,10 @@ contract HookJobRequester is OracleAttestationConsumer, Owned {
         if (msg.sender != job.requester) revert NotRequester();
         // forge-lint: disable-next-line(block-timestamp)
         if (block.timestamp <= job.reviewDeadline) revert DeadlineNotReached(job.reviewDeadline);
-        bytes32 oracleRequestId = job.reviewRequestId;
-        delete reviewOf[oracleRequestId];
+        bytes32 intakeRequestId = job.reviewRequestId;
+        delete reviewOf[intakeRequestId];
         job.review = ReviewStatus.Unanswered;
-        emit ReviewUnanswered(jobRequestId, oracleRequestId, 0, "expired");
+        emit ReviewUnanswered(jobRequestId, intakeRequestId, 0, "expired");
     }
 
     // ---------------------------------------------------------------- reads for a static site
@@ -323,6 +417,10 @@ contract HookJobRequester is OracleAttestationConsumer, Owned {
     /// @notice Everything a status page shows for one job, in one eth_call.
     function getJob(bytes32 requestId) external view returns (Job memory) {
         return jobs[requestId];
+    }
+
+    function getReviewAsk(bytes32 intakeRequestId) external view returns (ReviewAsk memory) {
+        return _reviewAsks[intakeRequestId];
     }
 
     function jobCount() external view returns (uint256) {
@@ -335,7 +433,8 @@ contract HookJobRequester is OracleAttestationConsumer, Owned {
 
     // ---------------------------------------------------------------- owner settings
 
-    /// @dev Change only with no job or review pending: callbacks are accepted from the current intake.
+    /// @dev Operational recommendation: rotate with no pending work. This is NOT enforced;
+    /// the current Intake and signer authorize callbacks even for previously opened asks.
     function setIntake(address to) external onlyOwner {
         if (to == address(0)) revert ZeroAddress();
         intake = IIntake(to);
@@ -418,6 +517,11 @@ contract HookJobRequester is OracleAttestationConsumer, Owned {
     }
 
     // ---------------------------------------------------------------- internals
+
+    function _recordIntakeId(bytes32 requestId) internal {
+        if (requestId == bytes32(0) || usedIntakeRequestIds[requestId]) revert DuplicateRequestId(requestId);
+        usedIntakeRequestIds[requestId] = true;
+    }
 
     function _pull(bytes32 action) internal returns (uint256 price) {
         price = intake.priceOf(action, asset);
