@@ -1,5 +1,9 @@
 # Hooks Store foundation
 
+Deployment preparation from `b157921` is in the [executable runbook](docs/DEPLOYMENT_PREPARATION.md) and
+[manifest](deployment/manifest.json). Owner and ad-recipient approvals remain open; no public deployment
+or paid request is authorized. The audited Solidity and compiler settings are unchanged.
+
 A versioned HookSpec, one standalone Uniswap v4 hook, and a shared CREATE2 deployment path for chat and visual creators. The implementation is locally tested. No public-chain transaction was submitted, and no hosted Store, chat creation service, visual builder or production deployment is claimed.
 
 The Store now also has a [free onchain listing registry and refundable featured ads](docs/LISTINGS_AND_ADS.md).
@@ -37,7 +41,7 @@ node --test test/listings-reader.test.cjs test/requester-abi.test.cjs
 
 The repository fuzz seed is pinned in `foundry.toml`:
 `0x936d89b088020ddf36122a88c4c9aed7130c7a410f5c44680a7d121950c99345`.
-This follow-up also runs `forge test --fuzz-seed 0xf26a9b5634efd5ce7b559826e3d88cfde1d1b356c70d58ff3025a15e862a9578 --gas-report` with the assignment seed. Tests do not read or mutate environment variables. Python integration tests start and stop their own disposable Anvil instance on loopback; they never use a remote RPC or a private key. The earlier IMD requester hardening follow-up recorded all 10 passing. The listing/ads follow-up did not modify or rerun those SDK tests.
+The deployment-preparation follow-up also runs `forge test --fuzz-seed 0x987078825760321852440813e64598edbfcd99df874323a1a45a55bcb5c3e545` with its assignment seed; [actual logs](docs/checks/deployment-preparation/README.md) distinguish current checks from historical results below. Tests do not read or mutate environment variables. Python integration tests start and stop their own disposable Anvil instance on loopback; they never use a remote RPC or a private key. The earlier IMD requester hardening follow-up recorded all 10 passing. The listing/ads follow-up did not modify or rerun those SDK tests.
 
 The listings/ads follow-up also checks the supplied seed directly using
 `forge test --fuzz-seed 0x897ccfb85f71eb00ada949c5387d8bc41b650fda2a7d704b3960c7edf39b4654`.
@@ -67,7 +71,9 @@ Both creator frontends emit the same structured spec. They call `normalize_spec`
 
 ## Configuration and responsibilities
 
-No production addresses are embedded. An operator must supply the actual chain ID, a reviewed PoolManager address and its runtime code hash, the deployed Store factory address, RPC endpoint and an explicit broadcaster for scripts. The creator supplies the positive raw-unit swap ceiling. Missing or inconsistent settings fail validation. This repository was not supplied a network address manifest and does not copy unchecked addresses from reference tables.
+Production protocol address candidates, first-party sources and read-only observations are now recorded in the
+[preparation manifest](deployment/manifest.json); no public application deployment address or owner is invented.
+An operator must supply the actual chain ID, a reviewed PoolManager address and its runtime code hash, the deployed Store factory address, RPC endpoint and an explicit broadcaster for scripts. The creator supplies the positive raw-unit swap ceiling. Missing or inconsistent settings fail validation. This repository was not supplied a network address manifest and does not copy unchecked addresses from reference tables.
 
 There is no hook owner, proxy, upgrade key, pause key, fee recipient or mutable setting. The factory is permissionless and can deploy only the pinned template. The constructor's settings are write-once storage, with no setters; this makes the entire runtime bytecode independently comparable before and after deployment. A different setting requires a new deployment and new pools.
 
@@ -80,8 +86,8 @@ The restriction is a property of this factory build (`DeploymentPolicy`), not of
 For the new advertising contract, the explicit launch owner calls `configureToken(token)` once with
 the verified, 18-decimal IMD address for the settlement chain and `setProceedsRecipient(recipient)`
 with the requester-approved treasury address. Neither address is guessed or defaulted; deposits
-require the token and purchases require both settings. **Proposed recipient: the Hooks Store project
-treasury under a requester-approved multisig, exact address pending final approval before live use.**
+require the token and purchases require both settings. **Proposed recipient: `0x3f252e859a277a86A3967c11D4E054B2f07a1F22`, pending final requester approval before live use.**
+This is not the Intake payee; its ownership/control model has not been verified.
 Recipient changes affect future purchases only. There is no admin sweep, upgrade, pause, pricing
 control or access to users' credit. Full [settings, admin powers and responsibilities](docs/LISTINGS_AND_ADS.md#after-launch)
 are documented separately from the existing Intake integration. The registry has no global admin.

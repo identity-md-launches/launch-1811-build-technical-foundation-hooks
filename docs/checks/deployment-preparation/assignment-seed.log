@@ -1,0 +1,394 @@
+Command: forge test --fuzz-seed 0x987078825760321852440813e64598edbfcd99df874323a1a45a55bcb5c3e545
+Started: 2026-10-17T04:23:50.684711+00:00
+No files changed, compilation skipped
+
+Ran 1 test for test/JobProtocolTuple.t.sol:JobProtocolGasTest
+[PASS] testColdTupleWithLongURIFits200kAndRuntimeLimit() (gas: 894390)
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 15.41ms (4.78ms CPU time)
+
+Ran 11 tests for test/JobProtocolTuple.t.sol:JobProtocolTupleTest
+[PASS] testDuplicateCannotReplaceHashOrURI() (gas: 1092073)
+[PASS] testEmptyURICanBeReportedWithoutReviewApproval() (gas: 1026753)
+[PASS] testFuzzLateTupleWorksBeforeOrAfterLocalExpiry(bool) (runs: 256, μ: 1103404, ~: 1087438)
+[PASS] testFuzzSuppliedHashAndURIBytesArePreserved(bytes32,uint16) (runs: 256, μ: 1117967, ~: 1078893)
+[PASS] testLateTuplePreservesFinalizedNegativeReview() (gas: 2468528)
+[PASS] testMalformedTuplesLoseOnlyTheSingleIntakeAttempt() (gas: 6654115)
+[PASS] testObsoleteSelectorIsNotAnAlias() (gas: 1024978)
+[PASS] testProtocolTuple() (gas: 996399)
+[PASS] testRegisteredSelectorAndResultEventsMatchProtocol() (gas: 1102173)
+[PASS] testUnauthorizedTupleLeavesJobAndLogsUntouched() (gas: 1117916)
+[PASS] testUnknownTupleCannotDeliverAnotherRequest() (gas: 1029152)
+Suite result: ok. 11 passed; 0 failed; 0 skipped; finished in 852.62ms (846.84ms CPU time)
+
+Ran 4 tests for test/OracleConformance.t.sol:OracleConformanceTest
+[PASS] testProtocolSignatureVerifiesBeforeItsNonBoolAnswerIsRefused() (gas: 2060648)
+[PASS] test_acceptsAFreshSignatureFromTheVectorKeyAsDelivered() (gas: 2136385)
+[PASS] test_callbackSelectorsAreCanonical() (gas: 3965)
+[PASS] test_digestMatchesTheProtocol() (gas: 13912)
+Suite result: ok. 4 passed; 0 failed; 0 skipped; finished in 11.14ms (7.67ms CPU time)
+
+Ran 6 tests for test/OracleSigner.t.sol:OracleSignerTest
+[PASS] testContractSignerUsesErc1271FallbackUnderTheStipend() (gas: 2627221)
+[PASS] testDelegatedSignerStillRejectsWrongKeyTamperingAndMalformedEcdsa() (gas: 2511895)
+[PASS] testEcdsaKeyRemainsValidEvenIfItsCodeRejectsErc1271() (gas: 2249328)
+[PASS] testEip7702DesignatorDoesNotDisableTheSignersEcdsaKey() (gas: 2263466)
+[PASS] testErc1271RevocationRevertAndShortReturnFailClosedAndDoNotConsume() (gas: 3047340)
+[PASS] testFutureAttestationIsRefusedWithoutConsumingIt() (gas: 2187980)
+Suite result: ok. 6 passed; 0 failed; 0 skipped; finished in 49.96ms (43.41ms CPU time)
+
+Ran 13 tests for test/RequesterMvpAudit.t.sol:RequesterMvpLifecycleTest
+[PASS] testAbandonedAskReceiptBlocksClosureWithoutRequesterExpiryRequest() (gas: 2356137)
+[PASS] testBindingResetRequiresOwnerExactBodyAndPendingBoundAsk() (gas: 2745439)
+[PASS] testFuzzCompromisedEpochBlocksRetainedAnswersAndAllowsHonestClosure(bool,bool) (runs: 256, μ: 4037432, ~: 4164280)
+[PASS] testFuzzJobFailureAndExpiryOrderingCannotChangeReviewEligibility(uint8,bool) (runs: 256, μ: 2488314, ~: 2499733)
+[PASS] testFuzzWrongPrebindingRetainsOneShotAnswerAndCanBeCorrected(uint8,bool) (runs: 256, μ: 2890078, ~: 2891087)
+[PASS] testIncidentRevocationIsExplicitAndCannotUndoFinalizedVerdicts() (gas: 2491813)
+[PASS] testLateFailureCannotClearFinalizedNegativeReview() (gas: 2409318)
+[PASS] testOwnerClosesAbandonedAskOnlyAfterDeadlineAndCannotCloseItsRetry() (gas: 3679361)
+[PASS] testRevocationFreezesEveryOldReceiptButNotANewEpochReceipt() (gas: 6624254)
+[PASS] testRevocationValidatesAuthorityEpochAndEvidence() (gas: 238952)
+[PASS] testRevokedBoundMismatchClosesWithoutResetAndReservationReleasePreservesHistory() (gas: 2650887)
+[PASS] testSwappedPreboundDeliveriesStayPendingAndNeverConsumeEachOthersUuid() (gas: 4996492)
+[PASS] testUnknownOrMissingReceiptCannotBeIncidentClosed() (gas: 1869944)
+Suite result: ok. 13 passed; 0 failed; 0 skipped; finished in 3.23s (3.22s CPU time)
+
+Ran 6 tests for test/RequesterMvpAudit.t.sol:RequesterMvpPaymentTest
+[PASS] testCallerLimitZeroFailsAndLowerQuoteChargesOnlyQuote() (gas: 1077278)
+[PASS] testExistingDonationsCannotHideUnderpaymentOrBecomeCallerFunds() (gas: 1829601)
+[PASS] testFuzzCallerLimitSurvivesOwnerCeilingIncreaseAndIntakePriceMove(bool,uint96) (runs: 256, μ: 1651548, ~: 2075209)
+[PASS] testFuzzInexactIncomingTokensCannotSpendPreexistingDonations(uint8) (runs: 256, μ: 1208649, ~: 1210500)
+[PASS] testFuzzUnderspendingIntakeRollsBackAllStateAndLeavesNothingSweepable(uint256,bool,bool) (runs: 256, μ: 2399383, ~: 2879715)
+[PASS] testTokenCallbackCannotReenterSweepOrChangePaymentConfiguration() (gas: 4055234)
+Suite result: ok. 6 passed; 0 failed; 0 skipped; finished in 1.35s (1.35s CPU time)
+
+Ran 12 tests for test/AuditContextMismatchProof.t.sol:AuditContextMismatchProofTest
+[PASS] testAsynchronousRefusalAfterPaymentClosesWithoutRefund() (gas: 2749066)
+[PASS] testContextMismatchRecoveryCannotSetAsideAMatchingVerdictOrBeCalledByRequester() (gas: 2689591)
+[PASS] testContextMismatchRecoveryNeedsAnUnboundPendingAskWithAReceipt() (gas: 2545315)
+[PASS] testFuzzAcceptedTemplateNamesEveryStepInEveryAssembledBody(bytes32,uint16,uint8) (runs: 256, μ: 1659134, ~: 1659525)
+[PASS] testFuzzBodyQuorumBelowConfiguredMinimumNoLongerBurnsAnAgreedAnswer(uint16,uint16,bool,bool) (runs: 256, μ: 2328473, ~: 2272917)
+[PASS] testFuzzPanelStrengthMinimumsStillRefuseWeakAnswersInOneShot(uint8) (runs: 256, μ: 2432713, ~: 2432664)
+[PASS] testFuzzSameUuidOtherSignedContextWasStuckAndNowClosesHonestly(uint8,bool) (runs: 256, μ: 4070508, ~: 4070568)
+[PASS] testFuzzStepMarkerSplitAcrossFragmentsIsRefused(uint8,uint8,uint8) (runs: 256, μ: 1109661, ~: 1113498)
+[PASS] testFuzzSynchronousIntakeRefusalRevertsTheWholeAskWithoutDebit(bytes4,bool) (runs: 256, μ: 2552805, ~: 2585088)
+[PASS] testMarkersOnlyACreatorBriefCouldSupplyDoNotSatisfyTheTemplate() (gas: 960879)
+[PASS] testReceiptAcknowledgmentCommitsToTheVerdict() (gas: 2195626)
+[PASS] testReproductionQuorumOneWithSixAgreedIsAValidAnswer() (gas: 2278852)
+Suite result: ok. 12 passed; 0 failed; 0 skipped; finished in 6.19s (6.18s CPU time)
+
+Ran 1 test for test/AuditExpiryProof.t.sol:ExpiryFrontRunShoppingTest
+[PASS] testRequesterFrontRunsLateNotPassedWithExpiryAndReasks() (gas: 1278383)
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 4.30ms (1.95ms CPU time)
+
+Ran 7 tests for test/ReviewAuditRegression.t.sol:ReviewAuditRegressionTest
+[PASS] testExpiryNeedsDeadlineAndCurrentOwnerApprovalForExactAsk() (gas: 3755978)
+[PASS] testExpiryRequestAllowsBindingBeforeLateDelivery() (gas: 2447036)
+[PASS] testFuzzExactConflictRecoveryPreservesOtherAskAndReplayProtection(bool,bool,bool) (runs: 256, μ: 5951955, ~: 5951946)
+[PASS] testFuzzExpiryAndDeliveryBothOrdersPreserveVerdictAndBlockRetries(bool,bool,bool) (runs: 256, μ: 2691283, ~: 2779070)
+[PASS] testFuzzSameUuidTypoCannotDiscardGenuineNegativeEvenWithConflict(uint8,bool) (runs: 256, μ: 3491692, ~: 4374526)
+[PASS] testFuzzUnavailableDifferentTrueUuidCannotDiscardGenuineNegative(uint8) (runs: 256, μ: 4601845, ~: 4593660)
+[PASS] testIntakeFailureAfterExpiryRequestAllowsRetryAndInvalidatesOldApproval() (gas: 3259741)
+Suite result: ok. 7 passed; 0 failed; 0 skipped; finished in 5.51s (5.51s CPU time)
+
+Ran 2 tests for test/ReviewBinding.t.sol:RequesterOwnershipTest
+[PASS] testMistypedHandoverCanBeCancelledOrReplacedAndOnlyNomineeAccepts() (gas: 430359)
+[PASS] testZeroAndSelfHandoversRefusedWithoutLosingControl() (gas: 103680)
+Suite result: ok. 2 passed; 0 failed; 0 skipped; finished in 9.45ms (1.83ms CPU time)
+
+Ran 13 tests for test/ReviewBinding.t.sol:ReviewBindingTest
+[PASS] testAnswerAtDeadlineAcceptedAndExcessiveBackwardSkewRefused() (gas: 2382031)
+[PASS] testBindingRequiresOwnerAndExactRecordedBodyAndCannotBeOverwritten() (gas: 2211557)
+[PASS] testExpiredAskAnswerCannotSettleRetryOfIdenticalQuestion() (gas: 3656740)
+[PASS] testFuzzIntakeIdCannotBeReusedAfterReviewCloses(uint8) (runs: 256, μ: 2809842, ~: 2831866)
+[PASS] testFuzzOracleIdReservationSurvivesFailureExpiryAndSettlement(uint8) (runs: 256, μ: 4273189, ~: 4296088)
+[PASS] testInvalidOrUnknownBindingsRefused() (gas: 2068064)
+[PASS] testLateValidAnswerAndLateBindingAllowedUntilExplicitExpiry() (gas: 4466236)
+[PASS] testOwnerRotationPowersApplyToAlreadyPendingRequestsAsDocumented() (gas: 3317082)
+[PASS] testSignedPanelQuorumAndCountsMustBeConsistent() (gas: 2243442)
+[PASS] testSignedWrongQuestionIdChainOrWindowCannotSettle() (gas: 3719940)
+[PASS] testSwappedHonestAnswersLeaveBothPendingThenSettleTheirOwnAsks() (gas: 5021773)
+[PASS] testTemplateAndTimeoutChangesDoNotChangePendingAskContext() (gas: 2568227)
+[PASS] testUnboundReceiptDoesNotTrustMatchingIntakeIdAndRawBodyHash() (gas: 2428721)
+Suite result: ok. 13 passed; 0 failed; 0 skipped; finished in 2.26s (2.26s CPU time)
+
+Ran 11 tests for test/AuditFixes.t.sol:AuditFixesTest
+[PASS] testAllowedTestnetsDeployAndVerifyEndToEnd() (gas: 7765983)
+[PASS] testBaseMainnetRejectedOnEveryReleasePath() (gas: 9450397)
+[PASS] testEthereumMainnetRejectedOnEveryReleasePath() (gas: 9450443)
+[PASS] testFullPageCompletesOrResumesUnderTypicalCallGasCap() (gas: 4696895)
+[PASS] testFuzzUnknownChainsRejectedOnEveryReleasePath(uint64) (runs: 256, μ: 9453605, ~: 9453605)
+[PASS] testHookConstructorStillBindsSpecToActualChain() (gas: 19895)
+[PASS] testHookTemplateStaysChainAgnosticForFutureMainnetRelease() (gas: 1388790)
+[PASS] testMaxPageGasWithinBudgetWhenUncapped() (gas: 2338692)
+[PASS] testRobinhoodMainnetRejectedOnEveryReleasePath() (gas: 9450442)
+[PASS] testTooLittleGasForOneCandidateRevertsClearly() (gas: 17619788)
+[PASS] testTruncatedPageReportsFirstUncheckedNonce() (gas: 1946363)
+Suite result: ok. 11 passed; 0 failed; 0 skipped; finished in 7.46s (7.46s CPU time)
+
+Ran 1 test for test/AuditReceiptConflictProof.t.sol:StuckReceiptProofTest
+[PASS] testOwnerCanCloseReceiptWhoseUuidWasConsumedElsewhere() (gas: 2596747)
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 7.16ms (4.89ms CPU time)
+
+Ran 3 tests for test/DeployHookJobRequester.t.sol:DeployHookJobRequesterTest
+[PASS] testCheckRefusesAddressesWithoutCodeAndUnsoldActions() (gas: 136180)
+[PASS] testDeployThenConfigureGivesAWorkingRequesterOwnedByTheNamedOwner() (gas: 7241222)
+[PASS] testRunRefusesZeroBroadcaster() (gas: 86380)
+Suite result: ok. 3 passed; 0 failed; 0 skipped; finished in 6.92ms (5.07ms CPU time)
+
+Ran 25 tests for test/Deployment.t.sol:DeploymentTest
+[PASS] testAllNamedMainnetsAndUnknownChainsRejected() (gas: 4440)
+[PASS] testAnyoneMayDeployIdenticalPlanWithoutTakingOwnership() (gas: 3340102)
+[PASS] testChangedConstructorSettingsInvalidateCachedPlan() (gas: 2452880)
+[PASS] testChangingManagerChangesCommitments() (gas: 4456007)
+[PASS] testDuplicateDeploymentRejectedAndMinerSkipsOccupiedAddress() (gas: 3409894)
+[PASS] testFuzzOnlyExactPermissionMaskAccepted(uint160) (runs: 256, μ: 30168, ~: 30225)
+[PASS] testFuzzPredictionMatchesIndependentCreate2Formula(address,bytes32,bytes32) (runs: 256, μ: 3933, ~: 3933)
+[PASS] testFuzzSpecLimitCommitsToExactConstructor(uint128,bytes32) (runs: 256, μ: 44323, ~: 44323)
+[PASS] testInvalidSearchRanges() (gas: 100769)
+[PASS] testInvalidSpecFieldsRejected() (gas: 161488)
+[PASS] testManagerCodeChangeFailsClosed() (gas: 2410875)
+[PASS] testManagerMustHaveExpectedCode() (gas: 68520)
+[PASS] testPredictionDeploymentPermissionsSettingsAndBytecodeAgree() (gas: 3496937)
+[PASS] testPrefundedPredictedAddressStillDeploys() (gas: 3331370)
+[PASS] testScriptUsesSamePlanAndDeploymentAsStore() (gas: 7192658)
+[PASS] testScriptsRejectMissingBroadcaster() (gas: 7147621)
+[PASS] testSearchExhaustionAndResume() (gas: 6291072)
+[PASS] testStaleOrForgedScriptPlansRejected() (gas: 6271704)
+[PASS] testTestnetPolicyIdsOnlyLocalSimulation() (gas: 7542)
+[PASS] testVerificationDetectsCorruptedConstructorStorage() (gas: 3314813)
+[PASS] testVerificationDetectsCorruptedRuntime() (gas: 3308499)
+[PASS] testVerifyUndeployedOrWrongAddressRejected() (gas: 2430633)
+[PASS] testWrongChainRejected() (gas: 29640)
+[PASS] testWrongExpectedAddressAndHashRejected() (gas: 2458895)
+[PASS] testWrongSaltRejectedByFactoryAndConstructor() (gas: 98469)
+Suite result: ok. 25 passed; 0 failed; 0 skipped; finished in 427.66ms (425.28ms CPU time)
+
+Ran 7 tests for test/FeaturedAdversarial.t.sol:FeaturedAdversarialTest
+[PASS] testFalseRevertingMalformedAndNoMovementTokensCannotCreateCredit() (gas: 1201538)
+[PASS] testMissingTokenCodeAfterConfigurationCannotFakeTransfer() (gas: 68113)
+[PASS] testNoReturnTokenWorksForDepositsAndWithdrawals() (gas: 264270)
+[PASS] testProceedsWithdrawalAlsoGuardsReentrancy() (gas: 1621022)
+[PASS] testRecipientCannotBlockCancellationOrSettlementAndFailedClaimRollsBack() (gas: 2093568)
+[PASS] testTaxedOrFailedWithdrawalRollsBackAndRemainsRetryable() (gas: 1194337)
+[PASS] testTokenCallbacksCannotReenterAnyCustodyMutation() (gas: 3108803)
+Suite result: ok. 7 passed; 0 failed; 0 skipped; finished in 14.84ms (11.88ms CPU time)
+
+Ran 24 tests for test/ReviewDelivery.t.sol:ReviewDeliveryTest
+[PASS] testAnswerAtExactSignatureExpiryCanBeRetainedAndConfirmedLater() (gas: 2353047)
+[PASS] testConfirmedReceiptCannotBeReplayedOrRebound() (gas: 2404078)
+[PASS] testEarlyEip7702KeyReceiptFitsColdStipend() (gas: 2353570)
+[PASS] testEarlyErc1271ReceiptFitsColdStipendAndSurvivesLaterRevocation() (gas: 2884531)
+[PASS] testFreshLateAnswerAcceptedIfRequesterRequestsExpiryFirst() (gas: 2369641)
+[PASS] testFuzzBindingMustMatchEveryRetainedFieldAndFailedBindingCanBeCorrected(uint8) (runs: 256, μ: 2599550, ~: 2599721)
+[PASS] testFuzzClockSkewToleranceIsSymmetricAtAskTime(int16,bool) (runs: 256, μ: 2306577, ~: 2323088)
+[PASS] testFuzzEarlyOneAttemptCallbackRetainedThenConfirmedWithoutAnotherFee(bool) (runs: 256, μ: 2800123, ~: 2800137)
+[PASS] testFuzzFreshLateAnswerAcceptedUntilExplicitExpiry(bool,uint32) (runs: 256, μ: 2419008, ~: 2400533)
+[PASS] testFuzzInvalidEarlyAnswerNeverCreatesReceiptOrVerdict(uint8) (runs: 256, μ: 2024675, ~: 2026580)
+[PASS] testFuzzRequesterCannotDiscardRetainedAnswerOrBuyAnotherReview(bool) (runs: 256, μ: 2586628, ~: 2586637)
+[PASS] testIntakeFailureBeforeReceiptIsTerminalAndBindingCannotInventAnAnswer() (gas: 2054289)
+[PASS] testInvalidOneAttemptCallbackLosesFeeAndCannotRetryOrCreateReceipt() (gas: 3581878)
+[PASS] testMalformedOneShotCallbackCannotCreateReceipt() (gas: 1889525)
+[PASS] testOneSecondBackwardSkewAndExactFiveMinuteBoundaryAccepted() (gas: 4620310)
+[PASS] testOnlyCurrentIntakeMayRetainAndOnlyOwnerMayConfirm() (gas: 2552393)
+[PASS] testReceiptBindingStillRequiresExactBodyFingerprint() (gas: 2358125)
+[PASS] testReceiptCanBeConfirmedAfterSignatureExpiryTimeoutAndAuthorityRotation() (gas: 2637612)
+[PASS] testReceiptCannotBeOverwrittenOrClearedBySecondIntakeCallback() (gas: 2592195)
+[PASS] testReservedUuidRetainedWithoutVerdictButConsumedUuidRefused() (gas: 6131275)
+[PASS] testSignatureExpiryStillControlsArrivalEvenAfterAskDeadline() (gas: 2022594)
+[PASS] testSwappedEarlyYesAndNoAnswersCannotBecomeVerdicts() (gas: 4361713)
+[PASS] testTimestampExtremesDoNotOverflowSkewCheck() (gas: 2412099)
+[PASS] testUnconfirmedDuplicateCannotReserveOrConsumeTheActualAsksUuid() (gas: 4374316)
+Suite result: ok. 24 passed; 0 failed; 0 skipped; finished in 4.71s (4.71s CPU time)
+
+Ran 8 tests for test/ReviewReceiptGas.t.sol:ReviewReceiptGasTest
+[PASS] testAudit22ColdReadsNowRetainsOneShotReceiptAndBoundVerdict() (gas: 4150823)
+[PASS] testColdEoaReceiptGasAndExactStipend() (gas: 1521757)
+[PASS] testColdFiveOfSevenReceiptAfterExpiryRequestFitsStipend() (gas: 2836682)
+[PASS] testColdFiveOfSevenReceiptAndBoundCallbacksFitStipend() (gas: 4114308)
+[PASS] testColdFiveOfSevenRetryReceiptBeforeReservationReleaseFitsStipend() (gas: 2938567)
+[PASS] testColdWrongPrebindingRetainsReceiptWithFiveOfSevenAndAuditSigner() (gas: 4934759)
+[PASS] testFuzzMultisignerRefusesWrongKeyDuplicateRevokedExpiredOrInsufficientSignatures(uint8) (runs: 256, μ: 383538, ~: 385495)
+[PASS] testOverBudgetSignerStillFailsClosedAndLosesSingleAttemptWithoutPartialReceipt() (gas: 711516)
+Suite result: ok. 8 passed; 0 failed; 0 skipped; finished in 579.80ms (565.78ms CPU time)
+
+Ran 3 tests for test/ReviewReceiptPacking.t.sol:ReviewReceiptPackingTest
+[PASS] testAllocatedMetadataIsNotAnAnswerAndReadAbiRemainsTenWords() (gas: 1882167)
+[PASS] testFuzzReceiptPreservesFullContextAndPackedFields(uint64,uint64,uint64,uint16,uint16,bool,uint256) (runs: 256, μ: 2402702, ~: 2402626)
+[PASS] testReceiptPackingMaximumValuesDoNotLeakIntoAdjacentFields() (gas: 2392631)
+Suite result: ok. 3 passed; 0 failed; 0 skipped; finished in 754.05ms (749.42ms CPU time)
+
+Ran 11 tests for test/ReviewRecovery.t.sol:ReviewRecoveryTest
+[PASS] testBoundOrTerminalAsksCannotBeDiscarded() (gas: 2367570)
+[PASS] testDiscardingDuplicateReceiptDoesNotClearGenuineConsumedUuid() (gas: 4380228)
+[PASS] testExpiredJobFalseVerdictRemainsTerminalEvenIfReviewLaterCompletes() (gas: 2444007)
+[PASS] testFuzzOwnerCannotDiscardReceiptWithMatchingContext(bool) (runs: 256, μ: 2375614, ~: 2375618)
+[PASS] testFuzzReleaseUnusedReservationAfterExpiryOrFailureThenFinalizeRetry(bool,bool) (runs: 256, μ: 5644742, ~: 5653544)
+[PASS] testFuzzSameUuidFieldMismatchCannotDiscardReceipt(uint8) (runs: 256, μ: 2237588, ~: 2237762)
+[PASS] testLateNotPassedReceiptCannotBeFrontRunByRequesterExpiry() (gas: 2412823)
+[PASS] testRecoveryRequiresCurrentOwnerExactBodyValidContextAndReceipt() (gas: 2571619)
+[PASS] testReservationReleaseRejectsUnknownUnboundAndPendingHolderEvenPastDeadline() (gas: 4038072)
+[PASS] testSignerRotationPreservesRetainedVerificationButRejectsUndeliveredOldSignature() (gas: 4480967)
+[PASS] testSwappedReceiptOwnerClosesWrongAskWithoutStrandingGenuineUuid() (gas: 6144659)
+Suite result: ok. 11 passed; 0 failed; 0 skipped; finished in 3.12s (3.12s CPU time)
+
+Ran 1 test for test/UriPilotGas.t.sol:UriPilotGasTest
+[PASS] testColdMeasuredUriBoundaryAndOneAttemptFeeLoss() (gas: 872304)
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 5.52ms (792.38µs CPU time)
+
+Ran 1 test for test/FeaturedTransferInvariant.t.sol:FeaturedTransferInvariantTest
+[PASS] invariantEveryTokenIsAccountedForAndEveryCreditHasBacking() (runs: 256, calls: 128000, reverts: 0)
+
+╭-------------------------+------------------------+-------+---------+----------╮
+| Contract                | Selector               | Calls | Reverts | Discards |
++===============================================================================+
+| FeaturedTransferHandler | advanceTime            | 11691 | 0       | 0        |
+|-------------------------+------------------------+-------+---------+----------|
+| FeaturedTransferHandler | cancel                 | 11533 | 0       | 0        |
+|-------------------------+------------------------+-------+---------+----------|
+| FeaturedTransferHandler | cancelAsCurrentOwner   | 11701 | 0       | 0        |
+|-------------------------+------------------------+-------+---------+----------|
+| FeaturedTransferHandler | claim                  | 11408 | 0       | 0        |
+|-------------------------+------------------------+-------+---------+----------|
+| FeaturedTransferHandler | deposit                | 11673 | 0       | 0        |
+|-------------------------+------------------------+-------+---------+----------|
+| FeaturedTransferHandler | purchaseAsCurrentOwner | 11693 | 0       | 0        |
+|-------------------------+------------------------+-------+---------+----------|
+| FeaturedTransferHandler | rotateRecipient        | 11709 | 0       | 0        |
+|-------------------------+------------------------+-------+---------+----------|
+| FeaturedTransferHandler | settle                 | 11638 | 0       | 0        |
+|-------------------------+------------------------+-------+---------+----------|
+| FeaturedTransferHandler | toggleCurrentListing   | 11563 | 0       | 0        |
+|-------------------------+------------------------+-------+---------+----------|
+| FeaturedTransferHandler | transferListing        | 11683 | 0       | 0        |
+|-------------------------+------------------------+-------+---------+----------|
+| FeaturedTransferHandler | withdraw               | 11708 | 0       | 0        |
+╰-------------------------+------------------------+-------+---------+----------╯
+
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 178.72s (178.71s CPU time)
+
+Ran 15 tests for test/HookIntegration.t.sol:HookIntegrationTest
+[PASS] testAllDirectionsAndExactModesAcceptLimit() (gas: 650218)
+[PASS] testDuplicatePoolInitializationFails() (gas: 41653)
+[PASS] testDynamicFeePoolRejectedAtomically() (gas: 97839)
+[PASS] testFuzzHookDataHasNoAuthority(bytes) (runs: 256, μ: 210231, ~: 209980)
+[PASS] testFuzzRealSwapsSettleAndConserve(uint128,bool,bool,bool) (runs: 256, μ: 281404, ~: 283179)
+[PASS] testFuzzSignedBoundaryAndNeutralReturn(int256,bytes) (runs: 256, μ: 30766, ~: 29813)
+[PASS] testFuzzUnauthorizedCallbacks(address) (runs: 256, μ: 94945, ~: 95102)
+[PASS] testIntMinIntMaxAndZeroFailClearly() (gas: 88270)
+[PASS] testLimitCapsOnlySpecifiedSideNotUnspecifiedSide() (gas: 427039)
+[PASS] testLiquidityWithdrawalRemainsAvailableAfterRejectedSwap() (gas: 184825)
+[PASS] testOverLimitRevertsThroughManagerInAllModes() (gas: 253819)
+[PASS] testSettlementFailureRollsBackCounterAndPoolState() (gas: 388376)
+[PASS] testTwoNewPoolsReuseOneDeployedHook() (gas: 624953)
+[PASS] testUnusedCallbacksAlwaysRevert() (gas: 209241)
+[PASS] testWrongHookAndUnknownPoolRejected() (gas: 124522)
+Suite result: ok. 15 passed; 0 failed; 0 skipped; finished in 519.07ms (491.98ms CPU time)
+
+Ran 29 tests for test/HookJobRequester.t.sol:HookJobRequesterTest
+[PASS] testAnswerSignedForAnotherConsumerRefused() (gas: 2191898)
+[PASS] testBodyIsExactTemplateWithStepsSpecAndQuotedBrief() (gas: 947576)
+[PASS] testBriefValidation() (gas: 1870180)
+[PASS] testCallbackWithUnexpectedAbiFailsSafeAndJobCanExpire() (gas: 1202748)
+[PASS] testCallbacksFitTheIntakeStipend() (gas: 1859307)
+[PASS] testConstructorRefusesZeroAddresses() (gas: 10483)
+[PASS] testForgedExpiredWeakOrMistypedAnswersRefused() (gas: 2799455)
+[PASS] testFuzzPrintableAsciiBriefAcceptedUnlessReserved(bytes32,uint8) (runs: 256, μ: 507901, ~: 868182)
+[PASS] testJobFailureClosesJobOnceAndIsNotAVerdict() (gas: 1954526)
+[PASS] testJobIdCollidingWithPendingReviewAskRefused() (gas: 2464996)
+[PASS] testOpenJobPaysOncePullsExactPriceAndTracksRequestId() (gas: 1153399)
+[PASS] testOwnerSettersAreOwnerOnlyAndValidated() (gas: 638330)
+[PASS] testPriceCeilingProtectsStandingAllowance() (gas: 3071134)
+[PASS] testResultAcceptedOnceFromIntakeOnly() (gas: 1116520)
+[PASS] testReusedRequestIdRefused() (gas: 1242437)
+[PASS] testReviewExpiryRequestedByRequesterAndConfirmedByOwner() (gas: 2378290)
+[PASS] testReviewFailureLeavesNoVerdictAndAllowsRetry() (gas: 3487817)
+[PASS] testReviewNotPassedIsStoredNotReverted() (gas: 2275740)
+[PASS] testReviewOnlyForDeliveredOrExpiredJobsByRequester() (gas: 2404055)
+[PASS] testReviewPassedOnlyFromSignedOracleAnswer() (gas: 2494788)
+[PASS] testSameAttestationCannotSettleASecondAsk() (gas: 4306375)
+[PASS] testSignerRotationTakesEffect() (gas: 2361296)
+[PASS] testStaticSiteReadContract() (gas: 1019818)
+[PASS] testSweepRecoversStrayTokens() (gas: 137069)
+[PASS] testUnconfiguredRequesterRefusesUntilOwnerSetsTemplates() (gas: 1560555)
+[PASS] testUnknownRequestIdRefused() (gas: 142556)
+[PASS] testUnpricedActionAndVersion1IntakeRefusedWithoutPayment() (gas: 472643)
+[PASS] testVersion1IntakeWorksWithTheFailureHookOff() (gas: 3249057)
+[PASS] testWalletMustApproveAndPay() (gas: 373289)
+Suite result: ok. 29 passed; 0 failed; 0 skipped; finished in 242.95ms (238.67ms CPU time)
+
+Ran 11 tests for test/HookListingRegistry.t.sol:HookListingRegistryTest
+[PASS] testAuditUrlAndAuditLabelNeverConferVerification() (gas: 1866291)
+[PASS] testFreeCreateAndEditPersistAllFieldsAndHistory() (gas: 1618302)
+[PASS] testFuzzUnauthorizedCallerCannotModifyListing(address) (runs: 256, μ: 842646, ~: 842726)
+[PASS] testFuzzValidLabelsRemainSearchable(uint128) (runs: 256, μ: 747481, ~: 747158)
+[PASS] testInvalidIdentityUnknownRecordsAndPagesRevert() (gas: 931804)
+[PASS] testInvalidMetadataIsAtomicAndReferencesMayBeAbsent() (gas: 1106108)
+[PASS] testLabelValidationBoundsAndDuplicates() (gas: 965451)
+[PASS] testSameHookCanHaveIndependentOwnersButNoOwnerDuplicates() (gas: 2284749)
+[PASS] testSearchByLabelChainOwnerAndVisibilityUsesBoundedAscendingCursor() (gas: 2329424)
+[PASS] testTransferCanBeCancelledOrReplaced() (gas: 1022369)
+[PASS] testTwoStepListingTransferAndDuplicateProtection() (gas: 1824321)
+Suite result: ok. 11 passed; 0 failed; 0 skipped; finished in 348.05ms (346.11ms CPU time)
+
+Ran 21 tests for test/FeaturedPlacements.t.sol:FeaturedPlacementsTest
+[PASS] testAdminRotationIsTwoStepAndDoesNotControlCustody() (gas: 805958)
+[PASS] testBadTokenConfigurationAndConstructorArguments() (gas: 4903044)
+[PASS] testCancelledPlacementCannotSettleOrCancelTwice() (gas: 1586722)
+[PASS] testDepositWithdrawBelongsToDepositorAndCannotBeSwept() (gas: 693423)
+[PASS] testDirectTransfersAreNotCreditsAndCannotBeSwept() (gas: 496850)
+[PASS] testEditingInvalidatesStalePurchaseAndFeeDisclosuresAreSnapshotted() (gas: 1995083)
+[PASS] testExpirySettlementIsPermissionlessAndCannotBeRepeatedOrRefunded() (gas: 1830989)
+[PASS] testFeaturedOrderingPaginationAndLabelsSkipCancelledAndExpired() (gas: 3095145)
+[PASS] testFuzzCancellationConservesFundsAndRoundsInPayersFavor(uint256) (runs: 256, μ: 1591104, ~: 1591843)
+[PASS] testHalfDurationCancellationSplitsFeeAndProceedsArePullBased() (gas: 1742376)
+[PASS] testImmediateCancellationFullyRefundsThenOwnerCanWithdraw() (gas: 1648242)
+[PASS] testOnlyListingOwnerCanBuyAndUnrelatedAccountsCannotCancelIncludingAdmin() (gas: 1766171)
+[PASS] testPurchaseCostsExactlyPointOneImdAndHasSevenDayAdLabel() (gas: 1481692)
+[PASS] testRecipientRotationInvalidatesStalePurchaseBeforeFundsAreLocked() (gas: 1453644)
+[PASS] testRecipientsAreSnapshottedAndChangingThemCannotTakeOldFunds() (gas: 2414998)
+[PASS] testSingleLivePlacementButCanRenewUnsettledExpiredOrCancelledPlacement() (gas: 2497512)
+[PASS] testSnapshotSurvivesEditingArchivingTransferAndRefundStaysWithPayer() (gas: 2399345)
+[PASS] testStaleTermsInactiveListingInsufficientBalanceAndDeadlineFailBeforeDebit() (gas: 1405175)
+[PASS] testUnknownIdsAndInvalidPagesFail() (gas: 228111)
+[PASS] testUnsetConfigurationAndTokenCanOnlyBeChosenOnce() (gas: 2598769)
+[PASS] testZeroAmountsInvalidRecipientsAndExcessWithdrawalsFail() (gas: 629582)
+Suite result: ok. 21 passed; 0 failed; 0 skipped; finished in 334.45ms (332.13ms CPU time)
+
+Ran 5 tests for test/FeaturedTransfer.t.sol:FeaturedTransferTest
+[PASS] testBuyerCanClearSellersAdAndBuyItsOwnWhileOnlySellerGetsRefund() (gas: 3188812)
+[PASS] testFuzzNewOwnerCancellationConservesAllCredits(uint256) (runs: 256, μ: 1713076, ~: 1713805)
+[PASS] testIntermediateOwnerLosesCancellationPowerButOriginalPayerKeepsIt() (gas: 1869005)
+[PASS] testNewOwnerCannotCancelAtExpiryAndCanRenewBeforeOldSettlement() (gas: 2169353)
+[PASS] testProposedOwnerCannotCancelUntilAcceptingAndAdminCannotCancel() (gas: 1838309)
+Suite result: ok. 5 passed; 0 failed; 0 skipped; finished in 329.62ms (328.02ms CPU time)
+
+Ran 1 test for test/FeaturedInvariant.t.sol:FeaturedInvariantTest
+[PASS] invariantEveryTokenIsAccountedForAndEveryCreditHasBacking() (runs: 256, calls: 128000, reverts: 0)
+
+╭-----------------+-----------------+-------+---------+----------╮
+| Contract        | Selector        | Calls | Reverts | Discards |
++================================================================+
+| FeaturedHandler | advanceTime     | 14306 | 0       | 0        |
+|-----------------+-----------------+-------+---------+----------|
+| FeaturedHandler | cancel          | 14047 | 0       | 0        |
+|-----------------+-----------------+-------+---------+----------|
+| FeaturedHandler | claim           | 14203 | 0       | 0        |
+|-----------------+-----------------+-------+---------+----------|
+| FeaturedHandler | deposit         | 14089 | 0       | 0        |
+|-----------------+-----------------+-------+---------+----------|
+| FeaturedHandler | purchase        | 14278 | 0       | 0        |
+|-----------------+-----------------+-------+---------+----------|
+| FeaturedHandler | rotateRecipient | 14248 | 0       | 0        |
+|-----------------+-----------------+-------+---------+----------|
+| FeaturedHandler | settle          | 14060 | 0       | 0        |
+|-----------------+-----------------+-------+---------+----------|
+| FeaturedHandler | toggleListing   | 14378 | 0       | 0        |
+|-----------------+-----------------+-------+---------+----------|
+| FeaturedHandler | withdraw        | 14391 | 0       | 0        |
+╰-----------------+-----------------+-------+---------+----------╯
+
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 191.23s (191.23s CPU time)
+
+Ran 28 test suites in 205.35s (408.30s CPU time): 253 tests passed, 0 failed, 0 skipped (253 total tests)
+
+Exit status: 0

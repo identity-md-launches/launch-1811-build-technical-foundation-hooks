@@ -1,0 +1,31 @@
+Command argv: ["node", "--test", "test/requester-abi.test.cjs", "test/listings-reader.test.cjs"]
+✔ browser selectors match compiler artifacts (18.727394ms)
+✔ decode static listing and dynamic metadata including label offsets (182.712904ms)
+✔ decode ordered featured and organic pages with continuation cursors (231.983564ms)
+✔ every paid card visibly carries #ad and renders hostile text as text (197.466668ms)
+✔ reject malformed ABI, absent ad labels and unexpected placement status (202.94323ms)
+✔ listing references visibly escape bidi and invisible characters without link creation (58.476205ms)
+✔ label encoding matches independent ABI encoder and rejects noncanonical search text (77.495382ms)
+✔ published requester ABI is exactly the compiler ABI and has only capped paid calls (32.867294ms)
+✔ status page selectors and job event topics match the compiled contract (979.492883ms)
+✔ pending receipt shows explicit signer revocation before individual closure (4.09546ms)
+✔ receipt reads distinguish pending arrival, retained answer and terminal job (12.91452ms)
+✔ malformed revocation reads fail rather than display a verified receipt (4.440768ms)
+✔ job callback and URI event use the protocol tuple without changing the static Job or oracle ABI (0.822955ms)
+✔ URI event decoder agrees with cast for IPFS, HTTPS, Unicode and empty strings (328.607586ms)
+✔ URI decoder rejects malformed offsets, lengths, padding, oversized data and invalid UTF-8 (22.044488ms)
+✔ history visibly escapes every bidi, zero-width and control code point including leading BOM (25.505213ms)
+✔ history exposes URI only as unverified text, with no HTML, links or content fetching (21.074693ms)
+✔ history filters other contracts, requests, unknown topics and removed logs (10.463676ms)
+✔ malformed URI logs show unavailable without hiding later history or granting review approval (22.584458ms)
+✔ build fingerprints match compiler artifacts and requester runtime stays below EIP-170 (278.078908ms)
+ℹ tests 20
+ℹ suites 0
+ℹ pass 20
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4126.986021
+
+Exit status: 0

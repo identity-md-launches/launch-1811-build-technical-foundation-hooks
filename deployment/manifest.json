@@ -1,0 +1,213 @@
+{
+  "format": "hooks-store-deployment-preparation/v1",
+  "sourceCommit": "b157921170c318f8eeee638b06025a81cf768c02",
+  "status": "Preparation only; owner, recipient and activation remain approval-gated",
+  "launchKind": "evm_contracts",
+  "launcher": {
+    "sources": [
+      "https://imd.fun/docs/#job-body-launch-fields",
+      "https://api.imd.fun/reads/skill/evm-contracts-launch",
+      "https://explorer.imd.fun/launch"
+    ],
+    "deploysInOrder": true,
+    "postDeploymentCalls": false,
+    "maxContracts": 8,
+    "maxConstructorWords": 16,
+    "value": "0",
+    "handoff": "The separate IMD manifest stage creates launch.json. This file is not that schema. The current launcher recipe asks for fully constructor-configured applications; these audited contracts need later owner calls. Confirm acceptance of a deliberately unconfigured deployment plus owner handoff, or use the explicit deployment transactions. Never claim the launcher runs the setters."
+  },
+  "proposedAdProceedsRecipient": "0x3f252e859a277a86A3967c11D4E054B2f07a1F22",
+  "contracts": [
+    {
+      "contract": "HookListingRegistry",
+      "source": "src/store/HookListingRegistry.sol",
+      "constructorTypes": [],
+      "constructorArgs": [],
+      "dependsOn": [],
+      "ownerCalls": [],
+      "readback": [
+        "listingCount()"
+      ]
+    },
+    {
+      "contract": "FeaturedPlacements",
+      "source": "src/store/FeaturedPlacements.sol",
+      "constructorTypes": [
+        "address",
+        "address"
+      ],
+      "constructorArgs": [
+        "$owner",
+        "$contract:HookListingRegistry"
+      ],
+      "dependsOn": [
+        "HookListingRegistry"
+      ],
+      "ownerCalls": [
+        "configureToken(address)",
+        "setProceedsRecipient(address)"
+      ],
+      "readback": [
+        "owner()",
+        "pendingOwner()",
+        "registry()",
+        "imd()",
+        "proceedsRecipient()",
+        "PRICE()",
+        "DURATION()"
+      ]
+    },
+    {
+      "contract": "HookJobRequester",
+      "source": "src/imd/HookJobRequester.sol",
+      "constructorTypes": [
+        "address",
+        "address",
+        "address",
+        "address",
+        "uint256"
+      ],
+      "constructorArgs": [
+        "$owner",
+        "$intake",
+        "$asset",
+        "$oracleSigner",
+        "$maxPrice"
+      ],
+      "dependsOn": [],
+      "existingScript": "script/DeployHookJobRequester.s.sol:DeployHookJobRequester",
+      "ownerCalls": [
+        "setFailureHook(bool)",
+        "setTimeouts(uint64,uint64)",
+        "setJobTemplate(bytes32,bytes,bytes,bytes)",
+        "setReviewTemplate(bytes32,bytes,bytes,uint16,uint16)"
+      ],
+      "readback": [
+        "owner()",
+        "pendingOwner()",
+        "intake()",
+        "asset()",
+        "maxPrice()",
+        "oracleSigner()",
+        "failureHook()",
+        "jobTimeout()",
+        "reviewTimeout()",
+        "jobAction()",
+        "jobBodyPrefix()",
+        "jobBodyMiddle()",
+        "jobBodySuffix()",
+        "reviewAction()",
+        "reviewBodyPrefix()",
+        "reviewBodySuffix()",
+        "minPanelSize()",
+        "minAgreed()",
+        "eip712Domain()"
+      ],
+      "activation": "Leave both templates unset for infrastructure testing. Paid-pilot activation requires approved templates and successful free body checks plus separately approved paid work."
+    },
+    {
+      "contract": "HooksStoreFactory",
+      "source": "src/HooksStoreFactory.sol",
+      "constructorTypes": [],
+      "constructorArgs": [],
+      "dependsOn": [],
+      "onlyChainIds": [
+        31337,
+        11155111,
+        84532,
+        46630
+      ],
+      "existingScript": "script/DeployStore.s.sol:DeployStore",
+      "ownerCalls": [],
+      "readback": [
+        "runtimeCodeHash()"
+      ],
+      "limitation": "Testnet-only factory; deploys only BoundedSwapHook. No arbitrary or generated-hook bytecode support."
+    }
+  ],
+  "profiles": {
+    "sepolia": {
+      "chainId": 11155111,
+      "purpose": "infrastructure",
+      "includeFactory": true,
+      "intake": "0xa43e6f75ee006411f79ac1c84120606c2330de82",
+      "asset": "0x44a1cd38474fb1748400e7deb5f8d786cce3f89a",
+      "oracleSigner": "0x5598aa9146215bc13eb26f2c692ad1461fd32982",
+      "sources": [
+        "https://imd.fun/docs/#intake-addresses",
+        "https://api.imd.fun/oracle/requests?limit=1"
+      ],
+      "caveat": "Official docs describe oracle-only Intake. Captured capabilities omits Sepolia from onchain.chains. Never enable job.open here; infrastructure readiness is not paid-pilot readiness.",
+      "observedCodeHashes": {
+        "intake": "0x1359f8e0e9a839fd8c14e058822b25010e7ba239780bd0c6b868049f0ae5194d",
+        "asset": "0x3538eb43c63a76f91479ff1b5074d9cf2adbd6584813c1acce73435980d5870a",
+        "oracleSigner": "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470"
+      },
+      "observedAtBlock": "0xb610c6",
+      "observationSource": "docs/checks/deployment-preparation/live-rpc.json"
+    },
+    "ethereum": {
+      "chainId": 1,
+      "purpose": "paid-pilot",
+      "includeFactory": false,
+      "intake": "0xa43e6f75ee006411f79ac1c84120606c2330de82",
+      "asset": "0xd34a99bc0f67ae1bbd63c660e6d0b0dd03e263b7",
+      "oracleSigner": "0x5598aa9146215bc13eb26f2c692ad1461fd32982",
+      "sources": [
+        "https://api.imd.fun/requests/capabilities",
+        "https://imd.fun/docs/#intake-addresses",
+        "https://api.imd.fun/oracle/requests?limit=1"
+      ],
+      "observedCodeHashes": {
+        "intake": "0xdf76139e1b7dfe05bdf55e48e65076e4763a40d470fcf5da58034a488e30bdaf",
+        "asset": "0x79a1ae149d27d4aae006d4dd75cb834222c9623799bbf34359428aaf66fec3bf",
+        "oracleSigner": "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470"
+      },
+      "observedAtBlock": "0x18fee26",
+      "observationSource": "docs/checks/deployment-preparation/live-rpc.json"
+    },
+    "robinhood": {
+      "chainId": 4663,
+      "purpose": "paid-pilot",
+      "includeFactory": false,
+      "intake": "0xa43e6f75ee006411f79ac1c84120606c2330de82",
+      "asset": "0x5f7bb59365ce557c26dbcaa4ee9d39a4b95b7127",
+      "oracleSigner": "0x5598aa9146215bc13eb26f2c692ad1461fd32982",
+      "sources": [
+        "https://api.imd.fun/requests/capabilities",
+        "https://imd.fun/docs/#intake-addresses",
+        "https://api.imd.fun/oracle/requests?limit=1"
+      ],
+      "observedCodeHashes": {
+        "intake": "0xd96f270d009efd0fda0a2da91bb7f835a2686182e3abccd18966984134d3b5e8",
+        "asset": "0xa9a0e893f7d8327fe96f823291ad9199af5456c2f9fd80bbdeff29d1e91a93e2",
+        "oracleSigner": "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470"
+      },
+      "observedAtBlock": "0x5670d4a",
+      "observationSource": "docs/checks/deployment-preparation/live-rpc.json"
+    },
+    "local": {
+      "chainId": 31337,
+      "purpose": "local-mocks-only",
+      "includeFactory": true,
+      "intake": null,
+      "asset": null,
+      "oracleSigner": null,
+      "sources": [],
+      "caveat": "Supply addresses created by a disposable local fixture; never reuse for a public deployment."
+    }
+  },
+  "actions": {
+    "job.open": "0x6a6f622e6f70656e406a6f622d31000000000000000000000000000000000000",
+    "oracle.request": "0x6f7261636c652e72657175657374406f7261636c652d31000000000000000000"
+  },
+  "excluded": [
+    "public deployment",
+    "signatures",
+    "paid requests",
+    "token creation",
+    "pool creation",
+    "production factory changes",
+    "generated-hook deployment"
+  ]
+}

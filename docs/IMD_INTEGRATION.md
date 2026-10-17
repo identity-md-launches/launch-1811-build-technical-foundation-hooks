@@ -20,11 +20,12 @@
 
    A refused or unagreed ask (`onReviewFailure`, before a receipt) sets `Unanswered` and permits a new paid ask. After `reviewTimeout`, the requester can call `expireReview(jobId)` **only without a receipt**, but this now requests closure: the ask stays `Pending`, accepts delivery/binding, and blocks retries. Only the owner's `confirmReviewExpiry(intakeId)` closes it strictly after the ask deadline and after independently checking that no valid answer will be delivered. The owner can also close an abandoned overdue ask without a requester expiry request. Both callback/expiry-request orders preserve a late valid answer. Owner-confirmed closure is terminal for that Intake ID. A retained answer can only be finalized or closed through guarded owner recovery below.
 
-Callbacks run under the Intake's 200,000-gas stipend. `ReviewDelivery.t.sol` and `ReviewReceiptGas.t.sol` use the mock's one-attempt path with cold requester/signer access, including ECDSA, EIP-7702 key signatures, a 5-of-7 ERC-1271 signer and the audit's 22-cold-read stressor. They verify retained answers and irrevocable fee loss for invalid or over-budget callbacks. Direct calls in other tests probe revert reasons; they do not claim that Intake retries. See the callback budget below; the actual production signer and Intake still require a pilot.
+Production callbacks run under the Intake's 200,000-gas stipend. Current docs distinguish
+Sepolia's 1,000,000-gas allowance; conservative local tests still use 200k. `ReviewDelivery.t.sol` and `ReviewReceiptGas.t.sol` use the mock's one-attempt path with cold requester/signer access, including ECDSA, EIP-7702 key signatures, a 5-of-7 ERC-1271 signer and the audit's 22-cold-read stressor. They verify retained answers and irrevocable fee loss for invalid or over-budget callbacks. Direct calls in other tests probe revert reasons; they do not claim that Intake retries. See the callback budget below; the actual production signer and Intake still require a pilot.
 
 ## Job result callback and URI
 
-The [protocol's completion tuple](https://imd.fun/docs/#what-comes-back) is
+The [protocol's completion tuple](https://imd.fun/docs/#intake-what-comes-back) is
 `(bytes32 requestId, bytes32 resultHash, string uri)`. The requester registers
 `onJobResult(bytes32,bytes32,string)` (selector `0x325a77b4`), stores the **supplied** hash
 unchanged, keeps `JobDelivered(requestId, resultHash)`, and additionally emits
@@ -42,7 +43,9 @@ not prove code safety or that an independent review passed. Intake/owner trust r
 The URI lives only in event data: `Job` and its 15-word `getJob` return stay unchanged. Index
 `JobResultURI` by **chain, requester contract and request ID**, retaining block/transaction/log
 identity and handling reorgs. The static page displays it only as unverified `textContent` in
-history. It creates no link and never fetches the location. Empty strings are shown explicitly;
+history. Unicode controls, bidi/zero-width and default-ignorable characters are visibly escaped
+as `\u{HEX}` (including a leading BOM); ordinary printable Unicode is preserved. It creates no
+link and never fetches the location. Empty strings are shown explicitly;
 malformed ABI, invalid UTF-8 or data over the reader's 32 KiB display limit produce an unavailable
 message without hiding the remaining history. That display limit is not a protocol or contract
 length restriction. An excessive URI can exhaust the fixed callback gas: no finite stipend can
@@ -283,6 +286,13 @@ Normal rotation preserves historical verification until the owner explicitly rev
 
 ## Callback gas budget
 
+The deployment-preparation regression reproduces the audit's cold clean Open-job URI measurement:
+20,224 bytes delivered under exactly 200,000 forwarded gas; 20,256 bytes failed and consumed the
+one attempt/fee. **This is a pilot fixture measurement, not a universal safe URI ceiling.**
+Use short writer URIs with headroom and measure the actual chain/writer path; the reader's 32 KiB
+limit is unrelated. The [pilot runbook](DEPLOYMENT_PREPARATION.md#uri-gas-and-display-pilot-checks)
+records the setup and current Sepolia gas distinction. No onchain limit or compiler setting changed.
+
 The review callback stores four full-width context words and one packed metadata word; it does not
 truncate UUIDs, chain IDs or question hashes. `requestReview` preallocates bit 255 of the metadata
 word (about 22.1k additional request-transaction storage gas). Receipt writes that existing word
@@ -377,7 +387,7 @@ Until the owner calls these setters, `openJob` reverts `NotConfigured("jobTempla
 
 | Setter | What to set | Where the owner gets it |
 |---|---|---|
-| `setJobTemplate(action, prefix, middle, suffix)` | `job.open` action id and body template. The proposed template is in `test/helpers/ImdTemplates.sol`. | The action id string and the `job.open` body schema come from IdentityMD's `docs/onchain-intake.md`. They are **not** guessed here: the tests use `"job.open@test"`. Check the price with `Intake.priceOf(action, imd)`. |
+| `setJobTemplate(action, prefix, middle, suffix)` | `job.open` action id and body template. The historical `test/helpers/ImdTemplates.sol` is a local fixture only; its job shape is not the current paid body schema. Use an approved, free-checked bundle as described in [deployment preparation](DEPLOYMENT_PREPARATION.md#template-activation-and-a-real-paid-pilot). | The action id string and the `job.open` body schema come from IdentityMD's `docs/onchain-intake.md`. They are **not** guessed here: the tests use `"job.open@test"`. Check the price with `Intake.priceOf(action, imd)`. |
 | `setReviewTemplate(action, prefix, suffix, minPanel, minAgreed)` | `bytes32("oracle.request@oracle-1")`, the review question with the right `chainId`, and panel minimums matching the body (7 seats / 5 agreement in the example). Relative `window.hours:1` uses receipt-first confirmation; `validForSeconds:3600` limits arrival | Oracle-consumer reference. Fix `chainId` and the definitions for the launch chain. Confirm the wording with `POST /requests/check` from an operator machine. |
 | `bindReview(intakeId, bodyHash, oracleId, questionHash, chainId, fromBlock, toBlock)` | Once per pending review, normally **after receipt**: independently verify the exact UUID/canonical question/window and confirm the body fingerprint. A matching retained receipt finalizes immediately; no additional Intake fee | Authenticated protocol mapping and canonical question document; live post-delivery availability not yet verified |
 | `discardReviewReceipt(intakeId, bodyHash, oracleId, questionHash, chainId, fromBlock, toBlock)` | Close an unbound misdelivery with a different available true UUID, or an exact matching receipt with an onchain UUID conflict. Preserve history and UUID state | Check mapping offchain as for binding; no mapping proof is verified onchain |

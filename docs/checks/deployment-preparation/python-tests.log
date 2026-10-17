@@ -1,0 +1,39 @@
+Command argv: ["python3", "-m", "unittest", "discover", "-s", "test", "-p", "test_*.py", "-v"]
+Started: 2026-10-17T04:30:30.072951+00:00
+test_actual_unsold_overpriced_and_chain_mismatch_fail_preflight (test_deployment_preparation.DeploymentPreparationTest.test_actual_unsold_overpriced_and_chain_mismatch_fail_preflight) ... ok
+test_body_checks_reject_blockers_wrong_chain_old_fixture_and_changed_approval (test_deployment_preparation.DeploymentPreparationTest.test_body_checks_reject_blockers_wrong_chain_old_fixture_and_changed_approval) ... ok
+test_both_rpc_transports_are_read_only_and_observe_same_snapshot (test_deployment_preparation.DeploymentPreparationTest.test_both_rpc_transports_are_read_only_and_observe_same_snapshot) ... ok
+test_complete_unsigned_deploy_configure_readback_and_idempotence (test_deployment_preparation.DeploymentPreparationTest.test_complete_unsigned_deploy_configure_readback_and_idempotence) ... ok
+test_conflicting_one_time_token_and_wrong_caller_fail (test_deployment_preparation.DeploymentPreparationTest.test_conflicting_one_time_token_and_wrong_caller_fail) ... ok
+test_constructor_dependency_order_and_no_factory_on_production (test_deployment_preparation.DeploymentPreparationTest.test_constructor_dependency_order_and_no_factory_on_production) ... ok
+test_exact_templates_and_settings_calldata_then_all_readbacks (test_deployment_preparation.DeploymentPreparationTest.test_exact_templates_and_settings_calldata_then_all_readbacks) ... ok
+test_existing_scripts_simulate_without_broadcasting (test_deployment_preparation.DeploymentPreparationTest.test_existing_scripts_simulate_without_broadcasting) ... ok
+test_missing_code_wrong_owner_wrong_registry_and_immutable_tamper_fail (test_deployment_preparation.DeploymentPreparationTest.test_missing_code_wrong_owner_wrong_registry_and_immutable_tamper_fail) ... ok
+test_no_guessed_owner_or_unapproved_recipient_or_payee_substitution (test_deployment_preparation.DeploymentPreparationTest.test_no_guessed_owner_or_unapproved_recipient_or_payee_substitution) ... ok
+test_public_protocol_code_change_requires_new_review (test_deployment_preparation.DeploymentPreparationTest.test_public_protocol_code_change_requires_new_review) ... ok
+test_verify_build_detects_artifact_change_and_cli_refuses_draft_creation (test_deployment_preparation.DeploymentPreparationTest.test_verify_build_detects_artifact_change_and_cli_refuses_draft_creation) ... ok
+test_bad_receipts_and_bad_bounds_fail_closed (test_receipts.ReceiptTest.test_bad_receipts_and_bad_bounds_fail_closed) ... ok
+test_pending_then_mined_succeeds (test_receipts.ReceiptTest.test_pending_then_mined_succeeds) ... ok
+test_reverted_receipt_is_not_pending_and_never_retried (test_receipts.ReceiptTest.test_reverted_receipt_is_not_pending_and_never_retried) ... ok
+test_rpc_error_is_not_misreported_as_transaction_revert (test_receipts.ReceiptTest.test_rpc_error_is_not_misreported_as_transaction_revert) ... ok
+test_timeout_is_bounded_including_rpc_time (test_receipts.ReceiptTest.test_timeout_is_bounded_including_rpc_time) ... ok
+test_transport_expiring_at_overall_deadline_is_a_receipt_timeout (test_receipts.ReceiptTest.test_transport_expiring_at_overall_deadline_is_a_receipt_timeout) ... ok
+test_free_endpoint_payload_and_success_failure_evidence (test_request_body_check.RequestBodyCheckTest.test_free_endpoint_payload_and_success_failure_evidence) ... ok
+test_chain_mismatch_and_mainnets_rejected (test_store_sdk.StoreSdkTest.test_chain_mismatch_and_mainnets_rejected) ... ok
+test_chat_and_visual_use_identical_canonical_spec (test_store_sdk.StoreSdkTest.test_chat_and_visual_use_identical_canonical_spec) ... ok
+test_every_required_field_is_required (test_store_sdk.StoreSdkTest.test_every_required_field_is_required) ... ok
+test_manager_code_and_factory_must_match (test_store_sdk.StoreSdkTest.test_manager_code_and_factory_must_match) ... ok
+test_numeric_boundaries_and_no_float_coercion (test_store_sdk.StoreSdkTest.test_numeric_boundaries_and_no_float_coercion) ... ok
+test_plan_deploy_and_verify_real_create2_locally (test_store_sdk.StoreSdkTest.test_plan_deploy_and_verify_real_create2_locally) ... ok
+test_read_only_client_refuses_transaction_submission (test_store_sdk.StoreSdkTest.test_read_only_client_refuses_transaction_submission) ... ok
+test_receipt_polling_on_non_automining_node_and_revert (test_store_sdk.StoreSdkTest.test_receipt_polling_on_non_automining_node_and_revert) ... ok
+test_schema_document_matches_shared_constants (test_store_sdk.StoreSdkTest.test_schema_document_matches_shared_constants) ... ok
+test_unknown_fields_and_duplicate_json_keys_rejected (test_store_sdk.StoreSdkTest.test_unknown_fields_and_duplicate_json_keys_rejected) ... ok
+test_versions_templates_and_permissions_fail_closed (test_store_sdk.StoreSdkTest.test_versions_templates_and_permissions_fail_closed) ... ok
+
+----------------------------------------------------------------------
+Ran 30 tests in 33.824s
+
+OK
+
+Exit status: 0

@@ -6,7 +6,7 @@ The repository's `.git/` write prohibition is respected: no new commit was creat
 [Implementation diff](implementation.patch) includes source, callers, tests, ABI, fingerprints and
 current documentation; this evidence directory and its raw logs are delivered separately.
 
-The [protocol](https://imd.fun/docs/#what-comes-back) specifies a job result tuple of
+The [protocol](https://imd.fun/docs/#intake-what-comes-back) specifies a job result tuple of
 `(bytes32 requestId, bytes32 resultHash, string uri)`. The old callback decoded `(bytes32,bytes)`
 and hashed the bytes it received, so the existing mock callers concealed a protocol mismatch.
 The production change is limited to that callback, its documentation and one additional event.

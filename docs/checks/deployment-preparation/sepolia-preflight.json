@@ -1,0 +1,17 @@
+{
+  "chainId": 11155111,
+  "block": "0xb610fb",
+  "profile": "sepolia",
+  "evidenceKind": "live-read-only",
+  "codeHashes": {
+    "intake": "0x1359f8e0e9a839fd8c14e058822b25010e7ba239780bd0c6b868049f0ae5194d",
+    "asset": "0x3538eb43c63a76f91479ff1b5074d9cf2adbd6584813c1acce73435980d5870a",
+    "oracleSigner": "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470"
+  },
+  "prices": {
+    "job.open": "0",
+    "oracle.request": "500000000000000000"
+  },
+  "paidPilotReady": false,
+  "limitation": "infrastructure only; no job.open; capabilities/docs discrepancy remains"
+}

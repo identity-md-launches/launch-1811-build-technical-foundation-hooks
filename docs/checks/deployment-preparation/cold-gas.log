@@ -1,0 +1,56 @@
+Compiling 106 files with Solc 0.8.26
+Solc 0.8.26 finished in 17.58s
+Compiler run successful!
+
+Ran 1 test for test/JobProtocolTuple.t.sol:JobProtocolGasTest
+[PASS] testColdTupleWithLongURIFits200kAndRuntimeLimit() (gas: 894390)
+Logs:
+  Cold job tuple with 4096-byte URI minimum forwarded gas: 67052
+  Requester deployed runtime bytes: 24117
+
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 20.33ms (9.34ms CPU time)
+
+Ran 1 test for test/UriPilotGas.t.sol:UriPilotGasTest
+[PASS] testColdMeasuredUriBoundaryAndOneAttemptFeeLoss() (gas: 872304)
+Logs:
+  Local cold URI bytes delivered under exact 200k: 20224
+  Local cold URI bytes exceeding exact 200k: 20256
+
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 5.39ms (700.46µs CPU time)
+
+Ran 8 tests for test/ReviewReceiptGas.t.sol:ReviewReceiptGasTest
+[PASS] testAudit22ColdReadsNowRetainsOneShotReceiptAndBoundVerdict() (gas: 4150823)
+Logs:
+  Cold audit registry +22 reads receipt minimum forwarded gas: 187231
+  Cold audit registry +22 reads bound minimum forwarded gas: 149726
+
+[PASS] testColdEoaReceiptGasAndExactStipend() (gas: 1521757)
+Logs:
+  Cold EOA receipt minimum forwarded gas: 124984
+
+[PASS] testColdFiveOfSevenReceiptAfterExpiryRequestFitsStipend() (gas: 2836682)
+Logs:
+  Cold 5-of-7 receipt after expiry request minimum forwarded gas: 170077
+
+[PASS] testColdFiveOfSevenReceiptAndBoundCallbacksFitStipend() (gas: 4114308)
+Logs:
+  Cold 5-of-7 receipt minimum forwarded gas: 170077
+  Cold 5-of-7 bound minimum forwarded gas: 132553
+
+[PASS] testColdFiveOfSevenRetryReceiptBeforeReservationReleaseFitsStipend() (gas: 2938567)
+Logs:
+  Cold 5-of-7 reserved retry receipt minimum forwarded gas: 170077
+
+[PASS] testColdWrongPrebindingRetainsReceiptWithFiveOfSevenAndAuditSigner() (gas: 4934759)
+Logs:
+  Cold 5-of-7 mismatched pre-binding minimum forwarded gas: 175123
+  Cold audit +22 reads mismatched pre-binding minimum forwarded gas: 192286
+
+[PASS] testFuzzMultisignerRefusesWrongKeyDuplicateRevokedExpiredOrInsufficientSignatures(uint8) (runs: 256, μ: 381986, ~: 385495)
+Logs:
+  Bound result 1
+
+[PASS] testOverBudgetSignerStillFailsClosedAndLosesSingleAttemptWithoutPartialReceipt() (gas: 711516)
+Suite result: ok. 8 passed; 0 failed; 0 skipped; finished in 290.94ms (334.03ms CPU time)
+
+Ran 3 test suites in 295.40ms (316.66ms CPU time): 10 tests passed, 0 failed, 0 skipped (10 total tests)

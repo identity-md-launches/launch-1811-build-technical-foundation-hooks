@@ -1,0 +1,157 @@
+{
+  "sourceCommit": "b157921170c318f8eeee638b06025a81cf768c02",
+  "algorithm": "sha256",
+  "files": {
+    "dependencies.lock.json": "7e020eb009266adbc78c97455aacab9de9f36b071e1be718eb7af1ba994c0c00",
+    "foundry.toml": "1bfc82a5c62b148d66ded9fa34096ae14ddc95d0bb3e5d067cf14126960cef36",
+    "remappings.txt": "b8941d09c2ce72d8cd25d6f4564fcba85b87b277fab9ad3eb643d085d91655f0",
+    "script/DeployHook.s.sol": "f4001fef7617c775e35a12cb714d5953e4c5312e85d882388a04b28d0c47f61f",
+    "script/DeployHookJobRequester.s.sol": "a1121c701e505f513039a18c3cb457074c09ae0887cc2d99cbc274d38828d79e",
+    "script/DeployStore.s.sol": "3466f42efee8ac00cd53ef36759bfd8c7e9b5aaa303a3f3178792659b5a0dac5",
+    "src/BoundedSwapHook.sol": "718c5cf94ac61fcdc7ed3b82d86b8c5ace77bcfb657dec3bb9ac730d1e3fca9f",
+    "src/DisabledCallbacks.sol": "df889eafc206b38ed9dd4045d6d4b1558814e1116d14c6cf067d44bedd52cdc0",
+    "src/HookSpec.sol": "f8922c87424591405f4f0a8b70b505b79b7d3858d0289d9d23157be3f0520b9b",
+    "src/HooksStoreFactory.sol": "73ff62b154d53c3fcfa35019757dfe51d2c6346fd203e03d9df61965330d5dd9",
+    "src/deployment/DeploymentPolicy.sol": "8fd240a38f3cc915112d9e9e1bea682342d6ad788140774a9ab7623b9038031d",
+    "src/deployment/HookDeployment.sol": "1770c5fec1cc6212d705da31cb9395047b7d3021879edfa911f5dace40afba57",
+    "src/deployment/HookMiner.sol": "df61b7d11409985bb4bad8e313b3486b05155a964b94d236add1151d78e3553e",
+    "src/imd/HookJobRequester.sol": "d2e19ac0315386b05f4ffcbd4f9db8194dc42a92ad9677172eaee9d1d0cf80d2",
+    "src/imd/IIntake.sol": "1fbab751d469c12a3488a8f690e647aa315c6369478b3f34be46ba842f64cda2",
+    "src/imd/OracleAttestation.sol": "36c589a16ab829e31d0549d7e81e5961d3172580ff8f4ef980c1e9617e087a20",
+    "src/interfaces/IHooksStore.sol": "9eedb6a4ef45f7ca3bd5c1b5b9ea628c7a8edd2ebf0359e2db618c6214f65a24",
+    "src/store/ExactStoreToken.sol": "b745c4cee9e13edd71cd8290f52720197cf58da07bc7a5db9021d610719bf387",
+    "src/store/FeaturedPlacements.sol": "38c8dfdda297d9107f69da9908c0d257f62b2a0af70508de39f69e634a517f7d",
+    "src/store/HookListingRegistry.sol": "b868400163017d67a3ab81618bc3e3bb5acf939098a90e769486e6ec5d4f4052",
+    "src/store/StoreAdmin.sol": "20714eb0b2a724ca8bcb9cc3581e4451f3d59e3414a559deb736f3cfacb76337",
+    "src/vendor/openzeppelin/interfaces/IERC1271.sol": "2d17bba201aa2f9c55e317315b872272a60361848dfceb6b1e77081265c79a27",
+    "src/vendor/openzeppelin/interfaces/IERC5267.sol": "f89772d2d4fafcbef8b73bb10ee9a3373edec2eedb2f1b302320915b351dc3d1",
+    "src/vendor/openzeppelin/interfaces/IERC7913.sol": "f66aad4249885b0f11369bfa825dded60aa4baa0d76d9becdac9daa48c350350",
+    "src/vendor/openzeppelin/utils/Bytes.sol": "83301409f76680a04c5bc434ff63f4550c7a589bd65053ec9b40a84d79433dd2",
+    "src/vendor/openzeppelin/utils/Panic.sol": "270fc8401c1a13fae6a7a4a2dd6e381b95d658896701e51f0d3e2688acab3dec",
+    "src/vendor/openzeppelin/utils/ShortStrings.sol": "1cfa08d3c551e9ec0b9cd249b09987f04e7e90f352e1a5e3b0d6a3bc426b3de7",
+    "src/vendor/openzeppelin/utils/StorageSlot.sol": "75704538dcb223239280c6726d9a31cf769a7816718517c997fc7d63bdb70778",
+    "src/vendor/openzeppelin/utils/Strings.sol": "01394e54f03c7cc339d45cbd7b0e76200251bbf03a7c65969d35267550c316b9",
+    "src/vendor/openzeppelin/utils/cryptography/ECDSA.sol": "ab9c16933a1a4c4591ce939464a4f5446a4d6f493e8dfb17331c870071adc59e",
+    "src/vendor/openzeppelin/utils/cryptography/EIP712.sol": "2845caaaf70757b6cce612ae4ffbec2c382cb3d1cb9765c98fa649c0f5f1c794",
+    "src/vendor/openzeppelin/utils/cryptography/MessageHashUtils.sol": "e30d52636186f04c2ca5bcea28a3fde7cf5a93e309efd549a57ab17612fbe47c",
+    "src/vendor/openzeppelin/utils/cryptography/SignatureChecker.sol": "0e221fe4808a88445aa9a9cbe00df2740987dc6c060ec00fa4e5aab4b1822c96",
+    "src/vendor/openzeppelin/utils/math/Math.sol": "2c3aa1d51bea71e5e27b47893a0a8883f200b0b97714ae4b38303627fe63c919",
+    "src/vendor/openzeppelin/utils/math/SafeCast.sol": "9769274bf53f26a7c7896c526ea1980dc9bea5bf5c2a5fd04870008c4afc1de9",
+    "src/vendor/openzeppelin/utils/math/SignedMath.sol": "1ed50b1056af886752f0fb48a0165d381e69bb4a4b18b893b066dc144a7e08d7"
+  },
+  "contracts": {
+    "BoundedSwapHook": {
+      "bytecode": {
+        "sha256": "2c0a3bc52144c7b1329fbbb4d4c37461fab61c4a9ad3fe284b402c97bbb81853",
+        "bytes": 4930
+      },
+      "deployedBytecode": {
+        "sha256": "8c854b14e4b424827178db95a9a071f078f8f63cff8c29da22de4e5219e622d5",
+        "bytes": 3431
+      },
+      "immutableReferences": {}
+    },
+    "HooksStoreFactory": {
+      "bytecode": {
+        "sha256": "770867f5d0b38339a3e555a7f4d35930c37b06a7a389681823b75e0b606a7d83",
+        "bytes": 14097
+      },
+      "deployedBytecode": {
+        "sha256": "796088c0159f2bf039ed8cebc4d08b9342eeaf748363f5618349a0254732cd94",
+        "bytes": 13970
+      },
+      "immutableReferences": {}
+    },
+    "HookJobRequester": {
+      "bytecode": {
+        "sha256": "e01f20c30726307eba12cda3f94d7ada113c3326c94aa890f80065b5eb640893",
+        "bytes": 25861
+      },
+      "deployedBytecode": {
+        "sha256": "a12ab8f258f89c3e2b7be6d24ee18eb08027ffec5671d8a1478c70afe6fccd60",
+        "bytes": 24117
+      },
+      "immutableReferences": {
+        "62310": [
+          {
+            "start": 18640,
+            "length": 32
+          }
+        ],
+        "62312": [
+          {
+            "start": 18598,
+            "length": 32
+          }
+        ],
+        "62314": [
+          {
+            "start": 18556,
+            "length": 32
+          }
+        ],
+        "62316": [
+          {
+            "start": 18721,
+            "length": 32
+          }
+        ],
+        "62318": [
+          {
+            "start": 18761,
+            "length": 32
+          }
+        ],
+        "62321": [
+          {
+            "start": 18028,
+            "length": 32
+          }
+        ],
+        "62324": [
+          {
+            "start": 18077,
+            "length": 32
+          }
+        ]
+      }
+    },
+    "HookListingRegistry": {
+      "bytecode": {
+        "sha256": "729733d6415026ba4233ac86a7a9f113e10f66771a4f553b726e64c28fdaf7ea",
+        "bytes": 9063
+      },
+      "deployedBytecode": {
+        "sha256": "45b9c51cdb68c5cfd671898a1417f6cd6e07a039cea370b3232bfad7808a81c9",
+        "bytes": 9035
+      },
+      "immutableReferences": {}
+    },
+    "FeaturedPlacements": {
+      "bytecode": {
+        "sha256": "cb2a90cca09676c4a48dd46b50e0558624eb613efde4b894cef1933df88d6f0e",
+        "bytes": 8606
+      },
+      "deployedBytecode": {
+        "sha256": "c8da82e35fd052fef490210de6c3cfa802bf09d29b9d9d11f8a81cbcd39c040f",
+        "bytes": 8232
+      },
+      "immutableReferences": {
+        "56946": [
+          {
+            "start": 800,
+            "length": 32
+          },
+          {
+            "start": 2164,
+            "length": 32
+          },
+          {
+            "start": 4111,
+            "length": 32
+          }
+        ]
+      }
+    }
+  }
+}

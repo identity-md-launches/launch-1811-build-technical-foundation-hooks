@@ -2,6 +2,7 @@
 "use strict";
 
 const HooksListings = (() => {
+  const display = typeof module !== "undefined" ? require("./display-text.js").escapeDisplayText : escapeDisplayText;
   const selectors = Object.freeze({
     registry: "7b103999", listingCount: "a9b07c26", placementCount: "bce5c67d",
     getListing: "107a274a", getMetadata: "7477efa4", search: "0b0da480",
@@ -42,7 +43,7 @@ const HooksListings = (() => {
       const length = this.offset(offset);
       if (length > max || (offset + 32 + length) * 2 > this.hex.length) throw new Error("Invalid string length");
       const hex = this.hex.slice((offset + 32) * 2, (offset + 32 + length) * 2);
-      return new TextDecoder().decode(Uint8Array.from(hex.match(/../g) || [], (byte) => parseInt(byte, 16)));
+      return new TextDecoder("utf-8", { ignoreBOM: true }).decode(Uint8Array.from(hex.match(/../g) || [], (byte) => parseInt(byte, 16)));
     }
   }
   function decodeListing(hex) {
@@ -113,10 +114,10 @@ const HooksListings = (() => {
       article.append(badge);
     }
     const title = doc.createElement("h3"), details = doc.createElement("dl");
-    title.textContent = data.name;
+    title.textContent = display(data.name);
     for (const [key, value] of cardRows(id, listing, data, placement)) {
       const dt = doc.createElement("dt"), dd = doc.createElement("dd");
-      dt.textContent = key; dd.textContent = value;
+      dt.textContent = key; dd.textContent = display(value);
       details.append(dt, dd);
     }
     article.append(title, details);

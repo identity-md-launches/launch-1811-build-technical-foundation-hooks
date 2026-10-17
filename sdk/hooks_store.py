@@ -6,9 +6,11 @@ builds unsigned calldata, and verifies deployments. It never signs or submits tr
 
 import argparse
 import json
+import math
 import re
 import subprocess
 import sys
+import time
 import urllib.request
 from pathlib import Path
 
@@ -31,6 +33,48 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class StoreError(ValueError):
     pass
+
+
+class ReceiptTimeout(StoreError, TimeoutError):
+    """No mined receipt within the deadline; this is not evidence of a revert."""
+
+
+class ReceiptReverted(StoreError):
+    """A mined receipt explicitly reports execution failure."""
+
+
+def wait_for_receipt(request, tx_hash, *, timeout=30.0, poll_interval=0.1):
+    """Read only. request(method, params, timeout=seconds) must honor its transport timeout.
+
+    Uses a monotonic deadline, including RPC time, with no unbounded retries. A successful
+    receipt proves inclusion, not finality: operators must handle confirmations/reorgs separately.
+    """
+    tx_hash = _hex(tx_hash, 32, "transaction hash")
+    for value, limit in ((timeout, 600), (poll_interval, 60)):
+        if type(value) not in (int, float) or not math.isfinite(value) or not 0 < value <= limit:
+            raise StoreError("receipt timeout/interval must be positive finite seconds (max 600/60)")
+    deadline = time.monotonic() + timeout
+    while True:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise ReceiptTimeout("receipt deadline exceeded; transaction may still be pending")
+        try:
+            receipt = request("eth_getTransactionReceipt", [tx_hash], timeout=min(30, remaining))
+        except (StoreError, TimeoutError) as exc:
+            if time.monotonic() >= deadline:
+                raise ReceiptTimeout("receipt deadline exceeded; transaction may still be pending") from exc
+            raise
+        if time.monotonic() >= deadline:
+            raise ReceiptTimeout("receipt deadline exceeded; transaction may still be pending")
+        if receipt is not None:
+            if not isinstance(receipt, dict) or not isinstance(receipt.get("transactionHash"), str) or receipt["transactionHash"].lower() != tx_hash:
+                raise StoreError("receipt does not match the requested transaction")
+            if receipt.get("status") == "0x0":
+                raise ReceiptReverted("transaction mined but reverted (status 0x0)")
+            if receipt.get("status") != "0x1" or not receipt.get("blockHash"):
+                raise StoreError("malformed mined receipt")
+            return receipt
+        time.sleep(min(poll_interval, max(0, deadline - time.monotonic())))
 
 
 def _cast(*args):
@@ -136,14 +180,14 @@ class Rpc:
         self.counter = 0
         self.block = self.request("eth_blockNumber", [])
 
-    def request(self, method, params):
-        if method not in {"eth_chainId", "eth_blockNumber", "eth_getCode", "eth_call"}:
+    def request(self, method, params, *, timeout=30):
+        if method not in {"eth_chainId", "eth_blockNumber", "eth_getCode", "eth_call", "eth_getTransactionReceipt"}:
             raise StoreError("only read-only RPC methods are permitted")
         self.counter += 1
         payload = json.dumps({"jsonrpc": "2.0", "id": self.counter, "method": method, "params": params}).encode()
         request = urllib.request.Request(self.url, payload, {"Content-Type": "application/json"})
         try:
-            with self.transport.open(request, timeout=30) as response:
+            with self.transport.open(request, timeout=timeout) as response:
                 data = json.load(response)
         except Exception as exc:
             # Endpoints can contain API credentials; never echo the URL or transport exception.

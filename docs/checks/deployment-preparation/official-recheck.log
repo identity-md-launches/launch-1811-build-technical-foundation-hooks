@@ -1,0 +1,53 @@
+{
+  "observedAt": "2026-10-17T04:17:33.579657+00:00",
+  "launcherChains": [
+    {
+      "chainId": 11155111,
+      "contractsOnly": true
+    },
+    {
+      "chainId": 1,
+      "contractsOnly": true
+    },
+    {
+      "chainId": 4663,
+      "contractsOnly": true
+    }
+  ],
+  "intakeChains": [
+    4663,
+    1
+  ],
+  "oracleAttester": "0x5598aa9146215bc13eb26f2c692ad1461fd32982",
+  "docsObservations": {
+    "noPostDeploymentCalls": true,
+    "sepoliaLargerCallbackGas": true,
+    "sepoliaNotInCapturedIntakeCapabilities": true
+  },
+  "chainReads": [
+    {
+      "profile": "ethereum",
+      "block": "0x18fee26",
+      "prices": {
+        "job.open": "500000000000000000",
+        "oracle.request": "500000000000000000"
+      }
+    },
+    {
+      "profile": "sepolia",
+      "block": "0xb610c6",
+      "prices": {
+        "job.open": "0",
+        "oracle.request": "500000000000000000"
+      }
+    },
+    {
+      "profile": "robinhood",
+      "block": "0x5670d4a",
+      "prices": {
+        "job.open": "500000000000000000",
+        "oracle.request": "500000000000000000"
+      }
+    }
+  ]
+}

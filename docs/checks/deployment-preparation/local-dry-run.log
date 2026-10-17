@@ -1,0 +1,39 @@
+{
+  "evidenceKind": "LOCAL MOCKS ONLY; not a public deployment or live paid pilot",
+  "contracts": [
+    "HookListingRegistry",
+    "FeaturedPlacements",
+    "HookJobRequester",
+    "HooksStoreFactory"
+  ],
+  "ownerCalls": [
+    "configureToken(address)",
+    "setProceedsRecipient(address)"
+  ],
+  "readback": {
+    "status": "configuration-matches",
+    "chainId": 31337,
+    "block": "0xa",
+    "checks": 20,
+    "codeAndImmutables": "exact match",
+    "protocol": {
+      "chainId": 31337,
+      "block": "0xa",
+      "profile": "local",
+      "evidenceKind": "local-mocks",
+      "codeHashes": {
+        "intake": "0xbfa4fddde60807f96ee5f40d8248a938dfd8d03bc9a96d75bc92b10742fd940f",
+        "asset": "0xb7e464dd89e8372acdb0cc1b138d744a1201a8fa5a1dbaf5d132e3a431bf7445",
+        "oracleSigner": "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470"
+      },
+      "prices": {
+        "job.open": "500000000000000000",
+        "oracle.request": "500000000000000000"
+      },
+      "paidPilotReady": false,
+      "limitation": "prices/code alone do not prove writer, oracle binding or signer gas"
+    },
+    "paidPilotProven": false
+  },
+  "scriptSimulationsDidNotBroadcast": true
+}

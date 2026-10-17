@@ -440,3 +440,14 @@ or independent security audit was performed. See the [live pilot requirements](I
 for the remaining writer/action/body, payment, document availability, oracle mapping and signer
 gas assumptions. Owner-trust disclosures and the distinction between delivery and review approval
 remain in force.
+
+## Deployment-preparation follow-up
+
+Continues `b157921170c318f8eeee638b06025a81cf768c02` with unchanged audited Solidity and
+compiler settings. [Command logs and live-read evidence](checks/deployment-preparation/README.md)
+record 253 Foundry passes with each of the pinned and assignment seeds, 20 site/ABI passes,
+30 Python passes, successful build/fmt checks, local deployment/configuration dry runs and exact
+creation/runtime-template fingerprint equality for all five application contracts. The source
+changes are reader/tooling fixes, a preparation manifest and owner-gated unsigned configuration;
+there was no public deployment or paid pilot. The new gas regression reproduces the measured
+20,224/20,256 URI boundary as a local pilot check, not a safe universal maximum.

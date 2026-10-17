@@ -152,24 +152,24 @@ fund submission, labels each ad visibly, and shows all references as unverified 
 
 ## Deployment parameters and proposed recipient
 
-No address is guessed or embedded. The future deployer creates `HookListingRegistry()` and then
+No operational owner or application deployment address is guessed. The future deployer creates `HookListingRegistry()` and then
 `FeaturedPlacements(owner_, registry_)`. The launch owner is an explicit constructor argument
 (the launch's `$owner` when populated by its separate manifest process), never `msg.sender` or
 `tx.origin`. `registry_` is the newly deployed, reviewed registry on the same settlement chain.
 The ads constructor does not call it or require code, allowing factory construction on an empty
 chain. Verify its bytecode and binding before configuring the token or accepting deposits.
 
-**Proposed proceeds recipient: the Hooks Store project's treasury, controlled by a
-requester-approved multisig. Its exact address and signers remain subject to final requester
-approval before live use.** No IdentityMD service, Intake, token, operator or guessed address is
+**Proposed proceeds recipient: `0x3f252e859a277a86A3967c11D4E054B2f07a1F22`, subject to final
+requester approval before live use. Its control model/signers have not been verified.** No IdentityMD service, Intake, token, operator or guessed address is
 substituted for that decision. The recipient begins unset and purchases fail clearly until the
 owner configures it. The owner-settable path lets this source-only assignment finish without
 blocking on a future launch choice.
 
 The ads token also begins unset. The future operator obtains the approved IMD address for the
 chosen settlement chain, verifies identity, code, decimals and behavior, then configures it once.
-The pinned input lists IMD candidates for Ethereum and Robinhood Chain, but this job has not
-verified a live address. Base has no approved payment asset supplied here. Do not substitute a
+The [preparation package](DEPLOYMENT_PREPARATION.md) now records first-party IMD candidates and
+read-only code/decimal/price observations for Ethereum, Robinhood Chain and Sepolia TestIMD.
+These observations do not establish a paid end-to-end service or production token behavior. Base has no approved payment asset supplied here. Do not substitute a
 lookalike ERC-20 or create a token. Cross-chain listing support does not bridge payments or make
 IMD available on another network. These new contracts are chain-agnostic; existing factory
 deployment policy remains as documented. All public-chain use remains untested.

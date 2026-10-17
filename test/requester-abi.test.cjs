@@ -33,6 +33,7 @@ function load(responses = []) {
     window: { ethereum: { async request(call) { calls.push(call); return responses.shift(); } } },
     fetch() { throw new Error("unexpected network fetch"); },
   });
+  vm.runInContext(readFileSync(path.join(root, "site/display-text.js"), "utf8"), ctx);
   vm.runInContext(script, ctx);
   return { ctx, calls, elements, created };
 }
@@ -134,10 +135,30 @@ test("URI decoder rejects malformed offsets, lengths, padding, oversized data an
 const requesterAddress = "0x" + "12".repeat(20), requestId = "0x" + "34".repeat(32);
 const uriTopic = "0xb7024b3387ec94e50f20e6f13d42c52ecb72ae8b532d7c595b5a094954a78e0b";
 function uriLog(uri) {
+  // Encode independently in JS so NUL and all C0 bytes can be covered (argv cannot contain NUL).
+  const bytes = Buffer.from(uri, "utf8");
   return { address: requesterAddress, topics: [uriTopic, requestId], blockNumber: "0x123",
     transactionHash: "0x" + "56".repeat(32),
-    data: execFileSync("cast", ["abi-encode", "f(string)", uri], { encoding: "utf8" }).trim() };
+    data: "0x" + word(32) + word(bytes.length) + bytes.toString("hex").padEnd(Math.ceil(bytes.length / 32) * 64, "0") };
 }
+
+test("history visibly escapes every bidi, zero-width and control code point including leading BOM", async () => {
+  const codes = [...Array.from({length: 32}, (_, i) => i),
+    ...Array.from({length: 33}, (_, i) => i + 127),
+    0x61c, 0x200b, 0x200c, 0x200d, 0x200e, 0x200f, 0x2028, 0x2029,
+    0x202a, 0x202b, 0x202c, 0x202d, 0x202e, 0x2060, 0x2066, 0x2067, 0x2068, 0x2069,
+    0xfeff, 0x34f, 0xe0001];
+  const raw = "\ufeffipfs://résultat/😀/" + String.fromCodePoint(...codes);
+  const expected = "\\u{FEFF}ipfs://résultat/😀/" + codes.map(n => "\\u{" + n.toString(16).toUpperCase() + "}").join("");
+  const { ctx, elements } = load([[uriLog(raw)]]);
+  ctx.addr = requesterAddress; ctx.id = requestId; ctx.data = uriLog(raw).data;
+  assert.equal(vm.runInContext("decodeResultURI(data)", ctx), raw, "decoder preserves the signed/event bytes");
+  await vm.runInContext('history("", addr, id, "")', ctx);
+  const cell = elements.get("#history tbody").children[0].children[3];
+  assert.equal(cell.textContent, "Result URI (unverified): " + expected);
+  assert.doesNotMatch(cell.textContent, /[\p{Cc}\p{Cf}\p{Default_Ignorable_Code_Point}\u2028\u2029]/u);
+  assert.equal(cell.children.length, 0);
+});
 
 test("history exposes URI only as unverified text, with no HTML, links or content fetching", async () => {
   const values = ["javascript:alert(1)", "data:text/html,<script>alert(1)</script>",

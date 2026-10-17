@@ -15,6 +15,8 @@ import urllib.request
 from sdk.hooks_store import (
     FIELDS, MASK, PERMISSIONS, ROOT, Rpc, StoreClient, StoreError,
     _artifact, _cast, _unique_object, abi_tuple, build_spec, keccak_hex, normalize_spec,
+    wait_for_receipt,
+    ReceiptTimeout, ReceiptReverted,
 )
 
 
@@ -58,11 +60,11 @@ class StoreSdkTest(unittest.TestCase):
             cls.anvil.wait(timeout=5)
 
     @classmethod
-    def rpc(cls, method, params):
+    def rpc(cls, method, params, *, timeout=5):
         data = json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": params}).encode()
         request = urllib.request.Request(cls.url, data, {"Content-Type": "application/json"})
         transport = urllib.request.build_opener(urllib.request.ProxyHandler({}))
-        with transport.open(request, timeout=5) as response:
+        with transport.open(request, timeout=timeout) as response:
             result = json.load(response)
         if "error" in result:
             raise RuntimeError(result["error"])
@@ -74,10 +76,7 @@ class StoreSdkTest(unittest.TestCase):
         transaction.update({"from": cls.account, "gas": hex(15_000_000)})
         transaction.pop("chainId", None)
         tx_hash = cls.rpc("eth_sendTransaction", [transaction])
-        receipt = cls.rpc("eth_getTransactionReceipt", [tx_hash])
-        if not receipt or receipt["status"] != "0x1":
-            raise AssertionError("local transaction failed")
-        return receipt
+        return wait_for_receipt(cls.rpc, tx_hash)
 
     def setUp(self):
         self.spec = build_spec(
@@ -145,6 +144,29 @@ class StoreSdkTest(unittest.TestCase):
     def test_read_only_client_refuses_transaction_submission(self):
         with self.assertRaisesRegex(StoreError, "read-only"):
             Rpc(self.url).request("eth_sendTransaction", [])
+
+    def test_receipt_polling_on_non_automining_node_and_revert(self):
+        self.rpc("evm_setAutomine", [False])
+        try:
+            tx = self.rpc("eth_sendTransaction", [{"from": self.account, "to": self.account, "gas": "0x5208"}])
+            self.assertIsNone(self.rpc("eth_getTransactionReceipt", [tx]))
+            with self.assertRaises(ReceiptTimeout):
+                wait_for_receipt(self.rpc, tx, timeout=0.06, poll_interval=0.01)
+            reads = [0]
+            def delayed_mine(method, params, *, timeout):
+                reads[0] += 1
+                if reads[0] == 3:
+                    self.rpc("evm_mine", [])
+                return self.rpc(method, params, timeout=timeout)
+            self.assertEqual(wait_for_receipt(delayed_mine, tx)["status"], "0x1")
+            self.assertEqual(reads[0], 3)
+        finally:
+            self.rpc("evm_setAutomine", [True])
+        # Invalid function selector at the real factory yields a mined failure, not a missing receipt.
+        tx = self.rpc("eth_sendTransaction", [{"from": self.account, "to": self.factory,
+            "data": "0xffffffff", "gas": "0x186a0"}])
+        with self.assertRaises(ReceiptReverted):
+            wait_for_receipt(self.rpc, tx)
 
     def test_unknown_fields_and_duplicate_json_keys_rejected(self):
         self.spec["owner"] = self.account

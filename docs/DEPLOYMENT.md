@@ -1,16 +1,19 @@
 # Deployment and operations
 
+For the current preparation package, use the [manifest, approval gates, unsigned calldata and
+state-readback runbook](DEPLOYMENT_PREPARATION.md). The sections below describe the existing scripts.
+
 For `HookListingRegistry` and `FeaturedPlacements`, see the separate
 [deployment parameters, recipient approval and after-launch settings](LISTINGS_AND_ADS.md#deployment-parameters-and-proposed-recipient).
 Those new contracts are chain-agnostic and start with ad payments unconfigured. The factory and
-hook scripts described below retain their original release policy. This assignment adds no launch
-manifest, token deployment or broadcast step.
+hook scripts described below retain their original release policy. The preparation manifest is separate from the service-generated `launch.json`; it creates no token
+or broadcast step. IMD's no-token launcher does not execute the owner setters.
 
-This assignment executed local tests only. The factory and supplied scripts reject all chains except `31337`, `11155111`, `84532` and `46630`. Mainnet deployment is disabled in the release. See [chain support](CHAINS.md) for untested items.
+Contract execution was local; the [preparation evidence](checks/deployment-preparation/README.md) separately records public read-only HTTP/RPC checks. The factory and supplied scripts reject all chains except `31337`, `11155111`, `84532` and `46630`. Mainnet deployment is disabled in the release. See [chain support](CHAINS.md) for untested items.
 
 ## Build identity
 
-Use solc 0.8.26, Cancun, optimizer enabled with 200 runs, metadata hash disabled and CBOR metadata omitted, exactly as in `foundry.toml`. Dependencies are pinned in `dependencies.lock.json`. Runtime templates have no immutable substitutions or linked libraries. Constructor settings use write-once storage, with no setters; no configuration is read from the factory or caller by the hook constructor.
+Use solc 0.8.26, Cancun, optimizer enabled with 200 runs, metadata hash disabled and CBOR metadata omitted, exactly as in `foundry.toml`. Dependencies are pinned in `dependencies.lock.json`. The BoundedSwapHook and HooksStoreFactory runtime templates have no immutable substitutions or linked libraries. The hook's constructor settings use write-once storage, with no setters; no configuration is read from the factory or caller by the hook constructor. FeaturedPlacements and HookJobRequester do have immutables; the preparation tool fills and verifies every immutable byte as described in the runbook.
 
 Keep the source revision, compiler configuration, vendored dependency hashes, creation bytecode, runtime bytecode and constructor arguments with each plan. Rebuild and re-mine after any change to compilation output. Do not substitute a newly compiled hook into an old mined plan.
 

@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "profile": "sepolia",
+  "owner": null,
+  "ownerApproval": null,
+  "adProceedsRecipient": "0x3f252e859a277a86A3967c11D4E054B2f07a1F22",
+  "recipientApproval": null,
+  "maxPrice": "500000000000000000",
+  "jobTimeout": 604800,
+  "reviewTimeout": 86400,
+  "templates": null,
+  "templateApproval": null
+}

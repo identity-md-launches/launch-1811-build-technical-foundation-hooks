@@ -1,0 +1,77 @@
+{
+  "observedAt": "2026-10-17T04:17:33.579657+00:00",
+  "evidenceKind": "live HTTP observations, no launch or paid request",
+  "sources": {
+    "capabilities": {
+      "url": "https://api.imd.fun/requests/capabilities",
+      "sha256": "03a04fafe1bd8b360003b287006d63ca2d5d752961facf1805f1e48bbbad694e",
+      "bytes": 6928
+    },
+    "docs": {
+      "url": "https://imd.fun/docs/",
+      "sha256": "e590de7c93b14e146bf2430aeb60abd891b74f9f226dbb3cd8bbc63c6be05281",
+      "bytes": 671515
+    },
+    "launcherRecipe": {
+      "url": "https://api.imd.fun/reads/skill/evm-contracts-launch",
+      "sha256": "13035031e48d83ef14c95c759b2c576f416c77ef5e322c3bd55bd92f53a6b0e2",
+      "bytes": 3712
+    },
+    "launcherUI": {
+      "url": "https://explorer.imd.fun/launch",
+      "sha256": "c57b4d0423fe8efa89e191dd9b7d6ed23a22c254c83b637f7f9912ad362ce8ad",
+      "bytes": 77229
+    },
+    "oracleAttester": {
+      "url": "https://api.imd.fun/oracle/requests?limit=1",
+      "sha256": "48f0bf6153aba6908a7c664d6410b9275dffc01a4c45976740bcb78e30f0f50f",
+      "bytes": 964
+    }
+  },
+  "oracleAttester": "0x5598aa9146215bc13eb26f2c692ad1461fd32982",
+  "launcherChains": [
+    {
+      "chainId": 11155111,
+      "contractsOnly": true
+    },
+    {
+      "chainId": 1,
+      "contractsOnly": true
+    },
+    {
+      "chainId": 4663,
+      "contractsOnly": true
+    }
+  ],
+  "intakeChains": [
+    4663,
+    1
+  ],
+  "protocolAnchors": {
+    "intake-what-comes-back": true,
+    "what-comes-back": false,
+    "job-body-launch-fields": true
+  },
+  "docsObservations": {
+    "noPostDeploymentCalls": true,
+    "sepoliaLargerCallbackGas": true,
+    "sepoliaNotInCapturedIntakeCapabilities": true
+  },
+  "launcherModules": [
+    {
+      "url": "https://explorer.imd.fun/_next/static/chunks/1m5vql10xfwok.js",
+      "sha256": "01373b7f50f99ab8f7eefe4c2593c16d4a06fc1e7affd8e961c1887484ee57e7",
+      "containsNoTokenLabel": true,
+      "evmContractsSnippets": [
+        "te\",tK),()=>window.removeEventListener(\"popstate\",tK)},[]);let tQ=N?.launches,tX=tQ?.chains.filter(e=>e.kinds.includes(\"evm_contracts\")).map(e=>e.chainId)??[],t0=tX.length>0&&(\"launch.open\"===eu&&\"evm_project\"===ef&&!ev&&(eg||\"github\"===e6)&&!ex||\"workflow.open\"===eu&&!e_),t1=[...aI.filter(e=",
+        "ter(e=>e.id!==t.id),t].map(e=>{let n;return{...e,open:(n=e.id,tQ?tQ.chains.some(e=>e.chainId===n&&(t0?e.kinds.includes(\"evm_contracts\"):e.kinds.some(e=>\"evm_contracts\"!==e))):n===t.id)}}).sort((e,t)=>Number(t.open)-Number(e.open)||aI.findIndex(t=>t.id===e.id)-aI.findIndex(e=>e.id===t.id));t1.",
+        "t n;return{...e,open:(n=e.id,tQ?tQ.chains.some(e=>e.chainId===n&&(t0?e.kinds.includes(\"evm_contracts\"):e.kinds.some(e=>\"evm_contracts\"!==e))):n===t.id)}}).sort((e,t)=>Number(t.open)-Number(e.open)||aI.findIndex(t=>t.id===e.id)-aI.findIndex(e=>e.id===t.id));t1.find(e=>e.id===eL);let t2=tQ?aI.f",
+        "t=>t.chainId===e.id&&!t.testnet))?.id??tQ.defaultChainId:t.id;(0,h.useEffect)(()=>{eW.current||eU(t2)},[t2]);let t4=t0?\"evm_contracts\":\"workflow.open\"===eu?\"evm_project\":ev?\"custom_token\":ef,t3=tQ?.chains.find(e=>e.chainId===eL)?.pairings.filter(e=>e.kinds.includes(t4))??[{pairWith:\"eth\",symb",
+        "l\",\"pashov-xray\",\"tob-entry-point-analyzer\"]},{skill:\"adapt-contract-project\"},{skill:\"adversarial-review\"}],onchain:n?\"evm_contracts\":\"evm_project\",github:!0,...void 0!==e.chainId?{chainId:e.chainId}:{},...e.pairWith&&\"eth\"!==e.pairWith&&!n?{pairWith:e.pairWith}:{},...a?{owner:a}:{}}}({objec",
+        ":t,shape:\"chain\",references:n1[e.kind],steps:[{skill:\"build-contract-project\"},{skill:\"adversarial-review\"}],onchain:n?\"evm_contracts\":e.kind,github:!0,...void 0!==e.chainId?{chainId:e.chainId}:{},...e.pairWith&&\"eth\"!==e.pairWith&&!n?{pairWith:e.pairWith}:{},...void 0!==e.poolPercent&&!n?{ec",
+        "function(e){let t=e.request.trim();if(!t)throw Error(\"Describe the contracts and the website.\");let n=!1===e.withToken?\"evm_contracts\":\"evm_project\",a=\"evm_project\"===n;return{request:t,context:\"The requester chose this release: source code published to GitHub, website hosted on IPFS, contrac",
+        "token\"===e;rM(()=>{r6?ej(t):ek(t),t||tX.includes(eL)||eU(tX[0]),t&&!tQ?.chains.some(e=>e.chainId===eL&&e.kinds.some(e=>\"evm_contracts\"!==e))&&eU(t2)},null,null,()=>{t&&r1(\"token-name\")})}})}),nk&&r4.push({id:\"name\",label:r8?\"Name\":\"Token\",value:(0,u.jsxs)(\"span\",{className:\"term-fields\",child"
+      ]
+    }
+  ]
+}

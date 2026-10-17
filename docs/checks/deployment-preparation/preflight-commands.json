@@ -1,0 +1,47 @@
+[
+  {
+    "command": [
+      "python3",
+      "script/prepare_deployment.py",
+      "preflight",
+      "--config",
+      "deployment/ethereum.draft.json",
+      "--rpc",
+      "https://ethereum-rpc.publicnode.com",
+      "--transport",
+      "curl"
+    ],
+    "exitStatus": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "python3",
+      "script/prepare_deployment.py",
+      "preflight",
+      "--config",
+      "deployment/sepolia.draft.json",
+      "--rpc",
+      "https://ethereum-sepolia-rpc.publicnode.com",
+      "--transport",
+      "curl"
+    ],
+    "exitStatus": 0,
+    "stderr": ""
+  },
+  {
+    "command": [
+      "python3",
+      "script/prepare_deployment.py",
+      "preflight",
+      "--config",
+      "deployment/robinhood.draft.json",
+      "--rpc",
+      "https://rpc.mainnet.chain.robinhood.com",
+      "--transport",
+      "curl"
+    ],
+    "exitStatus": 0,
+    "stderr": ""
+  }
+]

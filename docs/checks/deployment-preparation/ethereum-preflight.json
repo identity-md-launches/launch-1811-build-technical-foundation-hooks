@@ -1,0 +1,17 @@
+{
+  "chainId": 1,
+  "block": "0x18fee5e",
+  "profile": "ethereum",
+  "evidenceKind": "live-read-only",
+  "codeHashes": {
+    "intake": "0xdf76139e1b7dfe05bdf55e48e65076e4763a40d470fcf5da58034a488e30bdaf",
+    "asset": "0x79a1ae149d27d4aae006d4dd75cb834222c9623799bbf34359428aaf66fec3bf",
+    "oracleSigner": "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470"
+  },
+  "prices": {
+    "job.open": "500000000000000000",
+    "oracle.request": "500000000000000000"
+  },
+  "paidPilotReady": false,
+  "limitation": "prices/code alone do not prove writer, oracle binding or signer gas"
+}

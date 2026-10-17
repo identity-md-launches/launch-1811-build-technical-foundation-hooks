@@ -91,6 +91,17 @@ test("reject malformed ABI, absent ad labels and unexpected placement status", (
   assert.throws(() => ui.address("not an address"));
 });
 
+test("listing references visibly escape bidi and invisible characters without link creation", () => {
+  const doc = { createElement(tag) { return { tag, children: [], textContent: "",
+    append(...nodes) { this.children.push(...nodes); } }; } };
+  const metadata = ui.decodeMetadata(metadataHex());
+  metadata.sourceRef = "ipfs://safe/\u202E\u200B\u0001\uFEFF";
+  const card = ui.renderCard(doc, 1n, ui.decodeListing(listingHex()), metadata, null);
+  const flatten = n => [n.textContent, ...n.children.flatMap(flatten)];
+  assert.ok(flatten(card).includes("ipfs://safe/\\u{202E}\\u{200B}\\u{1}\\u{FEFF}"));
+  assert.doesNotMatch(flatten(card).join(""), /[\u202E\u200B\u0001\uFEFF]/u);
+});
+
 test("label encoding matches independent ABI encoder and rejects noncanonical search text", () => {
   assert.equal("0x" + ui.encodeLabel("static-fee"), encode("f(string)", "static-fee"));
   for (const label of ["", "Static-fee", "has space", "#ad", "a".repeat(33)]) assert.throws(() => ui.encodeLabel(label));

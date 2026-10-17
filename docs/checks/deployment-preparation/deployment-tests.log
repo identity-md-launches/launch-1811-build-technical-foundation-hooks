@@ -1,0 +1,15 @@
+test_actual_unsold_overpriced_and_chain_mismatch_fail_preflight (test_deployment_preparation.DeploymentPreparationTest.test_actual_unsold_overpriced_and_chain_mismatch_fail_preflight) ... ok
+test_body_checks_reject_blockers_wrong_chain_old_fixture_and_changed_approval (test_deployment_preparation.DeploymentPreparationTest.test_body_checks_reject_blockers_wrong_chain_old_fixture_and_changed_approval) ... ok
+test_complete_unsigned_deploy_configure_readback_and_idempotence (test_deployment_preparation.DeploymentPreparationTest.test_complete_unsigned_deploy_configure_readback_and_idempotence) ... ok
+test_conflicting_one_time_token_and_wrong_caller_fail (test_deployment_preparation.DeploymentPreparationTest.test_conflicting_one_time_token_and_wrong_caller_fail) ... ok
+test_constructor_dependency_order_and_no_factory_on_production (test_deployment_preparation.DeploymentPreparationTest.test_constructor_dependency_order_and_no_factory_on_production) ... ok
+test_exact_templates_and_settings_calldata_then_all_readbacks (test_deployment_preparation.DeploymentPreparationTest.test_exact_templates_and_settings_calldata_then_all_readbacks) ... ok
+test_existing_scripts_simulate_without_broadcasting (test_deployment_preparation.DeploymentPreparationTest.test_existing_scripts_simulate_without_broadcasting) ... ok
+test_missing_code_wrong_owner_wrong_registry_and_immutable_tamper_fail (test_deployment_preparation.DeploymentPreparationTest.test_missing_code_wrong_owner_wrong_registry_and_immutable_tamper_fail) ... ok
+test_no_guessed_owner_or_unapproved_recipient_or_payee_substitution (test_deployment_preparation.DeploymentPreparationTest.test_no_guessed_owner_or_unapproved_recipient_or_payee_substitution) ... ok
+test_verify_build_detects_artifact_change_and_cli_refuses_draft_creation (test_deployment_preparation.DeploymentPreparationTest.test_verify_build_detects_artifact_change_and_cli_refuses_draft_creation) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 33.902s
+
+OK

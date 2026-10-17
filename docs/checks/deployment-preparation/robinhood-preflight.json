@@ -1,0 +1,17 @@
+{
+  "chainId": 4663,
+  "block": "0x56727a3",
+  "profile": "robinhood",
+  "evidenceKind": "live-read-only",
+  "codeHashes": {
+    "intake": "0xd96f270d009efd0fda0a2da91bb7f835a2686182e3abccd18966984134d3b5e8",
+    "asset": "0xa9a0e893f7d8327fe96f823291ad9199af5456c2f9fd80bbdeff29d1e91a93e2",
+    "oracleSigner": "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470"
+  },
+  "prices": {
+    "job.open": "500000000000000000",
+    "oracle.request": "500000000000000000"
+  },
+  "paidPilotReady": false,
+  "limitation": "prices/code alone do not prove writer, oracle binding or signer gas"
+}
