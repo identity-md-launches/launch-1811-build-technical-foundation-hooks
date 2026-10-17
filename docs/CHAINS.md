@@ -26,3 +26,10 @@ no-token launcher capabilities, first-party Intake/token/signer sources and pric
 remains explicit. The existing HooksStoreFactory is still testnet-only and BoundedSwapHook-only;
 it is excluded from production deployment profiles. These observations do not change the policy
 or establish production hook integration.
+
+## Gated deployer update (2026-10-17)
+
+`GatedHookDeployer` pins one first-party PoolManager address and code hash on each of Ethereum 1,
+Base 8453, Robinhood Chain 4663 and Sepolia 11155111 (see `docs/checks/gated-deployment/managers.json`).
+The owner can enable only that pair on those chains. 31337/84532/46630 accept an owner-reviewed
+manager, and every other chain is refused. No deployment, fork or gas benchmark was done on any public chain.

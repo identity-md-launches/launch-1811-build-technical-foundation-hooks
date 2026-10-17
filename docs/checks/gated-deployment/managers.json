@@ -1,0 +1,16 @@
+{
+  "observedAt": "2026-10-17",
+  "addressSource": "https://docs.uniswap.org/contracts/v4/deployments (Uniswap first-party deployment table, fetched 2026-10-17)",
+  "codeHashMethod": "keccak256(eth_getCode(manager, latest)) via cast codehash / cast code | cast keccak",
+  "managers": [
+    {"chainId": 1, "name": "Ethereum", "poolManager": "0x000000000004444c5dc75cB358380D2e3dE08A90", "codeHash": "0x785f1014552b7ce7d5fb7d0c970ca60edee94fd00425d7ca21609acac7ce1293", "rpc": "https://ethereum-rpc.publicnode.com"},
+    {"chainId": 8453, "name": "Base", "poolManager": "0x498581fF718922c3f8e6A244956aF099B2652b2b", "codeHash": "0x83b2af6e9f3158defc2811cbcb0db71ecf8b2ba2abea39c39e370ac5c6f43eb6", "rpc": "https://base-rpc.publicnode.com"},
+    {"chainId": 4663, "name": "Robinhood Chain", "poolManager": "0x8366a39CC670B4001A1121B8F6A443A643e40951", "codeHash": "0xbd3881180b547f5fe817545743cfb4343e96b1bc6640dcd70c106b0066e95626", "rpc": "https://rpc.mainnet.chain.robinhood.com"},
+    {"chainId": 11155111, "name": "Sepolia", "poolManager": "0xE03A1074c86CFeDd5C142C4F04F1a1536e203543", "codeHash": "0x09930125a49f5b95caf8052991cc14d1240dca8b43f42b899115b86867e4bce1", "rpc": "https://ethereum-sepolia-rpc.publicnode.com"}
+  ],
+  "notes": [
+    "Code hashes differ per chain because the deployed PoolManager embeds deployment-specific immutables; each pair is pinned separately.",
+    "Base 84532, Robinhood testnet 46630 and local 31337 are not pinned: the owner enables a manager there after its own review.",
+    "Recheck before any pilot with: script/recheck_gated_managers.sh"
+  ]
+}

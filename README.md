@@ -152,3 +152,15 @@ No deployment, paid request or fund movement was performed.
 ## Salt mining under eth_call gas caps
 
 A full 131,072-candidate page costs about 46M gas, more than common RPC `eth_call` caps. `HookMiner.mine` now stops early when gas runs low and returns `found = false` with `nextNonce` at the first unchecked nonce. Callers resume there and no candidate is skipped. A call with too little gas for even one candidate reverts `InsufficientGas`. Tests walk the whole search under a 10M-gas cap and get the same salt as an uncapped search.
+
+## Oracle-gated generated-hook deployment (2026-10-17)
+
+`src/deployment/GatedHookDeployer.sol` deploys a job-generated hook only after the oracle signs a
+`Passed` review verdict through `HookJobRequester`. The reviewed result document must name the
+exact artifact digest (source/build identity, initcode, constructor arguments, runtime hash, chain,
+PoolManager and callback mask). The contract then reads back the deployed code and configuration.
+`python3 -m sdk.gated_deploy` prints unsigned `deploy` calldata. See
+[docs/GATED_DEPLOYMENT.md](docs/GATED_DEPLOYMENT.md) for trust assumptions, the per-chain manager
+pins, "After launch" settings and the remaining live-pilot gates. `HooksStoreFactory` remains a
+legacy **ungated** testnet-only BoundedSwapHook route. Local code and tests only: not audited and
+not deployed.
