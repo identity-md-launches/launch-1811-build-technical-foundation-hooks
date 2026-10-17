@@ -4,9 +4,12 @@ The verdict source here is MockVerdictRequester (LOCAL only); the oracle signatu
 covered by the Foundry suite against the real HookJobRequester (test/GatedHookDeployer.t.sol).
 """
 import json
+import hashlib
+from unittest.mock import Mock
 import unittest
 
 from sdk.gated_deploy import prepare
+from sdk.result_snapshot import approval_document
 from sdk.hooks_store import ROOT, Rpc, StoreError, _cast, keccak_hex
 from test.helpers.local_rpc import LocalChain
 
@@ -44,7 +47,7 @@ class GatedDeployToolTest(unittest.TestCase):
     def _params(self, doc):
         return dict(deployer=self.deployer, job=JOB, result_document=doc, creation_code=self.code,
                     constructor_args=self.args, source_hash="0x" + "22" * 32, build_hash="0x" + "33" * 32,
-                    runtime_hash=self.runtime, pool_manager=self.manager, permissions=hex(FLAGS))
+                    runtime_hash=self.runtime, pool_manager=self.manager, permissions=hex(FLAGS), binding_mode="owner-confirmed")
 
     def _digest(self):
         # Ask the contract for the canonical digest of the artifact this tool will build.
@@ -60,7 +63,15 @@ class GatedDeployToolTest(unittest.TestCase):
                                     str(status), str(review), keccak_hex("0x" + doc.hex()))
 
     def _doc(self):
-        return b'{"v":1,"hooksStoreArtifact":"0x' + self._digest()[2:].encode() + b'"}'
+        approval = approval_document(self._digest())
+        snapshot = {"jobId": "d8ec4ec9-b939-4ff8-8ce1-fad7a6a69bd9", "complete": True, "state": "completed",
+                    "launch": {"requested": False}, "delivery": {"requested": False},
+                    "source": [{"hash": "22" * 32, "submissionHash": hashlib.sha256(b"local source submission").hexdigest()}],
+                    "files": [{"name": "hooksStoreApproval", "path": "artifacts/hooks-store-approval.json",
+                               "mediaType": "application/json", "bytes": len(approval),
+                               "hash": hashlib.sha256(approval).hexdigest(),
+                               "submissionHash": hashlib.sha256(b"local review submission").hexdigest()}]}
+        return json.dumps(snapshot, separators=(",", ":")).encode()
 
     def test_success_produces_unsigned_calldata_the_contract_accepts(self):
         doc = self._doc()
@@ -98,8 +109,38 @@ class GatedDeployToolTest(unittest.TestCase):
         self._job(doc)
         params = self._params(doc)
         params["constructor_args"] = _cast("abi-encode", "f(address,uint160)", self.manager, str(FLAGS | 1))
-        with self.assertRaisesRegex(StoreError, "names artifact"):
+        with self.assertRaisesRegex(StoreError, "another artifact"):
             prepare(Rpc(self.local.url), **params)
+
+    def test_automatic_route_is_disabled_before_any_rpc(self):
+        params = self._params(b"{}")
+        params.pop("binding_mode")
+        rpc = Mock()
+        with self.assertRaisesRegex(StoreError, "automatic binding disabled"):
+            prepare(rpc, **params)
+        self.assertEqual(rpc.mock_calls, [])
+
+    def test_nested_rejected_alternative_does_not_approve_substitution(self):
+        doc = json.loads(self._doc())
+        doc["rejected"] = {"hooksStoreArtifact": "0x" + "aa" * 32}
+        raw = json.dumps(doc, separators=(",", ":")).encode()
+        self._job(raw)
+        out = prepare(Rpc(self.local.url), **self._params(raw))
+        self.assertFalse(out["automaticBindingSupported"])
+        self.assertEqual(out["bindingMode"], "owner-confirmed")
+        self.assertTrue(all(e["ok"] for e in out["evidence"]))
+
+    def test_duplicate_approval_and_changed_file_hash_are_refused(self):
+        for duplicate in (True, False):
+            doc = json.loads(self._doc())
+            if duplicate:
+                doc["files"].append(dict(doc["files"][0]))
+            else:
+                doc["files"][0]["hash"] = hashlib.sha256(b"rejected alternative").hexdigest()
+            raw = json.dumps(doc).encode()
+            self._job(raw)
+            with self.assertRaisesRegex(StoreError, "exactly one|another artifact"):
+                prepare(Rpc(self.local.url), **self._params(raw))
 
 
 if __name__ == "__main__":

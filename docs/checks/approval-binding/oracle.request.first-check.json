@@ -1,0 +1,92 @@
+{
+  "inputSha256": "d038afe120b66f2b3075b5dcff9794529cc3d8a960cac342bcb6028abcba7162",
+  "response": {
+    "action": "oracle.request",
+    "request": {
+      "v": 1,
+      "question": "For the job opened by Intake request 0x500f39df6cebe2b63246479b575e66955d2c5ce731d3a8e0ca35058d582d04a9 on chain 1, does its exact completion snapshot committed by resultHash contain a unique accepted hooksStoreApproval file whose canonical artifact digest describes the accepted source and reproducible build, and did the independent adversarial review accept that exact artifact with no unresolved findings? True only when the immutable completion snapshot, accepted source bundle and named approval file hashes verify; the HookArtifact binds the exact source/build, creation code, constructor args, runtime, chain, deployer, PoolManager and code hash, and permissions; and the independent review accepted this exact artifact without unresolved findings. Missing, pending, rejected, duplicate or unverifiable evidence means false. Use the byte-for-byte Intake completion URI or /intake-results/:id; resultHash is keccak256 of the control-plane /jobs/:id/result snapshot, not worker JSON. Only top-level source and files are accepted. File and bundle hashes are SHA-256.",
+      "chainId": 1,
+      "window": {
+        "hours": 24
+      },
+      "answerType": "bool",
+      "evidence": "panel",
+      "panelSize": 7,
+      "quorum": 5,
+      "validForSeconds": 86400
+    },
+    "proposed": {
+      "answerType": {
+        "value": "bool",
+        "confidence": 1
+      },
+      "evidence": {
+        "value": "chain",
+        "confidence": 0.34
+      },
+      "chainId": {
+        "value": 1,
+        "confidence": 0.95
+      },
+      "toleranceBps": {
+        "value": 0,
+        "confidence": 0.97
+      },
+      "head": {
+        "value": 1,
+        "confidence": 0.47
+      }
+    },
+    "judged": true,
+    "blockers": [
+      {
+        "code": "not_answerable",
+        "detail": "No one can answer this from public sources today: it may ask about the future, a matter of opinion, or something that is not public."
+      },
+      {
+        "code": "host_command",
+        "detail": "the question asks for a command's output. A panel answers from public sources and never runs a requester's commands on its own machines."
+      }
+    ],
+    "suggestions": [],
+    "online": 1014,
+    "limits": {
+      "minPanelSize": 5,
+      "maxPanelSize": 100
+    },
+    "chains": [
+      {
+        "id": 1,
+        "name": "Ethereum mainnet"
+      },
+      {
+        "id": 56,
+        "name": "BNB Chain"
+      },
+      {
+        "id": 4663,
+        "name": "Robinhood Chain"
+      },
+      {
+        "id": 8453,
+        "name": "Base"
+      },
+      {
+        "id": 42161,
+        "name": "Arbitrum One"
+      }
+    ]
+  },
+  "checkerInput": {
+    "action": "oracle.request",
+    "input": {
+      "question": "For the job opened by Intake request 0x500f39df6cebe2b63246479b575e66955d2c5ce731d3a8e0ca35058d582d04a9 on chain 1, does its exact completion snapshot committed by resultHash contain a unique accepted hooksStoreApproval file whose canonical artifact digest describes the accepted source and reproducible build, and did the independent adversarial review accept that exact artifact with no unresolved findings? True only when the immutable completion snapshot, accepted source bundle and named approval file hashes verify; the HookArtifact binds the exact source/build, creation code, constructor args, runtime, chain, deployer, PoolManager and code hash, and permissions; and the independent review accepted this exact artifact without unresolved findings. Missing, pending, rejected, duplicate or unverifiable evidence means false. Use the byte-for-byte Intake completion URI or /intake-results/:id; resultHash is keccak256 of the control-plane /jobs/:id/result snapshot, not worker JSON. Only top-level source and files are accepted. File and bundle hashes are SHA-256.",
+      "chainId": 1,
+      "answerType": "bool",
+      "evidence": "panel",
+      "panelSize": 7
+    }
+  },
+  "assembledBodyMatchesDraft": true,
+  "reference": "https://api.imd.fun/requests/check at 2026-10-17T07:35:15.912405+00:00"
+}

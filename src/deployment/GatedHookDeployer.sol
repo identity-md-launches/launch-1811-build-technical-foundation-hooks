@@ -4,6 +4,7 @@ pragma solidity 0.8.26;
 import {StoreAdmin} from "../store/StoreAdmin.sol";
 import {HookJobRequester} from "../imd/HookJobRequester.sol";
 import {HookMiner} from "./HookMiner.sol";
+import {AcceptedArtifact} from "./AcceptedArtifact.sol";
 import {Hooks} from "v4-core/src/libraries/Hooks.sol";
 import {IHooks} from "v4-core/src/interfaces/IHooks.sol";
 
@@ -17,9 +18,9 @@ interface IGeneratedHook {
 /// @notice Deploys an arbitrary generated hook only when ALL of these hold onchain, in this call:
 /// 1. the `HookJobRequester` job is `Delivered` and its review is `Passed` by the oracle-signed
 ///    verdict the requester verified (an Intake completion, a URL or an owner allowlist is not);
-/// 2. the caller supplies the job's result document: its keccak256 equals the requester's stored
-///    `resultHash`, and it contains `"hooksStoreArtifact":"0x<artifactDigest>"`, so the reviewed
-///    result itself names this exact artifact;
+/// 2. the caller supplies the control-plane completion snapshot: its keccak256 equals the
+///    stored `resultHash`; its accepted source bundle and unique accepted approval file commit
+///    to this exact artifact (SHA-256 file hashes, never substring matching);
 /// 3. the artifact digest commits to the job (whose result hash commits to the document naming it), source and build identity, the creation code,
 ///    constructor arguments, expected runtime code hash, chain, this deployer, the PoolManager and
 ///    its code hash, and the callback permission mask;
@@ -171,9 +172,21 @@ contract GatedHookDeployer is StoreAdmin {
         return keccak256(abi.encode(ARTIFACT_TYPEHASH, a));
     }
 
-    /// @notice The exact bytes the job's result document must contain for this artifact.
+    /// @notice Legacy display helper only. A marker is never deployment evidence.
     function artifactMarker(Artifact memory a) public pure returns (bytes memory) {
         return bytes.concat(ARTIFACT_MARKER, _hex(artifactDigest(a)), '"');
+    }
+
+    /// @notice Exact bytes the publication step emits after accepted independent review.
+    /// No trailing newline. The snapshot must commit its SHA-256 under files, plus the source bundle.
+    function approvalDocument(Artifact memory a) public pure returns (bytes memory) {
+        return AcceptedArtifact.approvalDocument(artifactDigest(a));
+    }
+
+    /// @notice Automatic Intake-to-oracle binding is unavailable in the documented protocol.
+    /// This deployment tool cannot make owner binding permissionless or authenticate HTTP metadata.
+    function automaticBindingSupported() external pure returns (bool) {
+        return false;
     }
 
     function permissionsToFlags(Hooks.Permissions memory p) public pure returns (uint160 f) {
@@ -260,7 +273,7 @@ contract GatedHookDeployer is StoreAdmin {
         if (job.review != HookJobRequester.ReviewStatus.Passed) revert ReviewNotPassed(a.jobRequestId);
         if (requester.revokedReviewReceipts(job.reviewRequestId)) revert ReviewRevoked(job.reviewRequestId);
         uint32 epoch = requester.reviewReceiptSignerEpoch(job.reviewRequestId);
-        if (epoch != 0 && requester.revokedSignerEpochs(epoch) != bytes32(0)) {
+        if (epoch == 0 || requester.revokedSignerEpochs(epoch) != bytes32(0)) {
             revert ReviewRevoked(job.reviewRequestId);
         }
         // forge-lint: disable-next-line(block-timestamp)
@@ -269,7 +282,7 @@ contract GatedHookDeployer is StoreAdmin {
         if (resultDocument.length > MAX_RESULT_DOCUMENT_BYTES) revert ResultDocumentTooLong(resultDocument.length);
 
         digest = artifactDigest(a);
-        if (!_contains(resultDocument, artifactMarker(a))) revert ArtifactNotInResult(digest);
+        if (!AcceptedArtifact.verify(resultDocument, digest, a.sourceHash)) revert ArtifactNotInResult(digest);
         if (deployedHookOf[a.jobRequestId] != address(0)) {
             revert AlreadyDeployed(a.jobRequestId, deployedHookOf[a.jobRequestId]);
         }
@@ -327,26 +340,7 @@ contract GatedHookDeployer is StoreAdmin {
 
     // ---------------------------------------------------------------- internals
 
-    function _contains(bytes memory haystack, bytes memory needle) internal pure returns (bool) {
-        uint256 n = needle.length;
-        if (n > haystack.length) return false;
-        bytes32 h = keccak256(needle);
-        for (uint256 i; i + n <= haystack.length; ++i) {
-            bytes32 c;
-            assembly ("memory-safe") {
-                c := keccak256(add(add(haystack, 0x20), i), n)
-            }
-            if (c == h) return true;
-        }
-        return false;
-    }
-
     function _hex(bytes32 value) internal pure returns (bytes memory out) {
-        bytes16 digits = "0123456789abcdef";
-        out = new bytes(64);
-        for (uint256 i; i < 32; ++i) {
-            out[2 * i] = digits[uint8(value[i]) >> 4];
-            out[2 * i + 1] = digits[uint8(value[i]) & 0x0f];
-        }
+        return AcceptedArtifact.hexHash(value);
     }
 }

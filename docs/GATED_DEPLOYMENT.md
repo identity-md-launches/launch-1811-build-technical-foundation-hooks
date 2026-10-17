@@ -1,70 +1,109 @@
-# Oracle-gated deployment of generated hooks
+# Oracle-gated generated-hook deployment
 
-`src/deployment/GatedHookDeployer.sol` is the official Store deployment route for **generated**
-hooks (any job-produced Uniswap v4 hook, BoundedSwapHook included). The approval is enforced
-in the contract. The website and the SDK only prepare calldata. This is local code and local
-tests. Nothing has been deployed, no paid request was made, nothing was signed, and this is
-**not an audit or a claim of live readiness**.
+This patch continues `2aef6408eabb45b8f149e16a96c7734d4b4b5b07`. It is source and local tests only.
+No public deployment, paid request, wallet signature, key handling, token or pool creation occurred.
+Local mocks and test signatures are test fixtures. This is **not an audit or a live-readiness claim**.
 
-## Flow
+`GatedHookDeployer` enforces the approval onchain. Its immutable requester must report a Delivered
+job and Passed review, with authenticated, nonzero, unrevoked signer-epoch provenance. The creator
+must supply the exact control-plane completion snapshot. A substring, arbitrary worker JSON,
+Delivered status, owner manager allowlist or user-supplied review URL cannot authorize a deployment.
 
-1. **Build/test/adversarial review job.** The creator calls `HookJobRequester.openJob` (unchanged).
-   The job template must tell the worker to put this into the result document:
-   `"hooksStoreArtifact":"0x<artifactDigest>"`, where the digest covers the exact artifact they built.
-2. **Delivery.** The Intake calls `onJobResult(requestId, resultHash, uri)`. `resultHash` is the
-   keccak256 of the result document's bytes. This is a delivery, not an approval.
-3. **Separate oracle confirmation.** The creator calls `requestReview` (unchanged). Both orders
-   still work: the owner binds first and then the signed callback arrives, or the signed callback
-   arrives first, is kept as a receipt, and the owner's `bindReview` finalizes it. Only a signed
-   `true` from the oracle sets `ReviewStatus.Passed`.
-4. **Unsigned calldata.** `python3 -m sdk.gated_deploy ...` reads the job, checks the result
-   document's hash and its artifact line, and mines a salt for the permission mask with
-   `mine` (`eth_call`). It then runs the contract's complete `check(...)` gate as an `eth_call`
-   and prints an unsigned `deploy(...)` transaction from the job requester, plus an evidence list.
-5. **Deployment.** The job requester signs and sends the transaction with their own wallet.
-   `deploy` runs every check again. It consumes the approval before CREATE2, deploys, then reads
-   back the runtime code hash, `poolManager()` and `getHookPermissions()`.
+## Completion snapshot and accepted evidence
 
-## What the artifact digest binds
+[IMD completion schema](https://imd.fun/docs/#intake-what-comes-back) says the job callback is
+`(bytes32 requestId, bytes32 resultHash, string uri)`. `resultHash` is **keccak256 of the exact
+control-plane `/jobs/:id/result` snapshot at completion**. Obtain its bytes from the completion's
+IPFS URI or `/intake-results/:id`; do not hash a fresh status response, URI, callback encoding,
+reserialized JSON, worker submission or report. The requester authenticates Intake delivery;
+the job completion itself is not oracle-signed.
 
-`artifactDigest = keccak256(abi.encode(ARTIFACT_TYPEHASH, Artifact))`, where the `Artifact`
-fields are:
+The public result schema has `jobId`, `state`, `complete`, `launch`, `source`, `files`, `delivery`
+and optional fields such as `projectId`. [Accepted source and named files](https://imd.fun/docs/#jobs)
+carry `hash` and `submissionHash`; named files also carry `name`, `path`, `mediaType`, `bytes`, `url`.
+[Bundle and file hashes are SHA-256](https://imd.fun/docs/#uploads). The captured real result for the
+preceding project job has an accepted source entry and **no named files**; it cannot authorize
+this new route. Sources and exact responses are retained under `checks/approval-binding/sources/`.
+
+The new path is:
+
+1. Build the hook, test it independently, and obtain the independent adversarial review. Identify
+   an earlier accepted source bundle containing the exact reviewed code and tests. `sourceHash`
+   is that bundle's SHA-256. Choose it **before** the evidence publication step; do not hash an
+   archive that contains its own approval document. `buildHash` is keccak256 of the exact build
+   identity file (compiler/version/settings, dependency hashes, contract target and source selection).
+2. Publish the named output `hooksStoreApproval`, path `artifacts/hooks-store-approval.json`, media
+   type `application/json`. Its bytes must equal `approvalDocument(artifact)` exactly: compact JSON,
+   lowercase hex, this key order, no trailing newline:
+
+   ```json
+   {"schema":"hooks-store-approval-v1","hooksStoreArtifact":"0x<64 lowercase hex digest>","review":"passed"}
+   ```
+
+   The real document is 144 bytes. It is a separate worker file, **never an injected top-level
+   completion field**. The job template uses a fourth publication step after build/tests/review:
+   IMD's `adversarial-review` skill writes no files, so that reviewer is not asked to emit JSON.
+   Publication reports the accepted review and exact artifact; it does not grant approval by itself.
+   The accompanying `hooksStoreEvidence` output records source/build and accepted-review references
+   for the oracle panel. The contract does not parse that explanatory file or trust its URLs.
+3. Onchain, require exactly one matching accepted source hash in the snapshot's **top-level
+   `source` array**, and exactly one reserved approval name/path in its **top-level `files` array**.
+   Validate metadata, nonzero submission hashes, SHA-256 of the reconstructed approval document
+   and its byte count. Neither nested `rejected.files` nor an unrelated marker is considered.
+4. A separate oracle question asks whether these public accepted records describe the exact
+   reviewed artifact without unresolved findings. The existing authenticated question/UUID/window
+   binding and oracle signature verification remain required. A valid file without Passed, and
+   Passed without the accepted file, both fail.
+5. `sdk.gated_deploy` verifies the exact snapshot hash, accepted evidence and epoch, mines a salt
+   through read-only calls, runs `GatedHookDeployer.check` at the same RPC block, and returns unsigned
+   deployment calldata plus its evidence. The contract rechecks everything at execution and reads
+   back runtime hash, `poolManager()` and `getHookPermissions()` after CREATE2.
+
+The parser deliberately supports a bounded JSON subset: at most 65,536 bytes, depth 16, 128 entries
+per object/array and 2,048 tokens, printable ASCII strings without escapes. Structural JSON whitespace
+is allowed. Duplicate object keys **at every depth**, escaped aliases, duplicate approval entries,
+conflicting name/path aliases, malformed metadata and unsupported encodings fail closed. Unknown
+well-formed fields are ignored; they cannot replace `source` or `files`. Snapshot bytes may not be
+normalized to pass the parser because doing so changes `resultHash`. A live snapshot outside this
+subset needs a reviewed parser extension; it must not be rewritten. The old marker-only documents
+are deliberately no longer accepted. `artifactMarker` remains a display helper, never a proof.
+
+## Exact artifact binding
+
+`artifactDigest = keccak256(abi.encode(ARTIFACT_TYPEHASH, Artifact))`. The type and deploy/check
+signatures are unchanged. Each field remains bound:
 
 | Field | Meaning |
 |---|---|
-| `jobRequestId` | the Intake job id. Its stored `resultHash` must hash the supplied result document |
-| `sourceHash`, `buildHash` | the source bundle and build identity (compiler, settings) the reviewers checked |
-| `creationCodeHash` | keccak256 of the creation code |
-| `constructorArgsHash` | keccak256 of the ABI-encoded constructor arguments |
-| `runtimeCodeHash` | the expected deployed code hash. This catches constructors whose output depends on the environment |
-| `chainId`, `deployer` | must be `block.chainid` and this deployer |
-| `poolManager`, `poolManagerCodeHash` | must be enabled here and match the live code hash |
-| `permissions` | the 14-bit callback mask. The CREATE2 address and the readback must both match it |
+| `jobRequestId` | Exact Intake job id; its stored result hash commits the snapshot containing the approval |
+| `sourceHash` | SHA-256 of the selected accepted source bundle |
+| `buildHash` | keccak256 of the exact build identity file; reviewers establish reproducibility |
+| `creationCodeHash` | keccak256 of creation bytecode |
+| `constructorArgsHash` | keccak256 of ABI-encoded constructor bytes |
+| `runtimeCodeHash` | Expected deployed runtime keccak256, including resolved immutables |
+| `chainId`, `deployer` | Must be this chain and this deployer |
+| `poolManager`, `poolManagerCodeHash` | Enabled/pinned pair and current code hash |
+| `permissions` | Exact valid 14-bit callback mask, also checked in address bits and readback |
 
-The salt is not part of the digest. Any mined salt is accepted if the address carries exactly
-`permissions` and has no code. Each job deploys at most once (`deployedHookOf`), and each digest
-deploys at most once (`usedArtifact`).
+No salt is signed: any mined salt meeting the exact mask is usable. One deployment per job and
+artifact, with approval consumed before CREATE2. Reverting, reentering, empty-runtime, substituted
+bytecode/constructor, dishonest-readback and environment-dependent constructors remain covered.
+Wrong caller/context, stale jobs, missing/pending/negative/unanswered reviews and replay still fail.
+The default job-age limit is 30 days from job opening; owner bounds remain 1–180 days.
 
-## Rejections (each one is tested in `test/GatedHookDeployer.t.sol`)
+## Revocation in both orders
 
-- No review, a pending review, an unbound early receipt, `NotPassed`, `Unanswered` or a forged
-  signature: `ReviewNotPassed`.
-- A job that was not delivered: `JobNotDelivered`. A caller who is not the job requester: `NotJobRequester`.
-- A changed result document: `ResultHashMismatch`. A changed source, build, mask, or another job's
-  approval: `ArtifactNotInResult`. Swapped creation code or constructor arguments:
-  `CreationCodeMismatch` / `ConstructorArgsMismatch`.
-- The wrong chain, deployer or manager, a disabled manager, or a manager code-hash mismatch: rejected.
-  An unsupported chain is rejected outright.
-- An invalid mask (zero, outside the 14 bits, or a return-delta bit without its base callback),
-  an unmined salt, a wrong expected address, or an occupied address (collision): rejected.
-- Replay of the same job (even with a new salt) or the same digest: rejected. A job opened more
-  than `maxJobAge` ago (default 30 days, owner-set within 1–180 days): `ApprovalStale`.
-- A retained verdict whose receipt or signer epoch was revoked on the requester: `ReviewRevoked`.
-- Malicious constructors. A reverting one leaves the approval unused. Empty runtime, a lying
-  `poolManager()` or `getHookPermissions()`, or runtime that depends on the environment: the whole
-  call reverts. A constructor that reenters `deploy` is blocked by the reentrancy lock.
+The signature's verification epoch is now retained for **bind-first and receipt-first** delivery,
+for both positive and negative verdicts. The immediate-finalization path writes just the epoch into
+the already allocated receipt metadata word. It does not materialize an early receipt or change the
+10-word receipt ABI, 15-word Job ABI, replay map, events, verdict or callback authentication.
+`reviewReceiptSignerEpoch(ask)` now means verification provenance in either order; zero means none.
 
-`deploy` is the only gated entry point. `check`, `mine`, `predict` and `verifyDeployment` are views.
+Ordinary rotation leaves an old approval usable. Explicit `revokeSignerEpoch(oldEpoch, incidentHash)`
+after rotation prevents deployment from that epoch in either order. Missing provenance also refuses
+deployment. Historical Passed/NotPassed and consumed UUIDs remain unchanged. Revocation cannot undo
+an already deployed hook. Old bind-first approvals from an older requester with no epoch fail closed;
+there is no owner migration shortcut for fabricating provenance.
 
 ## Chains and managers
 
@@ -85,66 +124,99 @@ There is no blanket mainnet unlock. Each chain starts with no manager enabled, a
 call `setManager` with the pinned pair. Enabling also needs the live code hash to match. None of
 these chains has been exercised with a deployment, a fork or a gas benchmark.
 
-## Trust assumptions (changed and unchanged)
+## Authenticated binding: automatic route disabled
 
-- **New: the result-document marker.** The oracle verdict is about the job's review. The artifact
-  is bound because the reviewed result document (committed by `resultHash`) names its digest.
-  The deployer does not re-derive the digest from source. The panel and reviewers must check
-  that the digest named in the result is the artifact they reviewed, so the review template
-  should ask exactly that.
-- **Unchanged: the requester owner.** They bind the Intake-to-oracle mapping (`bindReview`), set
-  the oracle signer, and can revoke receipts and epochs. `bindReview` is owner-only and is not
-  automatic. **Blocker for full automation:** the Intake id → oracle UUID/canonical question
-  mapping has no authenticated onchain or signed source today, so a person or process holding
-  the requester's owner key must check it offchain and call `bindReview`. This tool does not
-  fake that step. Founder approval of the hook itself is not required: the owner binds the
-  question context, and the verdict comes from the oracle.
-- **Oracle signer.** It is one hot key that the panel's answer depends on (see IMD_INTEGRATION.md).
-  Revocation is checked only for verdicts kept as early receipts, because a verdict finalized
-  bind-first stores no signer epoch.
-- **Deployer owner.** They can enable or disable managers within the pin policy and set
-  `maxJobAge`. They cannot change the requester (immutable), approve a hook, or bypass any check.
-  An owner allowlist is not an oracle proof, and none is treated as one.
-- **No contract change to HookJobRequester.** Its runtime size is 24,117 bytes, 459 bytes under
-  the EIP-170 limit, which leaves no room for a new artifact-review function. Artifact binding
-  therefore goes through the result document, which needs no requester change. All requester
-  protections (one-shot callback, receipts, replay, expiry, revocation) are reused unchanged.
+`automaticBindingSupported()` is always false. The SDK defaults to refusing automatic preparation.
+Only explicit `--binding-mode owner-confirmed` prepares a transaction against a finalized manual
+binding. It does not call `bindReview`, run a service, manage a wallet, collect a signature or send
+any transaction. It reports the owner trust assumption in its output. There is **no founder-free
+automatic route implemented or claimed**.
 
-## Legacy route
+The precise missing protocol evidence is a cryptographically authenticated relationship between:
 
-`HooksStoreFactory` stays as it was: an **ungated**, testnet/local-only, BoundedSwapHook-only
-route that is useful for template tests. Its deployments are not Store-approved and do not appear
-in `GatedHookDeployer.deployedHookOf`.
+- origin Intake chain/address, consumer/requester, **Intake review request id and exact bodyHash**;
+- oracle UUID, **canonical questionHash and its full canonicalization/preimage**, question chain,
+  and resolved absolute `fromBlock`/`toBlock`;
+- a defined protocol authority, consumer/chain domain separation, expiry and replay rules.
 
-## Deployment parameters / After launch
+An onchain authenticated registry or protocol-signed binding with those fields and a documented
+verification interface could supply it. No such binding interface is present in the captured docs
+or OpenAPI. This is a limit of the **published interface inspected**, not a claim about unpublished
+protocol internals. The documented OracleAttestation v2 signs the oracle UUID and question hash,
+but does **not** sign the outer Intake request id or request body. The HTTP `/intake/:chainId/:txHash`
+and `/oracle/requests/:id` records are useful observations, not onchain-verifiable binding proofs.
+The docs explicitly warn the writer can pair an answer with a different request. Receiving a valid
+attestation, matching its own fields, or trusting an HTTP response cannot authenticate that pairing.
+A Merkle inclusion proof without an authenticated root and the complete binding fields is also
+insufficient. The full canonical question construction cannot be replaced with keccak256(raw body).
 
-- Constructor: `(owner_, requester_)`. `owner_` is the launch owner (`$owner`). `requester_` is the
-  deployed `HookJobRequester` on the same chain.
-- `setManager(manager, codeHash, true)`: on pinned chains, the pair from the table above. Before
-  calling it, recheck with `script/recheck_gated_managers.sh`.
-- `setMaxJobAge(seconds)` (optional, default 30 days).
-- The requester owner updates the job template so the worker emits the `hooksStoreArtifact`
-  line, and the review template so the question asks whether the review covered that digest.
-  Run each new question through the IMD `/requests/check` before setting it.
+The existing manual `bindReview` remains owner-only. An unbound answer stays Pending regardless of
+who submits its fields. Owner recovery, expiry, signature, replay and one-shot protections remain.
+The owner must independently authenticate the context, and can still misbind if dishonest. Eliminating
+that owner transaction needs the missing official proof, not a new hot wallet signing our own mapping.
 
-## Remaining live-pilot gates
+## Templates and free request checker
 
-1. The live job worker emits the marker line with a digest it computed correctly.
-2. A real paid review on a pilot chain, with an authenticated `bindReview`.
-3. A Sepolia deployment of the deployer and requester, plus a gated deploy against the pinned manager.
-4. A per-chain gas check (local measurement: `deploy` 375k gas on average and 1.1M at most,
-   excluding the hook's own constructor size. Mining is an `eth_call` and runs up to 32M gas per
-   131,072-candidate page).
-5. An independent adversarial review of `GatedHookDeployer` before any value relies on it.
+`sdk/request_templates.py` creates actual-schema job and oracle fragments. `deployment/hook-templates.json`
+contains a **schema-check sample**, not a paid job or deployment configuration. Sample ids are local
+hashes and must never be represented as existing public requests. Build and test steps have their
+write paths, the reviewer writes nothing, and a final evidence publication step declares named outputs.
+The separate oracle question inspects public accepted records, not commands run on panel hosts.
 
-## Local evidence
+Both final assembled sample bodies passed the free `POST https://api.imd.fun/requests/check` with
+`blockers: []`. The oracle checker accepts only drafting fields. `script/check_request_body.py`
+projects those fields, retains the exact input, and requires the returned full `request` to equal
+**the entire assembled body**, including window, quorum and validity. A mismatched draft fails even
+with no blockers. The SDK's template validator enforces the same check. Initial full-body rejection
+and the earlier wording blockers are retained, followed by final successful responses. A local Anvil
+test proves the real requester assembles these same bytes (only the local request id is substituted).
 
-```
-forge build && forge test                                  # 297 tests, includes 44 in GatedHookDeployer.t.sol
-python3 -m unittest discover -s test -p 'test_*.py'        # 35 tests, includes test_gated_deploy.py on Anvil
-node test/requester-abi.test.cjs && node test/listings-reader.test.cjs
-script/recheck_gated_managers.sh                           # read-only, needs network
-```
+A schema check proves no worker output, authenticated binding, oracle answer, completion delivery
+or live deployment. Recheck each actual configured body; the job checker also recommends supplying
+all prior-work links. Before asking workers, supply the HookSpec, chain/deployer/manager parameters,
+current ABI and build rules via the actual job inputs. Missing parameters must leave approval absent.
 
-Sizes: GatedHookDeployer has a 10,342-byte runtime (limit 24,576). HookJobRequester is unchanged at 24,117.
-The ABI is in `site/GatedHookDeployer.abi.json`.
+## Trust and operational responsibilities
+
+- **Configured Intake/writer:** commits the snapshot and accepted-file metadata. That is its word,
+  not an oracle signature over the snapshot. The signed oracle verdict and correctly bound question
+  must confirm this exact accepted evidence. The owner can replace Intake, including for pending jobs.
+- **Oracle panel/signer:** establishes review semantics and reproducibility; the contract cannot
+  derive source code from bytecode or establish independence of reviewers. Signer replacement remains
+  an owner power. Local 5-of-7 ERC-1271 tests do not claim IMD currently operates such a signer.
+- **Requester owner:** manually authenticates every binding, sets templates and signer, handles
+  compromised-epoch revocation/recovery and pending asks. These powers remain trust assumptions.
+- **Deployer owner:** enables pinned managers, disables them, and sets maximum job age; cannot change
+  the immutable requester or bypass artifact/review/replay checks. A manager allowlist is not approval.
+- **Creator:** supplies exact snapshot/code/constructor bytes and sends any eventual deployment from
+  the recorded job-requester wallet. SDK output is unsigned and may become stale after its read block.
+
+## Parameters / After launch
+
+No new launch inputs are guessed. Deployer constructor remains `(owner_, requester_)`, with launch
+owner and actual requester supplied by the operator. The requester constructor/configuration remains
+in the existing runbook. All configuration below is future work, not authorization for this assignment:
+
+- Owner enables the reviewed live manager pair using `setManager(manager, codeHash, true)` after
+  checking target-chain code and the pins. Unknown chains fail closed; managers start disabled.
+- Owner optionally calls `setMaxJobAge(seconds)` within the unchanged bounds.
+- Requester owner sets the checked job/review templates, action ids and panel minimums, confirming
+  actual protocol compatibility and costs. Both orders of `bindReview` still require that owner.
+- For incident response, rotate the signer, revoke the old epoch with the incident evidence hash,
+  monitor retained receipts and use the existing guarded recovery calls. Do not erase history.
+
+`HooksStoreFactory` remains an ungated local/testnet-only BoundedSwapHook route; its hooks are not
+approved by this deployer. Nothing migrates or changes an existing deployed contract.
+
+## Checks and unresolved live gates
+
+See [retained RED/GREEN, full checks and sources](checks/approval-binding/README.md). Solidity 0.8.26,
+Cancun, optimizer 200 and metadata settings are unchanged. The cold callback cap remains **200,000**;
+the deployed runtime cap remains **24,576 bytes**. The size and callback logs are local evidence only.
+The fixed approval parser runs during deployment/check, not during the one-shot callback.
+
+Open gates are the missing official binding proof (automatic route disabled), production acceptance
+and publication of the named output/earlier reviewed source bundle, real snapshot encoding and URI
+availability, exact question canonicalization and resolved window, a live signer/Intake callback-gas
+pilot, per-chain deployment gas/manager confirmation, and independent adversarial review of these
+changes. No live-readiness or audit assurance is inferred from passing local tests or the free checker.

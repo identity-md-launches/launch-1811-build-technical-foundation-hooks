@@ -1,0 +1,9 @@
+No files changed, compilation skipped
+
+Ran 3 tests for test/ApprovalBindingRegression.t.sol:ApprovalBindingRegressionTest
+[PASS] testApprovedADeploysFromSnapshotThatAlsoMentionsRejectedB() (gas: 8091826)
+[PASS] testRegressionBindFirstRevokedEpochCannotDeploy() (gas: 6354617)
+[PASS] testRegressionRejectedNestedArtifactCannotDeploy() (gas: 6247310)
+Suite result: ok. 3 passed; 0 failed; 0 skipped; finished in 116.65ms (173.54ms CPU time)
+
+Ran 1 test suite in 119.30ms (116.65ms CPU time): 3 tests passed, 0 failed, 0 skipped (3 total tests)

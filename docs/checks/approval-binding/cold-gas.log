@@ -1,0 +1,54 @@
+No files changed, compilation skipped
+
+Ran 1 test for test/JobProtocolTuple.t.sol:JobProtocolGasTest
+[PASS] testColdTupleWithLongURIFits200kAndRuntimeLimit() (gas: 894390)
+Logs:
+  Cold job tuple with 4096-byte URI minimum forwarded gas: 67052
+  Requester deployed runtime bytes: 24166
+
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 19.06ms (3.85ms CPU time)
+
+Ran 1 test for test/UriPilotGas.t.sol:UriPilotGasTest
+[PASS] testColdMeasuredUriBoundaryAndOneAttemptFeeLoss() (gas: 989256)
+Logs:
+  Local cold URI bytes delivered under exact 200k: 20224
+  Local cold URI bytes exceeding exact 200k: 20256
+
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 15.31ms (2.91ms CPU time)
+
+Ran 8 tests for test/ReviewReceiptGas.t.sol:ReviewReceiptGasTest
+[PASS] testAudit22ColdReadsNowRetainsOneShotReceiptAndBoundVerdict() (gas: 3974794)
+Logs:
+  Cold audit registry +22 reads receipt minimum forwarded gas: 187231
+  Cold audit registry +22 reads bound minimum forwarded gas: 156968
+
+[PASS] testColdEoaReceiptGasAndExactStipend() (gas: 1565468)
+Logs:
+  Cold EOA receipt minimum forwarded gas: 124984
+
+[PASS] testColdFiveOfSevenReceiptAfterExpiryRequestFitsStipend() (gas: 2880417)
+Logs:
+  Cold 5-of-7 receipt after expiry request minimum forwarded gas: 170077
+
+[PASS] testColdFiveOfSevenReceiptAndBoundCallbacksFitStipend() (gas: 5243994)
+Logs:
+  Cold 5-of-7 receipt minimum forwarded gas: 170077
+  Cold 5-of-7 bound minimum forwarded gas: 139795
+
+[PASS] testColdFiveOfSevenRetryReceiptBeforeReservationReleaseFitsStipend() (gas: 2982360)
+Logs:
+  Cold 5-of-7 reserved retry receipt minimum forwarded gas: 170077
+
+[PASS] testColdWrongPrebindingRetainsReceiptWithFiveOfSevenAndAuditSigner() (gas: 4978500)
+Logs:
+  Cold 5-of-7 mismatched pre-binding minimum forwarded gas: 175123
+  Cold audit +22 reads mismatched pre-binding minimum forwarded gas: 192286
+
+[PASS] testFuzzMultisignerRefusesWrongKeyDuplicateRevokedExpiredOrInsufficientSignatures(uint8) (runs: 256, μ: 426742, ~: 429159)
+Logs:
+  Bound result 2
+
+[PASS] testOverBudgetSignerStillFailsClosedAndLosesSingleAttemptWithoutPartialReceipt() (gas: 798860)
+Suite result: ok. 8 passed; 0 failed; 0 skipped; finished in 516.42ms (587.06ms CPU time)
+
+Ran 3 test suites in 521.80ms (550.79ms CPU time): 10 tests passed, 0 failed, 0 skipped (10 total tests)

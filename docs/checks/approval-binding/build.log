@@ -1,0 +1,2508 @@
+Compiling 4 files with Solc 0.8.26
+Solc 0.8.26 finished in 17.71s
+Compiler run successful!
+warning[uninitialized-local]: local variable is read before being initialized
+   ╭▸ src/deployment/ResultJson.sol:66:22
+   │
+66 │             value = (value << 4) | c;
+   │                      ━━━━━
+   │
+   ╰ help: https://getfoundry.sh/forge/linting/uninitialized-local
+
+warning[require-revert-in-loop]: `require` or `revert` inside a loop
+   ╭▸ src/deployment/ResultJson.sol:65:18
+   │
+65 │             else revert InvalidResultJSON();
+   │                  ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   │
+   ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
+
+warning[require-revert-in-loop]: `require` or `revert` inside a loop
+   ╭▸ src/deployment/ResultJson.sol:76:35
+   │
+76 │             if (c < 48 || c > 57) revert InvalidResultJSON();
+   │                                   ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   │
+   ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
+
+warning[require-revert-in-loop]: `require` or `revert` inside a loop
+    ╭▸ src/deployment/ResultJson.sol:115:47
+    │
+115 │             if (++d.tokens[index].size > 128) revert InvalidResultJSON();
+    │                                               ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
+
+warning[require-revert-in-loop]: `require` or `revert` inside a loop
+    ╭▸ src/deployment/ResultJson.sol:117:38
+    │
+117 │                 if (_peek(d) != '"') revert InvalidResultJSON();
+    │                                      ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
+
+warning[require-revert-in-loop]: `require` or `revert` inside a loop
+   ╭▸ src/deployment/ResultJson.sol:83:81
+   │
+83 │         if (depth > 16 || d.pos == d.data.length || d.count == d.tokens.length) revert InvalidResultJSON();
+   │                                                                                 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   │
+   ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
+
+warning[require-revert-in-loop]: `require` or `revert` inside a loop
+    ╭▸ src/deployment/ResultJson.sol:138:47
+    │
+138 │             if (_tokenHash(d, previous) == h) revert InvalidResultJSON();
+    │                                               ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
+
+warning[require-revert-in-loop]: `require` or `revert` inside a loop
+    ╭▸ src/deployment/ResultJson.sol:121:38
+    │
+121 │                 if (_peek(d) != ":") revert InvalidResultJSON();
+    │                                      ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
+
+warning[require-revert-in-loop]: `require` or `revert` inside a loop
+    ╭▸ src/deployment/ResultJson.sol:129:27
+    │
+129 │             if (c != ",") revert InvalidResultJSON();
+    │                           ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
+
+warning[require-revert-in-loop]: `require` or `revert` inside a loop
+    ╭▸ src/deployment/ResultJson.sol:158:63
+    │
+158 │             if (uint8(c) < 32 || uint8(c) > 126 || c == "\\") revert InvalidResultJSON();
+    │                                                               ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
+
+warning[require-revert-in-loop]: `require` or `revert` inside a loop
+    ╭▸ src/deployment/ResultJson.sol:160:9
+    │
+160 │         revert InvalidResultJSON();
+    │         ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
+
+warning[require-revert-in-loop]: `require` or `revert` inside a loop
+    ╭▸ src/deployment/ResultJson.sol:193:41
+    │
+193 │             if (_peek(d) != literal[i]) revert InvalidResultJSON();
+    │                                         ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
+
+warning[require-revert-in-loop]: `require` or `revert` inside a loop
+    ╭▸ src/deployment/ResultJson.sol:169:37
+    │
+169 │             if (c < "1" || c > "9") revert InvalidResultJSON();
+    │                                     ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
+
+warning[require-revert-in-loop]: `require` or `revert` inside a loop
+    ╭▸ src/deployment/ResultJson.sol:188:29
+    │
+188 │         if (start == d.pos) revert InvalidResultJSON();
+    │                             ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/deployment/ResultJson.sol:109:33
+    │
+109 │         bytes1 close = object ? bytes1("}") : bytes1("]");
+    │                                 ━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'bytes1' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/deployment/ResultJson.sol:109:47
+    │
+109 │         bytes1 close = object ? bytes1("}") : bytes1("]");
+    │                                               ━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'bytes1' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[require-revert-in-loop]: `require` or `revert` inside a loop
+   ╭▸ src/deployment/HookMiner.sol:53:37
+   │
+53 │                 if (nonce == start) revert InsufficientGas();
+   │                                     ━━━━━━━━━━━━━━━━━━━━━━━━━
+   │
+   ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
+
+warning[reentrancy-events]: event emitted after an external call; reentrancy can reorder or fabricate logs that off-chain consumers rely on
+    ╭▸ src/deployment/GatedHookDeployer.sol:323:9
+    │
+323 │         emit GatedHookDeployed(a.jobRequestId, hook, digest, a.poolManager, a.permissions, salt);
+    │         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/reentrancy-events
+
+warning[return-bomb]: external call with a gas limit may copy unbounded return data
+    ╭▸ src/deployment/GatedHookDeployer.sol:331:39
+    │
+331 │         (bool ok, bytes memory ret) = hook.staticcall{gas: READBACK_GAS}(abi.encodeCall(IGeneratedHook.poolManager, ()));
+    │                                       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/return-bomb
+
+warning[return-bomb]: external call with a gas limit may copy unbounded return data
+    ╭▸ src/deployment/GatedHookDeployer.sol:335:21
+    │
+335 │         (ok, ret) = hook.staticcall{gas: READBACK_GAS}(abi.encodeCall(IGeneratedHook.getHookPermissions, ()));
+    │                     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/return-bomb
+
+warning[require-revert-in-loop]: `require` or `revert` inside a loop
+   ╭▸ src/deployment/AcceptedArtifact.sol:43:31
+   │
+43 │                 if (c != "-") revert InvalidArtifactEvidence();
+   │                               ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   │
+   ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
+
+warning[require-revert-in-loop]: `require` or `revert` inside a loop
+   ╭▸ src/deployment/AcceptedArtifact.sol:45:17
+   │
+45 │                 revert InvalidArtifactEvidence();
+   │                 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   │
+   ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
+
+warning[uninitialized-local]: local variable is read before being initialized
+   ╭▸ src/deployment/AcceptedArtifact.sol:58:19
+   │
+58 │                 ++found;
+   │                   ━━━━━
+   │
+   ╰ help: https://getfoundry.sh/forge/linting/uninitialized-local
+
+warning[require-revert-in-loop]: `require` or `revert` inside a loop
+   ╭▸ src/deployment/ResultJson.sol:35:43
+   │
+35 │         if (d.tokens[object].kind != "{") revert InvalidResultJSON();
+   │                                           ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   │
+   ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
+
+warning[require-revert-in-loop]: `require` or `revert` inside a loop
+   ╭▸ src/deployment/ResultJson.sol:41:9
+   │
+41 │         revert InvalidResultJSON();
+   │         ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   │
+   ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
+
+warning[require-revert-in-loop]: `require` or `revert` inside a loop
+   ╭▸ src/deployment/ResultJson.sol:59:53
+   │
+59 │         if (t.kind != '"' || t.end - t.start != 64) revert InvalidResultJSON();
+   │                                                     ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   │
+   ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
+
+warning[require-revert-in-loop]: `require` or `revert` inside a loop
+   ╭▸ src/deployment/AcceptedArtifact.sol:57:84
+   │
+57 │                 if (d.hashValue(d.member(cursor, "submissionHash")) == bytes32(0)) revert InvalidArtifactEvidence();
+   │                                                                                    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   │
+   ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
+
+warning[uninitialized-local]: local variable is read before being initialized
+   ╭▸ src/deployment/AcceptedArtifact.sol:79:41
+   │
+79 │                 if (!name || !path || ++found != 1) revert InvalidArtifactEvidence();
+   │                                         ━━━━━
+   │
+   ╰ help: https://getfoundry.sh/forge/linting/uninitialized-local
+
+warning[require-revert-in-loop]: `require` or `revert` inside a loop
+   ╭▸ src/deployment/AcceptedArtifact.sol:79:53
+   │
+79 │                 if (!name || !path || ++found != 1) revert InvalidArtifactEvidence();
+   │                                                     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   │
+   ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
+
+warning[require-revert-in-loop]: `require` or `revert` inside a loop
+   ╭▸ src/deployment/ResultJson.sol:73:52
+   │
+73 │         if (t.kind != "0" || t.end - t.start > 20) revert InvalidResultJSON();
+   │                                                    ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   │
+   ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
+
+warning[require-revert-in-loop]: `require` or `revert` inside a loop
+   ╭▸ src/deployment/AcceptedArtifact.sol:85:21
+   │
+85 │                     revert InvalidArtifactEvidence();
+   │                     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   │
+   ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
+
+warning[reentrancy-events]: event emitted after an external call; reentrancy can reorder or fabricate logs that off-chain consumers rely on
+   ╭▸ src/HooksStoreFactory.sol:77:9
+   │
+77 │         emit HookDeployed(plan.hook, plan.specHash, salt, plan.initCodeHash, plan.runtimeCodeHash);
+   │         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   │
+   ╰ help: https://getfoundry.sh/forge/linting/reentrancy-events
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/cryptography/SignatureChecker.sol:113:48
+    │
+113 │             return isValidSignatureNow(address(bytes20(signer)), hash, signature);
+    │                                                ━━━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'bytes20' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/cryptography/SignatureChecker.sol:115:59
+    │
+115 │             (bool success, bytes memory result) = address(bytes20(signer))
+    │                                                           ━━━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'bytes20' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[calls-loop]: external call inside a loop
+    ╭▸ src/vendor/openzeppelin/utils/cryptography/SignatureChecker.sol:115:51
+    │
+115 │               (bool success, bytes memory result) = address(bytes20(signer))
+    │ ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+116 │ ┃                 .staticcall(abi.encodeCall(IERC7913SignatureVerifier.verify, (signer.slice(20), hash, signature)));
+    │ ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/calls-loop
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/cryptography/ECDSA.sol:154:23
+    │
+154 │             uint8 v = uint8((uint256(vs) >> 255) + 27);
+    │                       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint8' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+   ╭▸ src/vendor/openzeppelin/utils/ShortStrings.sol:57:33
+   │
+57 │         return ShortString.wrap(bytes32(uint256(bytes32(bstr)) | bstr.length));
+   │                                 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   │
+   ├ note: consider disabling this lint if you're certain the cast is safe
+   │       
+   │       // casting to 'bytes32' is safe because [explain why]
+   │       // forge-lint: disable-next-line(unsafe-typecast)
+   │       
+   │       
+   ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+   ╭▸ src/vendor/openzeppelin/utils/ShortStrings.sol:57:49
+   │
+57 │         return ShortString.wrap(bytes32(uint256(bytes32(bstr)) | bstr.length));
+   │                                                 ━━━━━━━━━━━━━
+   │
+   ├ note: consider disabling this lint if you're certain the cast is safe
+   │       
+   │       // casting to 'bytes32' is safe because [explain why]
+   │       // forge-lint: disable-next-line(unsafe-typecast)
+   │       
+   │       
+   ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+   ╭▸ src/vendor/openzeppelin/utils/Bytes.sol:33:17
+   │
+33 │             if (bytes1(_unsafeReadBytesOffset(buffer, i)) == s) {
+   │                 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   │
+   ├ note: consider disabling this lint if you're certain the cast is safe
+   │       
+   │       // casting to 'bytes1' is safe because [explain why]
+   │       // forge-lint: disable-next-line(unsafe-typecast)
+   │       
+   │       
+   ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+   ╭▸ src/vendor/openzeppelin/utils/Bytes.sol:62:21
+   │
+62 │                 if (bytes1(_unsafeReadBytesOffset(buffer, i - 1)) == s) {
+   │                     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   │
+   ├ note: consider disabling this lint if you're certain the cast is safe
+   │       
+   │       // casting to 'bytes1' is safe because [explain why]
+   │       // forge-lint: disable-next-line(unsafe-typecast)
+   │       
+   │       
+   ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/Strings.sol:217:38
+    │
+217 │             uint8 chr = _tryParseChr(bytes1(_unsafeReadBytesOffset(buffer, i)));
+    │                                      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'bytes1' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/Strings.sol:289:50
+    │
+289 │ …     bytes1 sign = begin == end ? bytes1(0) : bytes1(_unsafeReadBytesOffset(buffer, begin)); // don't do out-of-bound (possibly unsa…
+    │                                                ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'bytes1' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/Strings.sol:290:37
+    │
+290 │         bool positiveSign = sign == bytes1("+");
+    │                                     ━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'bytes1' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/Strings.sol:291:37
+    │
+291 │         bool negativeSign = sign == bytes1("-");
+    │                                     ━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'bytes1' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/Strings.sol:297:43
+    │
+297 │             return (true, negativeSign ? -int256(absValue) : int256(absValue));
+    │                                           ━━━━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'int256' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/Strings.sol:297:62
+    │
+297 │             return (true, negativeSign ? -int256(absValue) : int256(absValue));
+    │                                                              ━━━━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'int256' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/Strings.sol:366:47
+    │
+366 │ …     bool hasPrefix = (end > begin + 1) && bytes2(_unsafeReadBytesOffset(buffer, begin)) == bytes2("0x"); // don't do out-of-bound (…
+    │                                             ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'bytes2' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/Strings.sol:366:96
+    │
+366 │ …     bool hasPrefix = (end > begin + 1) && bytes2(_unsafeReadBytesOffset(buffer, begin)) == bytes2("0x"); // don't do out-of-bound (…
+    │                                                                                              ━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'bytes2' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/Strings.sol:371:38
+    │
+371 │             uint8 chr = _tryParseChr(bytes1(_unsafeReadBytesOffset(buffer, i)));
+    │                                      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'bytes1' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/Strings.sol:425:47
+    │
+425 │ …     bool hasPrefix = (end > begin + 1) && bytes2(_unsafeReadBytesOffset(bytes(input), begin)) == bytes2("0x"); // don't do out-of-b…
+    │                                             ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'bytes2' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/Strings.sol:425:102
+    │
+425 │ …     bool hasPrefix = (end > begin + 1) && bytes2(_unsafeReadBytesOffset(bytes(input), begin)) == bytes2("0x"); // don't do out-of-b…
+    │                                                                                                    ━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'bytes2' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/Strings.sol:432:32
+    │
+432 │             return (s, address(uint160(v)));
+    │                                ━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint160' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/Strings.sol:471:27
+    │
+471 │             bytes1 char = bytes1(_unsafeReadBytesOffset(buffer, i));
+    │                           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'bytes1' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+   ╭▸ src/vendor/openzeppelin/utils/math/SignedMath.sol:24:35
+   │
+24 │             return b ^ ((a ^ b) * int256(SafeCast.toUint(condition)));
+   │                                   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   │
+   ├ note: consider disabling this lint if you're certain the cast is safe
+   │       
+   │       // casting to 'int256' is safe because [explain why]
+   │       // forge-lint: disable-next-line(unsafe-typecast)
+   │       
+   │       
+   ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+   ╭▸ src/vendor/openzeppelin/utils/math/SignedMath.sol:49:28
+   │
+49 │         return x + (int256(uint256(x) >> 255) & (a ^ b));
+   │                            ━━━━━━━━━━
+   │
+   ├ note: consider disabling this lint if you're certain the cast is safe
+   │       
+   │       // casting to 'uint256' is safe because [explain why]
+   │       // forge-lint: disable-next-line(unsafe-typecast)
+   │       
+   │       
+   ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+   ╭▸ src/vendor/openzeppelin/utils/math/SignedMath.sol:65:20
+   │
+65 │             return uint256((n + mask) ^ mask);
+   │                    ━━━━━━━━━━━━━━━━━━━━━━━━━━
+   │
+   ├ note: consider disabling this lint if you're certain the cast is safe
+   │       
+   │       // casting to 'uint256' is safe because [explain why]
+   │       // forge-lint: disable-next-line(unsafe-typecast)
+   │       
+   │       
+   ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+   ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:54:16
+   │
+54 │         return uint248(value);
+   │                ━━━━━━━━━━━━━━
+   │
+   ├ note: consider disabling this lint if you're certain the cast is safe
+   │       
+   │       // casting to 'uint248' is safe because [explain why]
+   │       // forge-lint: disable-next-line(unsafe-typecast)
+   │       
+   │       
+   ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+   ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:71:16
+   │
+71 │         return uint240(value);
+   │                ━━━━━━━━━━━━━━
+   │
+   ├ note: consider disabling this lint if you're certain the cast is safe
+   │       
+   │       // casting to 'uint240' is safe because [explain why]
+   │       // forge-lint: disable-next-line(unsafe-typecast)
+   │       
+   │       
+   ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+   ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:88:16
+   │
+88 │         return uint232(value);
+   │                ━━━━━━━━━━━━━━
+   │
+   ├ note: consider disabling this lint if you're certain the cast is safe
+   │       
+   │       // casting to 'uint232' is safe because [explain why]
+   │       // forge-lint: disable-next-line(unsafe-typecast)
+   │       
+   │       
+   ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:105:16
+    │
+105 │         return uint224(value);
+    │                ━━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint224' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:122:16
+    │
+122 │         return uint216(value);
+    │                ━━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint216' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:139:16
+    │
+139 │         return uint208(value);
+    │                ━━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint208' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:156:16
+    │
+156 │         return uint200(value);
+    │                ━━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint200' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:173:16
+    │
+173 │         return uint192(value);
+    │                ━━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint192' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:190:16
+    │
+190 │         return uint184(value);
+    │                ━━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint184' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:207:16
+    │
+207 │         return uint176(value);
+    │                ━━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint176' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:224:16
+    │
+224 │         return uint168(value);
+    │                ━━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint168' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:241:16
+    │
+241 │         return uint160(value);
+    │                ━━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint160' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:258:16
+    │
+258 │         return uint152(value);
+    │                ━━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint152' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:275:16
+    │
+275 │         return uint144(value);
+    │                ━━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint144' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:292:16
+    │
+292 │         return uint136(value);
+    │                ━━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint136' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:309:16
+    │
+309 │         return uint128(value);
+    │                ━━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint128' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:326:16
+    │
+326 │         return uint120(value);
+    │                ━━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint120' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:343:16
+    │
+343 │         return uint112(value);
+    │                ━━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint112' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:360:16
+    │
+360 │         return uint104(value);
+    │                ━━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint104' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:377:16
+    │
+377 │         return uint96(value);
+    │                ━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint96' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:394:16
+    │
+394 │         return uint88(value);
+    │                ━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint88' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:411:16
+    │
+411 │         return uint80(value);
+    │                ━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint80' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:428:16
+    │
+428 │         return uint72(value);
+    │                ━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint72' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:445:16
+    │
+445 │         return uint64(value);
+    │                ━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint64' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:462:16
+    │
+462 │         return uint56(value);
+    │                ━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint56' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:479:16
+    │
+479 │         return uint48(value);
+    │                ━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint48' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:496:16
+    │
+496 │         return uint40(value);
+    │                ━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint40' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:513:16
+    │
+513 │         return uint32(value);
+    │                ━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint32' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:530:16
+    │
+530 │         return uint24(value);
+    │                ━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint24' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:547:16
+    │
+547 │         return uint16(value);
+    │                ━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint16' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:564:16
+    │
+564 │         return uint8(value);
+    │                ━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint8' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:578:16
+    │
+578 │         return uint256(value);
+    │                ━━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint256' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:593:22
+    │
+593 │         downcasted = int248(value);
+    │                      ━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'int248' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:611:22
+    │
+611 │         downcasted = int240(value);
+    │                      ━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'int240' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:629:22
+    │
+629 │         downcasted = int232(value);
+    │                      ━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'int232' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:647:22
+    │
+647 │         downcasted = int224(value);
+    │                      ━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'int224' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:665:22
+    │
+665 │         downcasted = int216(value);
+    │                      ━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'int216' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:683:22
+    │
+683 │         downcasted = int208(value);
+    │                      ━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'int208' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:701:22
+    │
+701 │         downcasted = int200(value);
+    │                      ━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'int200' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:719:22
+    │
+719 │         downcasted = int192(value);
+    │                      ━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'int192' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:737:22
+    │
+737 │         downcasted = int184(value);
+    │                      ━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'int184' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:755:22
+    │
+755 │         downcasted = int176(value);
+    │                      ━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'int176' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:773:22
+    │
+773 │         downcasted = int168(value);
+    │                      ━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'int168' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:791:22
+    │
+791 │         downcasted = int160(value);
+    │                      ━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'int160' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:809:22
+    │
+809 │         downcasted = int152(value);
+    │                      ━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'int152' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:827:22
+    │
+827 │         downcasted = int144(value);
+    │                      ━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'int144' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:845:22
+    │
+845 │         downcasted = int136(value);
+    │                      ━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'int136' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:863:22
+    │
+863 │         downcasted = int128(value);
+    │                      ━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'int128' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:881:22
+    │
+881 │         downcasted = int120(value);
+    │                      ━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'int120' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:899:22
+    │
+899 │         downcasted = int112(value);
+    │                      ━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'int112' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:917:22
+    │
+917 │         downcasted = int104(value);
+    │                      ━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'int104' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:935:22
+    │
+935 │         downcasted = int96(value);
+    │                      ━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'int96' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:953:22
+    │
+953 │         downcasted = int88(value);
+    │                      ━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'int88' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:971:22
+    │
+971 │         downcasted = int80(value);
+    │                      ━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'int80' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:989:22
+    │
+989 │         downcasted = int72(value);
+    │                      ━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'int72' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+     ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:1007:22
+     │
+1007 │         downcasted = int64(value);
+     │                      ━━━━━━━━━━━━
+     │
+     ├ note: consider disabling this lint if you're certain the cast is safe
+     │       
+     │       // casting to 'int64' is safe because [explain why]
+     │       // forge-lint: disable-next-line(unsafe-typecast)
+     │       
+     │       
+     ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+     ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:1025:22
+     │
+1025 │         downcasted = int56(value);
+     │                      ━━━━━━━━━━━━
+     │
+     ├ note: consider disabling this lint if you're certain the cast is safe
+     │       
+     │       // casting to 'int56' is safe because [explain why]
+     │       // forge-lint: disable-next-line(unsafe-typecast)
+     │       
+     │       
+     ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+     ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:1043:22
+     │
+1043 │         downcasted = int48(value);
+     │                      ━━━━━━━━━━━━
+     │
+     ├ note: consider disabling this lint if you're certain the cast is safe
+     │       
+     │       // casting to 'int48' is safe because [explain why]
+     │       // forge-lint: disable-next-line(unsafe-typecast)
+     │       
+     │       
+     ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+     ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:1061:22
+     │
+1061 │         downcasted = int40(value);
+     │                      ━━━━━━━━━━━━
+     │
+     ├ note: consider disabling this lint if you're certain the cast is safe
+     │       
+     │       // casting to 'int40' is safe because [explain why]
+     │       // forge-lint: disable-next-line(unsafe-typecast)
+     │       
+     │       
+     ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+     ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:1079:22
+     │
+1079 │         downcasted = int32(value);
+     │                      ━━━━━━━━━━━━
+     │
+     ├ note: consider disabling this lint if you're certain the cast is safe
+     │       
+     │       // casting to 'int32' is safe because [explain why]
+     │       // forge-lint: disable-next-line(unsafe-typecast)
+     │       
+     │       
+     ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+     ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:1097:22
+     │
+1097 │         downcasted = int24(value);
+     │                      ━━━━━━━━━━━━
+     │
+     ├ note: consider disabling this lint if you're certain the cast is safe
+     │       
+     │       // casting to 'int24' is safe because [explain why]
+     │       // forge-lint: disable-next-line(unsafe-typecast)
+     │       
+     │       
+     ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+     ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:1115:22
+     │
+1115 │         downcasted = int16(value);
+     │                      ━━━━━━━━━━━━
+     │
+     ├ note: consider disabling this lint if you're certain the cast is safe
+     │       
+     │       // casting to 'int16' is safe because [explain why]
+     │       // forge-lint: disable-next-line(unsafe-typecast)
+     │       
+     │       
+     ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+     ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:1133:22
+     │
+1133 │         downcasted = int8(value);
+     │                      ━━━━━━━━━━━
+     │
+     ├ note: consider disabling this lint if you're certain the cast is safe
+     │       
+     │       // casting to 'int8' is safe because [explain why]
+     │       // forge-lint: disable-next-line(unsafe-typecast)
+     │       
+     │       
+     ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+     ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:1148:21
+     │
+1148 │         if (value > uint256(type(int256).max)) {
+     │                     ━━━━━━━━━━━━━━━━━━━━━━━━━
+     │
+     ├ note: consider disabling this lint if you're certain the cast is safe
+     │       
+     │       // casting to 'uint256' is safe because [explain why]
+     │       // forge-lint: disable-next-line(unsafe-typecast)
+     │       
+     │       
+     ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+     ╭▸ src/vendor/openzeppelin/utils/math/SafeCast.sol:1151:16
+     │
+1151 │         return int256(value);
+     │                ━━━━━━━━━━━━━
+     │
+     ├ note: consider disabling this lint if you're certain the cast is safe
+     │       
+     │       // casting to 'int256' is safe because [explain why]
+     │       // forge-lint: disable-next-line(unsafe-typecast)
+     │       
+     │       
+     ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[divide-before-multiply]: division before multiplication may lose precision
+    ╭▸ src/vendor/openzeppelin/utils/math/Math.sol:346:27
+    │
+346 │                     gcd - remainder * quotient
+    │                           ━━━━━━━━━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/divide-before-multiply
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/Math.sol:356:29
+    │
+356 │                     x - y * int256(quotient)
+    │                             ━━━━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'int256' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/Math.sol:361:39
+    │
+361 │             return ternary(x < 0, n - uint256(-x), uint256(x)); // Wrap the result if it's negative.
+    │                                       ━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint256' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/vendor/openzeppelin/utils/math/Math.sol:361:52
+    │
+361 │             return ternary(x < 0, n - uint256(-x), uint256(x)); // Wrap the result if it's negative.
+    │                                                    ━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint256' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[encode-packed-collision]: `abi.encodePacked()` called with multiple dynamic type arguments; hash collisions possible
+    ╭▸ src/vendor/openzeppelin/utils/math/Math.sol:461:18
+    │
+461 │         result = abi.encodePacked(b.length, e.length, mLen, b, e, m);
+    │                  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/encode-packed-collision
+
+warning[uninitialized-local]: local variable is read before being initialized
+    ╭▸ src/store/HookListingRegistry.sol:155:19
+    │
+155 │             ) ids[count++] = id;
+    │                   ━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/uninitialized-local
+
+warning[require-revert-in-loop]: `require` or `revert` inside a loop
+    ╭▸ src/store/HookListingRegistry.sol:203:70
+    │
+203 │             if (label.length == 0 || label.length > MAX_LABEL_BYTES) revert InvalidLabels();
+    │                                                                      ━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
+
+warning[require-revert-in-loop]: `require` or `revert` inside a loop
+    ╭▸ src/store/HookListingRegistry.sol:206:86
+    │
+206 │                 if (!((c >= "a" && c <= "z") || (c >= "0" && c <= "9") || c == "-")) revert InvalidLabels();
+    │                                                                                      ━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
+
+warning[require-revert-in-loop]: `require` or `revert` inside a loop
+    ╭▸ src/store/HookListingRegistry.sol:209:75
+    │
+209 │                 if (keccak256(label) == keccak256(bytes(data.labels[j]))) revert InvalidLabels();
+    │                                                                           ━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
+
+warning[non-reentrant-not-first]: `nonReentrant` is not the first modifier
+    ╭▸ src/store/FeaturedPlacements.sol:104:63
+    │
+104 │     function configureToken(address token) external onlyOwner nonReentrant {
+    │                                                               ━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/non-reentrant-not-first
+
+warning[missing-zero-check]: address parameter is used in a state write or value transfer without a zero-address check
+    ╭▸ src/store/FeaturedPlacements.sol:104:29
+    │
+104 │     function configureToken(address token) external onlyOwner nonReentrant {
+    │                             ━━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/missing-zero-check
+
+warning[reentrancy-events]: event emitted after an external call; reentrancy can reorder or fabricate logs that off-chain consumers rely on
+    ╭▸ src/store/FeaturedPlacements.sol:130:9
+    │
+130 │         emit Deposited(msg.sender, amount);
+    │         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/reentrancy-events
+
+warning[reentrancy-events]: event emitted after an external call; reentrancy can reorder or fabricate logs that off-chain consumers rely on
+    ╭▸ src/store/FeaturedPlacements.sol:140:9
+    │
+140 │         emit Withdrawn(msg.sender, to, amount);
+    │         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/reentrancy-events
+
+warning[block-timestamp]: usage of `block.timestamp` in a comparison may be manipulated by validators
+    ╭▸ src/store/FeaturedPlacements.sol:153:13
+    │
+153 │         if (block.timestamp > deadline) revert DeadlineExpired();
+    │             ━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/block-timestamp
+
+warning[block-timestamp]: usage of `block.timestamp` in a comparison may be manipulated by validators
+    ╭▸ src/store/FeaturedPlacements.sol:159:47
+    │
+159 │         if (previous.status == Status.Open && block.timestamp < previous.endsAt) revert AlreadyFeatured();
+    │                                               ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/block-timestamp
+
+warning[block-timestamp]: usage of `block.timestamp` in a comparison may be manipulated by validators
+    ╭▸ src/store/FeaturedPlacements.sol:182:13
+    │
+182 │         if (block.timestamp >= placement.endsAt) revert PlacementExpired();
+    │             ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/block-timestamp
+
+warning[block-timestamp]: usage of `block.timestamp` in a comparison may be manipulated by validators
+    ╭▸ src/store/FeaturedPlacements.sol:199:13
+    │
+199 │         if (block.timestamp < placement.endsAt) revert PlacementNotExpired();
+    │             ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/block-timestamp
+
+warning[reentrancy-events]: event emitted after an external call; reentrancy can reorder or fabricate logs that off-chain consumers rely on
+    ╭▸ src/store/FeaturedPlacements.sol:216:9
+    │
+216 │         emit ProceedsWithdrawn(msg.sender, to, amount);
+    │         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/reentrancy-events
+
+warning[block-timestamp]: usage of `block.timestamp` in a comparison may be manipulated by validators
+    ╭▸ src/store/FeaturedPlacements.sol:226:51
+    │
+226 │         return placement.status == Status.Open && block.timestamp < placement.endsAt;
+    │                                                   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/block-timestamp
+
+warning[uninitialized-local]: local variable is read before being initialized
+    ╭▸ src/store/FeaturedPlacements.sol:244:35
+    │
+244 │             if (isActive(id)) ads[count++] = _placements[id];
+    │                                   ━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/uninitialized-local
+
+warning[reentrancy-no-eth]: external call can be reentered before `_locked` is updated
+    ╭▸ src/imd/HookJobRequester.sol:991:25
+    │
+991 │             requestId = intake.requestWithFailure(action, body, callback, onFailure, asset, price);
+    │                         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/reentrancy-no-eth
+
+warning[reentrancy-no-eth]: external call can be reentered before `_locked` is updated
+    ╭▸ src/imd/HookJobRequester.sol:993:25
+    │
+993 │             requestId = intake.request(action, body, callback, asset, price);
+    │                         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/reentrancy-no-eth
+
+warning[reentrancy-no-eth]: external call can be reentered before `_locked` is updated
+     ╭▸ src/imd/HookJobRequester.sol:1006:39
+     │
+1006 │         (bool ok, bytes memory ret) = token.call(data);
+     │                                       ━━━━━━━━━━━━━━━━
+     │
+     ╰ help: https://getfoundry.sh/forge/linting/reentrancy-no-eth
+
+warning[reentrancy-events]: event emitted after an external call; reentrancy can reorder or fabricate logs that off-chain consumers rely on
+    ╭▸ src/imd/HookJobRequester.sol:323:9
+    │
+323 │         emit JobOpened(requestId, msg.sender, specHash, price, body);
+    │         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/reentrancy-events
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/imd/HookJobRequester.sol:316:24
+    │
+316 │         job.openedAt = uint64(block.timestamp);
+    │                        ━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint64' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/imd/HookJobRequester.sol:317:24
+    │
+317 │         job.deadline = uint64(block.timestamp) + jobTimeout;
+    │                        ━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint64' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[reentrancy-events]: event emitted after an external call; reentrancy can reorder or fabricate logs that off-chain consumers rely on
+    ╭▸ src/imd/HookJobRequester.sol:405:9
+    │
+405 │         emit ReviewRequested(jobRequestId, intakeRequestId, price, body);
+    │         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/reentrancy-events
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/imd/HookJobRequester.sol:397:30
+    │
+397 │         job.reviewDeadline = uint64(block.timestamp) + reviewTimeout;
+    │                              ━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint64' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/imd/HookJobRequester.sol:400:23
+    │
+400 │         ask.askedAt = uint64(block.timestamp);
+    │                       ━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint64' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[require-revert-in-loop]: `require` or `revert` inside a loop
+   ╭▸ src/deployment/HookMiner.sol:46:48
+   │
+46 │         if (flags & ~Hooks.ALL_HOOK_MASK != 0) revert InvalidFlags();
+   │                                                ━━━━━━━━━━━━━━━━━━━━━━
+   │
+   ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
+
+warning[require-revert-in-loop]: `require` or `revert` inside a loop
+   ╭▸ src/deployment/HookMiner.sol:48:13
+   │
+48 │             revert InvalidSearchRange();
+   │             ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   │
+   ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
+
+warning[reentrancy-events]: event emitted after an external call; reentrancy can reorder or fabricate logs that off-chain consumers rely on
+    ╭▸ src/imd/HookJobRequester.sol:742:13
+    │
+742 │             emit ReviewReceived(jobRequestId, requestId, a.requestId, digest);
+    │             ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/reentrancy-events
+
+warning[reentrancy-events]: event emitted after an external call; reentrancy can reorder or fabricate logs that off-chain consumers rely on
+    ╭▸ src/imd/HookJobRequester.sol:767:9
+    │
+767 │         emit ReviewAnswered(jobRequestId, requestId, passed, questionHash, panelJobId, panelSize, agreed);
+    │         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/reentrancy-events
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/imd/HookJobRequester.sol:738:32
+    │
+738 │                     | (uint256(uint64(block.timestamp)) << 128) | (uint256(a.panelSize) << 192)
+    │                                ━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint64' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/imd/HookJobRequester.sol:835:16
+    │
+835 │         return uint32((_reviewReceipts[intakeRequestId].details >> 225) & MAX_SIGNER_EPOCH);
+    │                ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint32' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/imd/HookJobRequester.sol:849:24
+    │
+849 │             fromBlock: uint64(details),
+    │                        ━━━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint64' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/imd/HookJobRequester.sol:850:22
+    │
+850 │             toBlock: uint64(details >> 64),
+    │                      ━━━━━━━━━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint64' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/imd/HookJobRequester.sol:851:25
+    │
+851 │             receivedAt: uint64(details >> 128),
+    │                         ━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint64' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/imd/HookJobRequester.sol:852:24
+    │
+852 │             panelSize: uint16(details >> 192),
+    │                        ━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint16' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[unsafe-typecast]: typecast can truncate values
+    ╭▸ src/imd/HookJobRequester.sol:853:21
+    │
+853 │             agreed: uint16(details >> 208),
+    │                     ━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ├ note: consider disabling this lint if you're certain the cast is safe
+    │       
+    │       // casting to 'uint16' is safe because [explain why]
+    │       // forge-lint: disable-next-line(unsafe-typecast)
+    │       
+    │       
+    ╰ help: https://getfoundry.sh/forge/linting/unsafe-typecast
+
+warning[non-reentrant-not-first]: `nonReentrant` is not the first modifier
+    ╭▸ src/imd/HookJobRequester.sol:877:55
+    │
+877 │     function setIntake(address to) external onlyOwner nonReentrant {
+    │                                                       ━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/non-reentrant-not-first
+
+warning[non-reentrant-not-first]: `nonReentrant` is not the first modifier
+    ╭▸ src/imd/HookJobRequester.sol:884:79
+    │
+884 │     function setPayment(address asset_, uint256 maxPrice_) external onlyOwner nonReentrant {
+    │                                                                               ━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/non-reentrant-not-first
+
+warning[reentrancy-events]: event emitted after an external call; reentrancy can reorder or fabricate logs that off-chain consumers rely on
+    ╭▸ src/imd/HookJobRequester.sol:928:9
+    │
+928 │         emit JobTemplateSet(action, keccak256(abi.encode(prefix, middle, suffix)));
+    │         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/reentrancy-events
+
+warning[non-reentrant-not-first]: `nonReentrant` is not the first modifier
+    ╭▸ src/imd/HookJobRequester.sol:962:82
+    │
+962 │     function sweep(address token, address to, uint256 amount) external onlyOwner nonReentrant {
+    │                                                                                  ━━━━━━━━━━━━
+    │
+    ╰ help: https://getfoundry.sh/forge/linting/non-reentrant-not-first
+
+warning[uninitialized-local]: local variable is read before being initialized
+     ╭▸ src/imd/HookJobRequester.sol:1016:16
+     │
+1016 │         while (i < n) {
+     │                ━
+     │
+     ╰ help: https://getfoundry.sh/forge/linting/uninitialized-local
+
+warning[require-revert-in-loop]: `require` or `revert` inside a loop
+     ╭▸ src/imd/HookJobRequester.sol:1019:96
+     │
+1019 │                 if (c < 0x20 || c == 0x7f || c == 0x22 || c == 0x5c || c == 0x3c || c == 0x3e) revert InvalidBrief(i);
+     │                                                                                                ━━━━━━━━━━━━━━━━━━━━━━━
+     │
+     ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
+
+warning[require-revert-in-loop]: `require` or `revert` inside a loop
+     ╭▸ src/imd/HookJobRequester.sol:1035:17
+     │
+1035 │                 revert InvalidBrief(i);
+     │                 ━━━━━━━━━━━━━━━━━━━━━━━
+     │
+     ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
+
+warning[require-revert-in-loop]: `require` or `revert` inside a loop
+     ╭▸ src/imd/HookJobRequester.sol:1037:30
+     │
+1037 │             if (i + len > n) revert InvalidBrief(i);
+     │                              ━━━━━━━━━━━━━━━━━━━━━━━
+     │
+     ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
+
+warning[require-revert-in-loop]: `require` or `revert` inside a loop
+     ╭▸ src/imd/HookJobRequester.sol:1040:39
+     │
+1040 │                 if (d & 0xc0 != 0x80) revert InvalidBrief(i + j);
+     │                                       ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     │
+     ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
+
+warning[require-revert-in-loop]: `require` or `revert` inside a loop
+     ╭▸ src/imd/HookJobRequester.sol:1043:77
+     │
+1043 │             if (len == 3 && (cp < 0x800 || (cp >= 0xd800 && cp <= 0xdfff))) revert InvalidBrief(i);
+     │                                                                             ━━━━━━━━━━━━━━━━━━━━━━━
+     │
+     ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
+
+warning[require-revert-in-loop]: `require` or `revert` inside a loop
+     ╭▸ src/imd/HookJobRequester.sol:1044:62
+     │
+1044 │             if (len == 4 && (cp < 0x10000 || cp > 0x10ffff)) revert InvalidBrief(i);
+     │                                                              ━━━━━━━━━━━━━━━━━━━━━━━
+     │
+     ╰ help: https://getfoundry.sh/forge/linting/require-revert-in-loop
+
+warning[uninitialized-local]: local variable is read before being initialized
+     ╭▸ src/imd/HookJobRequester.sol:1061:25
+     │
+1061 │         for (uint256 i; i + m <= haystack.length; ++i) {
+     │                         ━
+     │
+     ╰ help: https://getfoundry.sh/forge/linting/uninitialized-local
+
+warning[environment-read-across-mutation]: `block.timestamp` may be reused across `vm.warp`
+    ╭▸ test/HookJobRequester.t.sol:84:30
+    │
+ 84 │             issuedAt: uint64(block.timestamp),
+    │                              ━━━━━━━━━━━━━━━
+    ‡
+656 │         vm.warp(block.timestamp + 1 days + 1);
+    │         ───────────────────────────────────── `vm.warp` changes this environment here
+    │
+    ├ help: capture it with `vm.getBlockTimestamp()` instead
+    ╰ help: https://getfoundry.sh/forge/linting/environment-read-across-mutation
+
+warning[environment-read-across-mutation]: `block.timestamp` may be reused across `vm.warp`
+    ╭▸ test/HookJobRequester.t.sol:85:31
+    │
+ 85 │             expiresAt: uint64(block.timestamp + 1 hours)
+    │                               ━━━━━━━━━━━━━━━
+    ‡
+656 │         vm.warp(block.timestamp + 1 days + 1);
+    │         ───────────────────────────────────── `vm.warp` changes this environment here
+    │
+    ├ help: capture it with `vm.getBlockTimestamp()` instead
+    ╰ help: https://getfoundry.sh/forge/linting/environment-read-across-mutation
+
+warning[environment-read-across-mutation]: `block.timestamp` may be reused across `vm.warp`
+    ╭▸ test/HookJobRequester.t.sol:653:89
+    │
+653 │             abi.encodeWithSelector(HookJobRequester.DeadlineNotReached.selector, uint64(block.timestamp + 1 days))
+    │                                                                                         ━━━━━━━━━━━━━━━
+    ‡
+656 │         vm.warp(block.timestamp + 1 days + 1);
+    │         ───────────────────────────────────── `vm.warp` changes this environment here
+    │
+    ├ help: capture it with `vm.getBlockTimestamp()` instead
+    ╰ help: https://getfoundry.sh/forge/linting/environment-read-across-mutation
+
+warning[environment-read-across-mutation]: `block.timestamp` may be reused across `vm.warp`
+    ╭▸ test/HookJobRequester.t.sol:656:17
+    │
+656 │         vm.warp(block.timestamp + 1 days + 1);
+    │         ────────━━━━━━━━━━━━━━━────────────── `vm.warp` changes this environment here
+    │
+    ├ help: capture it with `vm.getBlockTimestamp()` instead
+    ╰ help: https://getfoundry.sh/forge/linting/environment-read-across-mutation
+
+warning[environment-read-across-mutation]: `block.timestamp` may be reused across `vm.warp`
+    ╭▸ test/HookJobRequester.t.sol:680:17
+    │
+680 │         vm.warp(block.timestamp + 7 days + 1);
+    │         ────────━━━━━━━━━━━━━━━────────────── `vm.warp` changes this environment here
+    │
+    ├ help: capture it with `vm.getBlockTimestamp()` instead
+    ╰ help: https://getfoundry.sh/forge/linting/environment-read-across-mutation
+
+warning[environment-read-across-mutation]: `block.timestamp` may be reused across `vm.warp`
+   ╭▸ test/HookJobRequester.t.sol:84:30
+   │
+84 │             issuedAt: uint64(block.timestamp),
+   │                              ━━━━━━━━━━━━━━━
+   │
+   ⸬  test/AuditContextMismatchProof.t.sol:97:9
+   │
+97 │         vm.warp(requester.getReviewAsk(askId).deadline + 1);
+   │         ─────────────────────────────────────────────────── `vm.warp` changes this environment here
+   │
+   ├ help: capture it with `vm.getBlockTimestamp()` instead
+   ╰ help: https://getfoundry.sh/forge/linting/environment-read-across-mutation
+
+warning[environment-read-across-mutation]: `block.timestamp` may be reused across `vm.warp`
+   ╭▸ test/HookJobRequester.t.sol:85:31
+   │
+85 │             expiresAt: uint64(block.timestamp + 1 hours)
+   │                               ━━━━━━━━━━━━━━━
+   │
+   ⸬  test/AuditContextMismatchProof.t.sol:97:9
+   │
+97 │         vm.warp(requester.getReviewAsk(askId).deadline + 1);
+   │         ─────────────────────────────────────────────────── `vm.warp` changes this environment here
+   │
+   ├ help: capture it with `vm.getBlockTimestamp()` instead
+   ╰ help: https://getfoundry.sh/forge/linting/environment-read-across-mutation
+
+warning[environment-read-across-mutation]: `block.timestamp` may be reused across `vm.warp`
+    ╭▸ test/AuditExpiryProof.t.sol:154:17
+    │
+154 │         vm.warp(block.timestamp + 1 days + 1);
+    │         ────────━━━━━━━━━━━━━━━────────────── `vm.warp` changes this environment here
+    │
+    ├ help: capture it with `vm.getBlockTimestamp()` instead
+    ╰ help: https://getfoundry.sh/forge/linting/environment-read-across-mutation
+
+warning[environment-read-across-mutation]: `block.timestamp` may be reused across `vm.warp`
+    ╭▸ test/HookJobRequester.t.sol:84:30
+    │
+ 84 │             issuedAt: uint64(block.timestamp),
+    │                              ━━━━━━━━━━━━━━━
+    │
+    ⸬  test/RequesterMvpAudit.t.sol:174:9
+    │
+174 │         vm.warp(deadline);
+    │         ───────────────── `vm.warp` changes this environment here
+    │
+    ├ help: capture it with `vm.getBlockTimestamp()` instead
+    ╰ help: https://getfoundry.sh/forge/linting/environment-read-across-mutation
+
+warning[environment-read-across-mutation]: `block.timestamp` may be reused across `vm.warp`
+    ╭▸ test/HookJobRequester.t.sol:85:31
+    │
+ 85 │             expiresAt: uint64(block.timestamp + 1 hours)
+    │                               ━━━━━━━━━━━━━━━
+    │
+    ⸬  test/RequesterMvpAudit.t.sol:174:9
+    │
+174 │         vm.warp(deadline);
+    │         ───────────────── `vm.warp` changes this environment here
+    │
+    ├ help: capture it with `vm.getBlockTimestamp()` instead
+    ╰ help: https://getfoundry.sh/forge/linting/environment-read-across-mutation
+
+warning[environment-read-across-mutation]: `block.timestamp` may be reused across `vm.warp`
+   ╭▸ test/HookJobRequester.t.sol:84:30
+   │
+84 │             issuedAt: uint64(block.timestamp),
+   │                              ━━━━━━━━━━━━━━━
+   │
+   ⸬  test/ReviewAuditRegression.t.sol:52:9
+   │
+52 │         vm.warp(requester.getReviewAsk(askId).deadline + 1);
+   │         ─────────────────────────────────────────────────── `vm.warp` changes this environment here
+   │
+   ├ help: capture it with `vm.getBlockTimestamp()` instead
+   ╰ help: https://getfoundry.sh/forge/linting/environment-read-across-mutation
+
+warning[environment-read-across-mutation]: `block.timestamp` may be reused across `vm.warp`
+   ╭▸ test/HookJobRequester.t.sol:85:31
+   │
+85 │             expiresAt: uint64(block.timestamp + 1 hours)
+   │                               ━━━━━━━━━━━━━━━
+   │
+   ⸬  test/ReviewAuditRegression.t.sol:52:9
+   │
+52 │         vm.warp(requester.getReviewAsk(askId).deadline + 1);
+   │         ─────────────────────────────────────────────────── `vm.warp` changes this environment here
+   │
+   ├ help: capture it with `vm.getBlockTimestamp()` instead
+   ╰ help: https://getfoundry.sh/forge/linting/environment-read-across-mutation
+
+warning[environment-read-across-mutation]: `block.timestamp` may be reused across `vm.revertToStateAndDelete`
+   ╭▸ test/HookJobRequester.t.sol:84:30
+   │
+84 │             issuedAt: uint64(block.timestamp),
+   │                              ━━━━━━━━━━━━━━━
+   │
+   ⸬  test/ReviewBinding.t.sol:25:20
+   │
+25 │         assertTrue(vm.revertToStateAndDelete(snapshot));
+   │                    ─────────────────────────────────── `vm.revertToStateAndDelete` changes this environment here
+   │
+   ├ help: capture it with `vm.getBlockTimestamp()` instead
+   ╰ help: https://getfoundry.sh/forge/linting/environment-read-across-mutation
+
+warning[environment-read-across-mutation]: `block.timestamp` may be reused across `vm.revertToStateAndDelete`
+   ╭▸ test/HookJobRequester.t.sol:85:31
+   │
+85 │             expiresAt: uint64(block.timestamp + 1 hours)
+   │                               ━━━━━━━━━━━━━━━
+   │
+   ⸬  test/ReviewBinding.t.sol:25:20
+   │
+25 │         assertTrue(vm.revertToStateAndDelete(snapshot));
+   │                    ─────────────────────────────────── `vm.revertToStateAndDelete` changes this environment here
+   │
+   ├ help: capture it with `vm.getBlockTimestamp()` instead
+   ╰ help: https://getfoundry.sh/forge/linting/environment-read-across-mutation
+
+warning[environment-read-across-mutation]: `block.timestamp` may be reused across `vm.warp`
+    ╭▸ test/HookJobRequester.t.sol:84:30
+    │
+ 84 │             issuedAt: uint64(block.timestamp),
+    │                              ━━━━━━━━━━━━━━━
+    │
+    ⸬  test/ReviewBinding.t.sol:144:13
+    │
+144 │             vm.warp(requester.getJob(jobId).reviewDeadline + 1);
+    │             ─────────────────────────────────────────────────── `vm.warp` changes this environment here
+    │
+    ├ help: capture it with `vm.getBlockTimestamp()` instead
+    ╰ help: https://getfoundry.sh/forge/linting/environment-read-across-mutation
+
+warning[environment-read-across-mutation]: `block.timestamp` may be reused across `vm.warp`
+    ╭▸ test/HookJobRequester.t.sol:85:31
+    │
+ 85 │             expiresAt: uint64(block.timestamp + 1 hours)
+    │                               ━━━━━━━━━━━━━━━
+    │
+    ⸬  test/ReviewBinding.t.sol:144:13
+    │
+144 │             vm.warp(requester.getJob(jobId).reviewDeadline + 1);
+    │             ─────────────────────────────────────────────────── `vm.warp` changes this environment here
+    │
+    ├ help: capture it with `vm.getBlockTimestamp()` instead
+    ╰ help: https://getfoundry.sh/forge/linting/environment-read-across-mutation
+
+warning[environment-read-across-mutation]: `block.timestamp` may be reused across `vm.warp`
+    ╭▸ test/HookJobRequester.t.sol:84:30
+    │
+ 84 │             issuedAt: uint64(block.timestamp),
+    │                              ━━━━━━━━━━━━━━━
+    │
+    ⸬  test/ReviewBinding.t.sol:165:9
+    │
+165 │         vm.warp(deadline + 1);
+    │         ───────────────────── `vm.warp` changes this environment here
+    │
+    ├ help: capture it with `vm.getBlockTimestamp()` instead
+    ╰ help: https://getfoundry.sh/forge/linting/environment-read-across-mutation
+
+warning[environment-read-across-mutation]: `block.timestamp` may be reused across `vm.warp`
+    ╭▸ test/HookJobRequester.t.sol:85:31
+    │
+ 85 │             expiresAt: uint64(block.timestamp + 1 hours)
+    │                               ━━━━━━━━━━━━━━━
+    │
+    ⸬  test/ReviewBinding.t.sol:165:9
+    │
+165 │         vm.warp(deadline + 1);
+    │         ───────────────────── `vm.warp` changes this environment here
+    │
+    ├ help: capture it with `vm.getBlockTimestamp()` instead
+    ╰ help: https://getfoundry.sh/forge/linting/environment-read-across-mutation
+
+warning[environment-read-across-mutation]: `block.timestamp` may be reused across `vm.warp`
+    ╭▸ test/HookJobRequester.t.sol:84:30
+    │
+ 84 │             issuedAt: uint64(block.timestamp),
+    │                              ━━━━━━━━━━━━━━━
+    │
+    ⸬  test/ReviewBinding.t.sol:189:9
+    │
+189 │         vm.warp(ask.deadline);
+    │         ───────────────────── `vm.warp` changes this environment here
+    │
+    ├ help: capture it with `vm.getBlockTimestamp()` instead
+    ╰ help: https://getfoundry.sh/forge/linting/environment-read-across-mutation
+
+warning[environment-read-across-mutation]: `block.timestamp` may be reused across `vm.warp`
+    ╭▸ test/HookJobRequester.t.sol:85:31
+    │
+ 85 │             expiresAt: uint64(block.timestamp + 1 hours)
+    │                               ━━━━━━━━━━━━━━━
+    │
+    ⸬  test/ReviewBinding.t.sol:189:9
+    │
+189 │         vm.warp(ask.deadline);
+    │         ───────────────────── `vm.warp` changes this environment here
+    │
+    ├ help: capture it with `vm.getBlockTimestamp()` instead
+    ╰ help: https://getfoundry.sh/forge/linting/environment-read-across-mutation
+
+warning[environment-read-across-mutation]: `block.timestamp` may be reused across `vm.warp`
+    ╭▸ test/HookJobRequester.t.sol:84:30
+    │
+ 84 │             issuedAt: uint64(block.timestamp),
+    │                              ━━━━━━━━━━━━━━━
+    │
+    ⸬  test/ReviewBinding.t.sol:199:9
+    │
+199 │         vm.warp(requester.getJob(jobId).reviewDeadline + 1);
+    │         ─────────────────────────────────────────────────── `vm.warp` changes this environment here
+    │
+    ├ help: capture it with `vm.getBlockTimestamp()` instead
+    ╰ help: https://getfoundry.sh/forge/linting/environment-read-across-mutation
+
+warning[environment-read-across-mutation]: `block.timestamp` may be reused across `vm.warp`
+    ╭▸ test/HookJobRequester.t.sol:85:31
+    │
+ 85 │             expiresAt: uint64(block.timestamp + 1 hours)
+    │                               ━━━━━━━━━━━━━━━
+    │
+    ⸬  test/ReviewBinding.t.sol:199:9
+    │
+199 │         vm.warp(requester.getJob(jobId).reviewDeadline + 1);
+    │         ─────────────────────────────────────────────────── `vm.warp` changes this environment here
+    │
+    ├ help: capture it with `vm.getBlockTimestamp()` instead
+    ╰ help: https://getfoundry.sh/forge/linting/environment-read-across-mutation
+
+warning[environment-read-across-mutation]: `block.timestamp` may be reused across `vm.warp`
+    ╭▸ test/ReviewBinding.t.sol:197:38
+    │
+197 │         oldAnswer.expiresAt = uint64(block.timestamp + 7 days);
+    │                                      ━━━━━━━━━━━━━━━
+198 │         bytes memory oldSignature = _sign(oldAnswer, signerKey);
+199 │         vm.warp(requester.getJob(jobId).reviewDeadline + 1);
+    │         ─────────────────────────────────────────────────── `vm.warp` changes this environment here
+    │
+    ├ help: capture it with `vm.getBlockTimestamp()` instead
+    ╰ help: https://getfoundry.sh/forge/linting/environment-read-across-mutation
+
+warning[environment-read-across-mutation]: `block.timestamp` may be reused across `vm.warp`
+    ╭▸ test/HookJobRequester.t.sol:84:30
+    │
+ 84 │             issuedAt: uint64(block.timestamp),
+    │                              ━━━━━━━━━━━━━━━
+    │
+    ⸬  test/ReviewDelivery.t.sol:337:9
+    │
+337 │         vm.warp(requester.getReviewAsk(askId).deadline + 1);
+    │         ─────────────────────────────────────────────────── `vm.warp` changes this environment here
+    │
+    ├ help: capture it with `vm.getBlockTimestamp()` instead
+    ╰ help: https://getfoundry.sh/forge/linting/environment-read-across-mutation
+
+warning[environment-read-across-mutation]: `block.timestamp` may be reused across `vm.warp`
+    ╭▸ test/HookJobRequester.t.sol:85:31
+    │
+ 85 │             expiresAt: uint64(block.timestamp + 1 hours)
+    │                               ━━━━━━━━━━━━━━━
+    │
+    ⸬  test/ReviewDelivery.t.sol:337:9
+    │
+337 │         vm.warp(requester.getReviewAsk(askId).deadline + 1);
+    │         ─────────────────────────────────────────────────── `vm.warp` changes this environment here
+    │
+    ├ help: capture it with `vm.getBlockTimestamp()` instead
+    ╰ help: https://getfoundry.sh/forge/linting/environment-read-across-mutation
+
+warning[environment-read-across-mutation]: `block.timestamp` may be reused across `vm.warp`
+    ╭▸ test/HookJobRequester.t.sol:84:30
+    │
+ 84 │             issuedAt: uint64(block.timestamp),
+    │                              ━━━━━━━━━━━━━━━
+    │
+    ⸬  test/ReviewDelivery.t.sol:431:13
+    │
+431 │             vm.warp(vm.getBlockTimestamp() + 3 minutes);
+    │             ─────────────────────────────────────────── `vm.warp` changes this environment here
+    │
+    ├ help: capture it with `vm.getBlockTimestamp()` instead
+    ╰ help: https://getfoundry.sh/forge/linting/environment-read-across-mutation
+
+warning[environment-read-across-mutation]: `block.timestamp` may be reused across `vm.warp`
+    ╭▸ test/HookJobRequester.t.sol:85:31
+    │
+ 85 │             expiresAt: uint64(block.timestamp + 1 hours)
+    │                               ━━━━━━━━━━━━━━━
+    │
+    ⸬  test/ReviewDelivery.t.sol:431:13
+    │
+431 │             vm.warp(vm.getBlockTimestamp() + 3 minutes);
+    │             ─────────────────────────────────────────── `vm.warp` changes this environment here
+    │
+    ├ help: capture it with `vm.getBlockTimestamp()` instead
+    ╰ help: https://getfoundry.sh/forge/linting/environment-read-across-mutation
+
+warning[environment-read-across-mutation]: `block.timestamp` may be reused across `vm.warp`
+    ╭▸ test/HookJobRequester.t.sol:84:30
+    │
+ 84 │             issuedAt: uint64(block.timestamp),
+    │                              ━━━━━━━━━━━━━━━
+    │
+    ⸬  test/ReviewDelivery.t.sol:459:9
+    │
+459 │         vm.warp(uint256(requester.getReviewAsk(askId).deadline) + delay);
+    │         ──────────────────────────────────────────────────────────────── `vm.warp` changes this environment here
+    │
+    ├ help: capture it with `vm.getBlockTimestamp()` instead
+    ╰ help: https://getfoundry.sh/forge/linting/environment-read-across-mutation
+
+warning[environment-read-across-mutation]: `block.timestamp` may be reused across `vm.warp`
+    ╭▸ test/HookJobRequester.t.sol:85:31
+    │
+ 85 │             expiresAt: uint64(block.timestamp + 1 hours)
+    │                               ━━━━━━━━━━━━━━━
+    │
+    ⸬  test/ReviewDelivery.t.sol:459:9
+    │
+459 │         vm.warp(uint256(requester.getReviewAsk(askId).deadline) + delay);
+    │         ──────────────────────────────────────────────────────────────── `vm.warp` changes this environment here
+    │
+    ├ help: capture it with `vm.getBlockTimestamp()` instead
+    ╰ help: https://getfoundry.sh/forge/linting/environment-read-across-mutation
+
+warning[environment-read-across-mutation]: `block.timestamp` may be reused across `vm.warp`
+    ╭▸ test/HookJobRequester.t.sol:84:30
+    │
+ 84 │             issuedAt: uint64(block.timestamp),
+    │                              ━━━━━━━━━━━━━━━
+    │
+    ⸬  test/ReviewDelivery.t.sol:471:9
+    │
+471 │         vm.warp(requester.getReviewAsk(askId).deadline + 1);
+    │         ─────────────────────────────────────────────────── `vm.warp` changes this environment here
+    │
+    ├ help: capture it with `vm.getBlockTimestamp()` instead
+    ╰ help: https://getfoundry.sh/forge/linting/environment-read-across-mutation
+
+warning[environment-read-across-mutation]: `block.timestamp` may be reused across `vm.warp`
+    ╭▸ test/HookJobRequester.t.sol:85:31
+    │
+ 85 │             expiresAt: uint64(block.timestamp + 1 hours)
+    │                               ━━━━━━━━━━━━━━━
+    │
+    ⸬  test/ReviewDelivery.t.sol:471:9
+    │
+471 │         vm.warp(requester.getReviewAsk(askId).deadline + 1);
+    │         ─────────────────────────────────────────────────── `vm.warp` changes this environment here
+    │
+    ├ help: capture it with `vm.getBlockTimestamp()` instead
+    ╰ help: https://getfoundry.sh/forge/linting/environment-read-across-mutation
+
+warning[environment-read-across-mutation]: `block.timestamp` may be reused across `vm.revertToStateAndDelete`
+    ╭▸ test/HookJobRequester.t.sol:84:30
+    │
+ 84 │             issuedAt: uint64(block.timestamp),
+    │                              ━━━━━━━━━━━━━━━
+    │
+    ⸬  test/ReviewReceiptGas.t.sol:106:24
+    │
+106 │             assertTrue(vm.revertToStateAndDelete(snapshot));
+    │                        ─────────────────────────────────── `vm.revertToStateAndDelete` changes this environment here
+    │
+    ├ help: capture it with `vm.getBlockTimestamp()` instead
+    ╰ help: https://getfoundry.sh/forge/linting/environment-read-across-mutation
+
+warning[environment-read-across-mutation]: `block.timestamp` may be reused across `vm.revertToStateAndDelete`
+    ╭▸ test/HookJobRequester.t.sol:85:31
+    │
+ 85 │             expiresAt: uint64(block.timestamp + 1 hours)
+    │                               ━━━━━━━━━━━━━━━
+    │
+    ⸬  test/ReviewReceiptGas.t.sol:106:24
+    │
+106 │             assertTrue(vm.revertToStateAndDelete(snapshot));
+    │                        ─────────────────────────────────── `vm.revertToStateAndDelete` changes this environment here
+    │
+    ├ help: capture it with `vm.getBlockTimestamp()` instead
+    ╰ help: https://getfoundry.sh/forge/linting/environment-read-across-mutation
+
+warning[environment-read-across-mutation]: `block.timestamp` may be reused across `vm.warp`
+    ╭▸ test/HookJobRequester.t.sol:84:30
+    │
+ 84 │             issuedAt: uint64(block.timestamp),
+    │                              ━━━━━━━━━━━━━━━
+    │
+    ⸬  test/ReviewRecovery.t.sol:237:13
+    │
+237 │             vm.warp(requester.getReviewAsk(askId).deadline + 1);
+    │             ─────────────────────────────────────────────────── `vm.warp` changes this environment here
+    │
+    ├ help: capture it with `vm.getBlockTimestamp()` instead
+    ╰ help: https://getfoundry.sh/forge/linting/environment-read-across-mutation
+
+warning[environment-read-across-mutation]: `block.timestamp` may be reused across `vm.warp`
+    ╭▸ test/HookJobRequester.t.sol:85:31
+    │
+ 85 │             expiresAt: uint64(block.timestamp + 1 hours)
+    │                               ━━━━━━━━━━━━━━━
+    │
+    ⸬  test/ReviewRecovery.t.sol:237:13
+    │
+237 │             vm.warp(requester.getReviewAsk(askId).deadline + 1);
+    │             ─────────────────────────────────────────────────── `vm.warp` changes this environment here
+    │
+    ├ help: capture it with `vm.getBlockTimestamp()` instead
+    ╰ help: https://getfoundry.sh/forge/linting/environment-read-across-mutation
+
+warning[environment-read-across-mutation]: `block.timestamp` may be reused across `vm.warp`
+    ╭▸ test/HookJobRequester.t.sol:84:30
+    │
+ 84 │             issuedAt: uint64(block.timestamp),
+    │                              ━━━━━━━━━━━━━━━
+    │
+    ⸬  test/ReviewRecovery.t.sol:292:9
+    │
+292 │         vm.warp(requester.getReviewAsk(boundAsk).deadline + 1);
+    │         ────────────────────────────────────────────────────── `vm.warp` changes this environment here
+    │
+    ├ help: capture it with `vm.getBlockTimestamp()` instead
+    ╰ help: https://getfoundry.sh/forge/linting/environment-read-across-mutation
+
+warning[environment-read-across-mutation]: `block.timestamp` may be reused across `vm.warp`
+    ╭▸ test/HookJobRequester.t.sol:85:31
+    │
+ 85 │             expiresAt: uint64(block.timestamp + 1 hours)
+    │                               ━━━━━━━━━━━━━━━
+    │
+    ⸬  test/ReviewRecovery.t.sol:292:9
+    │
+292 │         vm.warp(requester.getReviewAsk(boundAsk).deadline + 1);
+    │         ────────────────────────────────────────────────────── `vm.warp` changes this environment here
+    │
+    ├ help: capture it with `vm.getBlockTimestamp()` instead
+    ╰ help: https://getfoundry.sh/forge/linting/environment-read-across-mutation
+

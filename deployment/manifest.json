@@ -1,7 +1,7 @@
 {
   "format": "hooks-store-deployment-preparation/v1",
-  "sourceCommit": "b157921170c318f8eeee638b06025a81cf768c02",
-  "status": "Preparation only; owner, recipient and activation remain approval-gated",
+  "sourceCommit": null,
+  "status": "Local preparation after targeted approval-binding fixes; not audited. Automatic binding is disabled; owner, recipient and activation gates remain.",
   "launchKind": "evm_contracts",
   "launcher": {
     "sources": [
@@ -209,5 +209,8 @@
     "pool creation",
     "production factory changes",
     "generated-hook deployment"
-  ]
+  ],
+  "baseCommit": "2aef6408eabb45b8f149e16a96c7734d4b4b5b07",
+  "buildEvidence": "deployment/current-build.json",
+  "historicalBuildEvidence": "deployment/audited-build.json"
 }

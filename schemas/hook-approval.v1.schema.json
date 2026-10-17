@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Hooks Store accepted artifact approval v1",
+  "description": "Worker named output, never top-level completion fields. For deployment the bytes must exactly equal GatedHookDeployer.approvalDocument(artifact): this key order, compact encoding, lowercase digest, no newline. JSON schema validation alone cannot prove canonical bytes or acceptance.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "hooksStoreArtifact", "review"],
+  "properties": {
+    "schema": {"const": "hooks-store-approval-v1"},
+    "hooksStoreArtifact": {"type": "string", "pattern": "^0x[0-9a-f]{64}$"},
+    "review": {"const": "passed"}
+  }
+}

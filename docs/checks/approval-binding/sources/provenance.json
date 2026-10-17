@@ -1,0 +1,50 @@
+[
+  {
+    "file": "imd-docs.html",
+    "url": "https://imd.fun/docs/",
+    "retrievedAt": "2026-10-17T07:25:35.525301+00:00",
+    "sha256": "e590de7c93b14e146bf2430aeb60abd891b74f9f226dbb3cd8bbc63c6be05281"
+  },
+  {
+    "file": "openapi.json",
+    "url": "https://api.imd.fun/openapi.json",
+    "retrievedAt": "2026-10-17T07:25:35.579916+00:00",
+    "sha256": "be142840c010710cb2a5b9e5c73e71d8e79ec4054c15661699d60bfa627be96a"
+  },
+  {
+    "file": "previous-job-result.json",
+    "url": "https://api.imd.fun/jobs/d8ec4ec9-b939-4ff8-8ce1-fad7a6a69bd9/result",
+    "retrievedAt": "2026-10-17T07:25:36.398468+00:00",
+    "sha256": "c46b35507a0672563f72d3583c7cd68453ba5755a52e0e50341c57a2f9160393"
+  },
+  {
+    "file": "imd-docs.txt",
+    "url": "https://imd.fun/docs/llms.txt",
+    "sha256": "dde184cb6e1ef751794832d4f831bbf5a5589dbde3510eac86c2d968ac0e6325",
+    "retrievedAt": "2026-10-17T07:26:17.886605+00:00"
+  },
+  {
+    "file": "skills.json",
+    "url": "https://api.imd.fun/skills",
+    "sha256": "eee4f89d9d4d075fee697f47f925b19205e8d0f99c02f5a8b460be7ec707ef8a",
+    "retrievedAt": "2026-10-17T07:30:35.437750+00:00"
+  },
+  {
+    "file": "adversarial-review.json",
+    "url": "https://api.imd.fun/reads/skill/adversarial-review",
+    "sha256": "43eeb6f5770e4e1bf5fc092427b2f057e5a34ef6e5762bc8bdf9535fb69721df",
+    "retrievedAt": "2026-10-17T07:30:48.318954+00:00"
+  },
+  {
+    "file": "write-readme-and-docs.json",
+    "url": "https://api.imd.fun/reads/skill/write-readme-and-docs",
+    "sha256": "ed6338cf79a2fe17f1677d3512cebe8783677e2468b28c06310c98058846e933",
+    "retrievedAt": "2026-10-17T07:30:48.424464+00:00"
+  },
+  {
+    "file": "research-report.json",
+    "url": "https://api.imd.fun/reads/skill/research-report",
+    "sha256": "c2160a2929834e2147367cda57a04deea6ba7748af68294c16c00b5a03bca6f3",
+    "retrievedAt": "2026-10-17T07:31:09.462459+00:00"
+  }
+]

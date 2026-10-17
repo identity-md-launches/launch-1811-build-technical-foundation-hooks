@@ -3,6 +3,7 @@ pragma solidity 0.8.26;
 
 import {HookJobRequesterFixture} from "./HookJobRequester.t.sol";
 import {GatedHookDeployer} from "../src/deployment/GatedHookDeployer.sol";
+import {AcceptedArtifact} from "../src/deployment/AcceptedArtifact.sol";
 import {HookMiner} from "../src/deployment/HookMiner.sol";
 import {HookJobRequester} from "../src/imd/HookJobRequester.sol";
 import {OracleAttestation} from "../src/imd/OracleAttestation.sol";
@@ -60,7 +61,7 @@ contract GatedHookDeployerTest is HookJobRequesterFixture {
     {
         a = GatedHookDeployer.Artifact({
             jobRequestId: jobId,
-            sourceHash: keccak256("generated source bundle"),
+            sourceHash: sha256("generated source bundle"),
             buildHash: keccak256("solc 0.8.26 cancun optimizer 200"),
             creationCodeHash: keccak256(code),
             constructorArgsHash: keccak256(args),
@@ -74,7 +75,23 @@ contract GatedHookDeployerTest is HookJobRequesterFixture {
     }
 
     function _doc(GatedHookDeployer.Artifact memory a) internal view returns (bytes memory) {
-        return bytes.concat('{"v":1,"files":"...",', deployer.artifactMarker(a), "}");
+        bytes memory approval = deployer.approvalDocument(a);
+        return bytes.concat(
+            '{"jobId":"d8ec4ec9-b939-4ff8-8ce1-fad7a6a69bd9","state":"completed","complete":true,',
+            '"source":[{"hash":"',
+            AcceptedArtifact.hexHash(a.sourceHash),
+            '","submissionHash":"',
+            AcceptedArtifact.hexHash(sha256("accepted source submission")),
+            '"}],',
+            '"files":[{"name":"hooksStoreApproval","path":"artifacts/hooks-store-approval.json",',
+            '"mediaType":"application/json","hash":"',
+            AcceptedArtifact.hexHash(sha256(approval)),
+            '","bytes":',
+            bytes(vm.toString(approval.length)),
+            ',"submissionHash":"',
+            AcceptedArtifact.hexHash(sha256("accepted independent review submission")),
+            '"}]}'
+        );
     }
 
     function _mine(bytes memory init, uint160 flags) internal view returns (bytes32 salt, address hook) {
@@ -294,7 +311,7 @@ contract GatedHookDeployerTest is HookJobRequesterFixture {
         _expectDeployRevert(
             c, abi.encodeWithSelector(GatedHookDeployer.ArtifactNotInResult.selector, deployer.artifactDigest(c.a))
         );
-        c.a.sourceHash = keccak256("generated source bundle");
+        c.a.sourceHash = sha256("generated source bundle");
         c.a.buildHash = keccak256("other build");
         _expectDeployRevert(
             c, abi.encodeWithSelector(GatedHookDeployer.ArtifactNotInResult.selector, deployer.artifactDigest(c.a))

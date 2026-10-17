@@ -1,0 +1,68 @@
+{
+  "sourceCommit": null,
+  "baseCommit": "2aef6408eabb45b8f149e16a96c7734d4b4b5b07",
+  "status": "unchanged",
+  "auditStatus": "not-audited",
+  "contracts": {
+    "BoundedSwapHook": {
+      "bytecode": {
+        "sha256": "2c0a3bc52144c7b1329fbbb4d4c37461fab61c4a9ad3fe284b402c97bbb81853",
+        "bytes": 4930
+      },
+      "deployedBytecode": {
+        "sha256": "8c854b14e4b424827178db95a9a071f078f8f63cff8c29da22de4e5219e622d5",
+        "bytes": 3431
+      }
+    },
+    "HooksStoreFactory": {
+      "bytecode": {
+        "sha256": "770867f5d0b38339a3e555a7f4d35930c37b06a7a389681823b75e0b606a7d83",
+        "bytes": 14097
+      },
+      "deployedBytecode": {
+        "sha256": "796088c0159f2bf039ed8cebc4d08b9342eeaf748363f5618349a0254732cd94",
+        "bytes": 13970
+      }
+    },
+    "HookJobRequester": {
+      "bytecode": {
+        "sha256": "c326f9a6bd189c1a67061213a85854ba0c21fd5207738b6105cbad0b7618f6f5",
+        "bytes": 25910
+      },
+      "deployedBytecode": {
+        "sha256": "4122cee1df9e77a7faf098df9937b78d75bbef0b59a22597b2164baf7d94bbca",
+        "bytes": 24166
+      }
+    },
+    "HookListingRegistry": {
+      "bytecode": {
+        "sha256": "729733d6415026ba4233ac86a7a9f113e10f66771a4f553b726e64c28fdaf7ea",
+        "bytes": 9063
+      },
+      "deployedBytecode": {
+        "sha256": "45b9c51cdb68c5cfd671898a1417f6cd6e07a039cea370b3232bfad7808a81c9",
+        "bytes": 9035
+      }
+    },
+    "FeaturedPlacements": {
+      "bytecode": {
+        "sha256": "cb2a90cca09676c4a48dd46b50e0558624eb613efde4b894cef1933df88d6f0e",
+        "bytes": 8606
+      },
+      "deployedBytecode": {
+        "sha256": "c8da82e35fd052fef490210de6c3cfa802bf09d29b9d9d11f8a81cbcd39c040f",
+        "bytes": 8232
+      }
+    },
+    "GatedHookDeployer": {
+      "bytecode": {
+        "sha256": "791fe50994ae15d9b4a3036531bea0a67aba79cac990a5fee6ba8559abc7e328",
+        "bytes": 17286
+      },
+      "deployedBytecode": {
+        "sha256": "bed16dfc11fd9d95b3b782f12435226bb9ee60cea3c6b0f6f83f0da5b95ad6d1",
+        "bytes": 16890
+      }
+    }
+  }
+}

@@ -326,7 +326,8 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
     /// @notice First completion notice for an open or locally expired job, from Intake only.
     /// Local expiry never suppresses a late result/failure or changes any review verdict.
     /// Unsigned: it says the Intake reported the job complete, never that its review passed.
-    /// @dev Protocol tuple: the supplied hash commits to the result document's bytes, not its URI.
+    /// @dev Protocol tuple: the supplied hash commits to the exact control-plane completion
+    /// snapshot (/jobs/:id/result at completion), not arbitrary worker JSON or the URI.
     /// The URI is emitted for offchain readers; no string is stored or fetched by this contract.
     function onJobResult(bytes32 requestId, bytes32 resultHash, string calldata uri) external onlyIntake {
         Job storage job = jobs[requestId];
@@ -495,8 +496,9 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
 
     /// @notice Incident response: revoke verification from an old signer epoch permanently.
     /// @dev First rotate to a safe signer (or repair an ERC-1271 registry and start a new epoch).
-    /// All retained receipts from this epoch immediately become unconfirmable. Already finalized
-    /// verdicts and consumed UUIDs are immutable. incidentHash commits to the operator's evidence.
+    /// All retained receipts from this epoch immediately become unconfirmable. Finalized verdicts
+    /// and consumed UUIDs stay historical; GatedHookDeployer rejects their use after revocation
+    /// in either callback order. incidentHash commits to the operator's evidence.
     function revokeSignerEpoch(uint32 epoch, bytes32 incidentHash) external onlyOwner {
         if (epoch == 0 || epoch >= oracleSignerEpoch) revert InvalidSignerEpoch(epoch);
         if (incidentHash == bytes32(0)) revert InvalidIncidentHash();
@@ -740,6 +742,9 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
             emit ReviewReceived(jobRequestId, requestId, a.requestId, digest);
             return;
         }
+        // Keep verification authority even when pre-binding settles immediately. This writes
+        // the already allocated metadata word, without materializing four cold context slots.
+        _reviewReceipts[requestId].details = RECEIPT_ALLOCATED | (uint256(oracleSignerEpoch) << 225);
         _consume(a.requestId);
         _answerReview(jobRequestId, requestId, passed, a.questionHash, a.panelJobId, a.panelSize, a.agreed);
     }
@@ -823,7 +828,9 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
         return _reviewAsks[intakeRequestId];
     }
 
-    /// @notice Zero without a receipt. Consult revokedSignerEpochs even before individual closure.
+    /// @notice Verification epoch for either callback order; zero before authenticated delivery.
+    /// A bind-first verdict has provenance here but no early receipt. Check revokedSignerEpochs
+    /// for finalized approvals too; revocation never rewrites the historical verdict.
     function reviewReceiptSignerEpoch(bytes32 intakeRequestId) public view returns (uint32) {
         return uint32((_reviewReceipts[intakeRequestId].details >> 225) & MAX_SIGNER_EPOCH);
     }

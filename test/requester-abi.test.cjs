@@ -225,3 +225,25 @@ test("build fingerprints match compiler artifacts and requester runtime stays be
   }
   assert.ok(fingerprints.contracts.HookJobRequester.runtimeCodeBytes < 24576);
 });
+
+
+test("Passed history remains visible while missing or revoked signer provenance blocks deployment", async () => {
+  for (const [epoch, incident, expected] of [[0, 0, /provenance missing; deployment disabled/],
+    [1, 0, /historical Passed verdict/], [1, 1, /revoked; deployment disabled; historical Passed verdict unchanged/]]) {
+    const responses = ["0x" + word(epoch)];
+    if (epoch) responses.push("0x" + word(incident));
+    const { ctx } = load(responses);
+    ctx.w = Array(15).fill(word(0)); ctx.w[4] = word(2);
+    const rows = await vm.runInContext('receiptRows("", "requester", w)', ctx);
+    assert.match(rows[0][1], expected);
+  }
+});
+
+test("gated deployer ABI is current and both deployed runtimes fit EIP-170", () => {
+  const built = JSON.parse(readFileSync(path.join(root, "out/GatedHookDeployer.sol/GatedHookDeployer.json")));
+  assert.deepEqual(JSON.parse(readFileSync(path.join(root, "site/GatedHookDeployer.abi.json"))), built.abi);
+  assert.ok(built.methodIdentifiers["automaticBindingSupported()"]);
+  assert.ok(built.abi.some(e => e.name === "approvalDocument"));
+  assert.ok((built.deployedBytecode.object.length - 2) / 2 < 24576);
+  assert.ok((artifact.deployedBytecode.object.length - 2) / 2 < 24576);
+});

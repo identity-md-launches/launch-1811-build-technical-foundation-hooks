@@ -24,6 +24,6 @@ contract MockVerdictRequester {
     }
 
     function reviewReceiptSignerEpoch(bytes32) external pure returns (uint32) {
-        return 0;
+        return 1;
     }
 }

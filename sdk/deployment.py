@@ -14,7 +14,7 @@ from urllib.parse import urlsplit
 from sdk.hooks_store import ROOT, Rpc, StoreError, _cast, _decimal, _hex, _unique_object, keccak_hex, load_json
 
 MANIFEST = ROOT / 'deployment/manifest.json'
-BASELINE = ROOT / 'deployment/audited-build.json'
+BASELINE = ROOT / 'deployment/current-build.json'
 PROPOSED_RECIPIENT = '0x3f252e859a277a86A3967c11D4E054B2f07a1F22'
 # A published protocol payee is never the proposed advertising beneficiary.
 INTAKE_PAYEE = '0x4e0fa57bde726079356537e2f34d671e9f41adbc'
@@ -91,11 +91,11 @@ def artifact(name, root=ROOT):
 
 
 def verify_build(root=ROOT):
-    """Compare creation and runtime templates, as well as every audited source/config byte."""
+    """Compare this local build snapshot, including sources/config. This is not an audit."""
     baseline = load_json(BASELINE)
     for name, expected in baseline['files'].items():
         if sha256((Path(root) / name).read_bytes()) != expected:
-            raise StoreError('audited source/config changed: ' + name)
+            raise StoreError('pinned source/config changed: ' + name)
     results = {}
     for name, expected in baseline['contracts'].items():
         built = artifact(name, root)
@@ -103,13 +103,14 @@ def verify_build(root=ROOT):
         for part in ('bytecode', 'deployedBytecode'):
             code = bytes.fromhex(built[part]['object'][2:])
             if sha256(code) != expected[part]['sha256'] or len(code) != expected[part]['bytes']:
-                raise StoreError('audited bytecode changed: ' + name + '/' + part)
+                raise StoreError('pinned bytecode changed: ' + name + '/' + part)
             results[name][part] = {'sha256': sha256(code), 'bytes': len(code)}
         # AST IDs can shift when a test is added; the byte locations must not shift.
         spans = lambda refs: sorted((x['start'], x['length']) for v in refs.values() for x in v)
         if spans(built['deployedBytecode'].get('immutableReferences', {})) != spans(expected['immutableReferences']):
             raise StoreError('immutable reference map changed: ' + name)
-    return {'sourceCommit': baseline['sourceCommit'], 'status': 'unchanged', 'contracts': results}
+    return {'sourceCommit': baseline['sourceCommit'], 'baseCommit': baseline['baseCommit'],
+            'status': 'unchanged', 'auditStatus': 'not-audited', 'contracts': results}
 
 
 def config(value, *, require_owner=False):
@@ -236,7 +237,7 @@ def validate_templates(t, chain, approved):
         raise StoreError('assembled template is invalid JSON') from exc
     if not isinstance(job, dict) or 'objective' not in job or 'onchain' in job:
         raise StoreError('job body needs objective and must not launch a token/pool')
-    # The old ImdTemplates fixture's v/kind/repository/steps schema is not a paid job body.
+    # Legacy v/kind/repository job bodies are not the official paid schema.
     if any(k in job for k in ('v', 'kind', 'repository', 'specHash', 'request')):
         raise StoreError('old local job fixture is not the official paid body schema')
     if not isinstance(review, dict) or review.get('chainId') != chain or review.get('answerType') != 'bool' or \
@@ -254,6 +255,8 @@ def validate_templates(t, chain, approved):
                 checked.get('response', {}).get('action') != action or checked['response'].get('blockers') != [] or \
                 not isinstance(checked.get('reference'), str) or not checked['reference'].strip():
             raise StoreError('free body-check result missing, stale or blocked: ' + action)
+        if action == 'oracle.request' and checked['response'].get('request') != body:
+            raise StoreError('free oracle checker draft differs from the assembled body')
     digest = sha256(canonical(t))
     if not isinstance(approved, dict) or approved.get('sha256') != digest or not approved.get('reference'):
         raise StoreError('templateApproval must approve the exact bundle SHA-256 and evidence')

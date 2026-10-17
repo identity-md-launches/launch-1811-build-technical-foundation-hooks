@@ -21,12 +21,21 @@ def main():
     args = p.parse_args()
     body = load_json(args.input)
     url = 'https://api.imd.fun/requests/check'
-    response = json.loads(fetch(url, {'action': args.action, 'input': body}))
+    # The official checker accepts a drafting subset for oracle.request, NOT its full body.
+    # Only approve the assembled body if the returned full request equals it exactly.
+    checker_input = body
+    if args.action == 'oracle.request':
+        fields = {'question', 'panelSize', 'answerType', 'evidence', 'chainId', 'toleranceBps', 'head'}
+        checker_input = {k: v for k, v in body.items() if k in fields}
+    response = json.loads(fetch(url, {'action': args.action, 'input': checker_input}))
+    matches = args.action != 'oracle.request' or response.get('request') == body
     record = {'inputSha256': sha256(canonical(body)), 'response': response,
+              'checkerInput': {'action': args.action, 'input': checker_input},
+              'assembledBodyMatchesDraft': matches,
               'reference': url + ' at ' + datetime.datetime.now(datetime.timezone.utc).isoformat()}
     Path(args.output).write_text(json.dumps(record, indent=2) + '\n')
     # An HTTP 200 by itself is not approval. Preserve all checker output, including blockers.
-    return 0 if response.get('action') == args.action and response.get('blockers') == [] else 1
+    return 0 if response.get('action') == args.action and response.get('blockers') == [] and matches else 1
 
 
 if __name__ == '__main__':

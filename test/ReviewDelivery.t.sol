@@ -77,7 +77,7 @@ contract ReviewDeliveryTest is HookJobRequesterFixture {
         uint256 initialBalance = imd.balanceOf(creator);
         (bytes32 jobId, bytes32 askId) = _unboundReview();
         assertEq(imd.balanceOf(creator), initialBalance - 2 * PRICE);
-        assertEq(vm.parseJsonUint(string(intake.bodyOf(askId)), ".window.hours"), 1);
+        assertEq(vm.parseJsonUint(string(intake.bodyOf(askId)), ".window.hours"), 24);
         vm.warp(vm.getBlockTimestamp() + 5 minutes);
         OracleAttestation.Attestation memory a = _attestation(askId, passed);
         // The plane resolves this AFTER payment; neither the UUID nor these blocks/hash were pinned.

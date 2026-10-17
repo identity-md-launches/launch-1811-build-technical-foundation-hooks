@@ -1,4 +1,4 @@
-"""Job result -> oracle-verdict checks -> mined salt -> UNSIGNED GatedHookDeployer.deploy calldata.
+"""IMD completion snapshot -> accepted evidence -> oracle-verdict checks -> mined salt -> UNSIGNED GatedHookDeployer.deploy calldata.
 
 Read-only: uses eth_chainId, eth_getCode and eth_call only, never signs or sends. Every gate the
 contract enforces is also re-run here through `check(...)` as an eth_call, so a transaction this
@@ -8,7 +8,7 @@ mined, for example if the address becomes occupied, the manager is disabled or t
 Usage:
   python3 -m sdk.gated_deploy --rpc URL --deployer 0x.. --job 0x.. --result-document result.json \
       --creation-code code.hex --constructor-args args.hex --source-hash 0x.. --build-hash 0x.. \
-      --runtime-hash 0x.. --pool-manager 0x.. --permissions 0x..
+      --runtime-hash 0x.. --pool-manager 0x.. --permissions 0x.. --binding-mode owner-confirmed
 """
 import argparse
 import json
@@ -16,6 +16,7 @@ import sys
 from pathlib import Path
 
 from sdk.hooks_store import Rpc, StoreError, _cast, _hex, keccak_hex
+from sdk.result_snapshot import verify_snapshot
 
 ARTIFACT = "(bytes32,bytes32,bytes32,bytes32,bytes32,bytes32,uint256,address,address,bytes32,uint160)"
 JOB_STATUS = ["None", "Open", "Delivered", "Failed", "Expired"]
@@ -39,12 +40,15 @@ def artifact_tuple(a):
 
 
 def prepare(rpc, *, deployer, job, result_document, creation_code, constructor_args, source_hash, build_hash,
-            runtime_hash, pool_manager, permissions, max_pages=64):
+            runtime_hash, pool_manager, permissions, max_pages=64, binding_mode="automatic", approval_document=None):
+    if binding_mode != "owner-confirmed":
+        raise StoreError("automatic binding disabled: official protocol supplies no authenticated Intake/body -> "
+                         "oracle UUID/canonical question proof; only explicit owner-confirmed local/manual use is supported")
     deployer = _hex(deployer, 20, "deployer")
     job = _hex(job, 32, "job")
     pool_manager = _hex(pool_manager, 20, "pool manager")
     creation_code = _hex(creation_code, (len(creation_code) - 2) // 2, "creation code")
-    constructor_args = constructor_args.lower() if constructor_args != "0x" else "0x"
+    constructor_args = _hex(constructor_args, (len(constructor_args) - 2) // 2, "constructor args")
     if not isinstance(result_document, (bytes, bytearray)):
         raise StoreError("result document must be bytes")
     evidence = []
@@ -69,18 +73,25 @@ def prepare(rpc, *, deployer, job, result_document, creation_code, constructor_a
     job_requester = _addr(_word(ret, 0))
     status, review = int(_word(ret, 3), 16), int(_word(ret, 4), 16)
     result_hash = _word(ret, 11)
+    review_request_id = _word(ret, 13)
     evidence.append({"check": "job status", "value": JOB_STATUS[status], "ok": status == 2})
     evidence.append({"check": "oracle-signed review verdict", "value": REVIEW_STATUS[review], "ok": review == 2})
     doc_hash = keccak_hex("0x" + bytes(result_document).hex())
     evidence.append({"check": "result document hash == job resultHash", "value": doc_hash,
                      "ok": doc_hash == result_hash.lower()})
     digest = _word(rpc.call(deployer, f"artifactDigest({ARTIFACT})", tup), 0)
-    marker = '"hooksStoreArtifact":"0x' + digest[2:] + '"'
-    evidence.append({"check": "result document names artifact", "value": marker,
-                     "ok": marker.encode() in bytes(result_document)})
+
     failed = [e["check"] for e in evidence if not e["ok"]]
     if failed:
         raise StoreError("refused before mining: " + "; ".join(failed))
+
+    proof = verify_snapshot(bytes(result_document), digest, a["sourceHash"], approval=approval_document)
+    evidence.append({"check": "accepted source and canonical approved-artifact file", "value": proof, "ok": True})
+    ask = review_request_id
+    epoch = int(rpc.call(requester, "reviewReceiptSignerEpoch(bytes32)", ask), 16)
+    if epoch == 0 or int(rpc.call(requester, "revokedSignerEpochs(uint32)", str(epoch)), 16) != 0:
+        raise StoreError("approval signer epoch missing or revoked")
+    evidence.append({"check": "authenticated signer epoch", "value": epoch, "ok": True})
 
     init_hash = keccak_hex(creation_code + constructor_args[2:])
     start, salt, hook = 0, None, None
@@ -104,6 +115,9 @@ def prepare(rpc, *, deployer, job, result_document, creation_code, constructor_a
                  constructor_args, salt, hook)
     return {
         "unsigned": True,
+        "bindingMode": "owner-confirmed",
+        "automaticBindingSupported": False,
+        "trust": "Owner authenticated the Intake-to-oracle binding; oracle signer authenticated the verdict.",
         "readBlock": rpc.block,
         "artifact": a,
         "artifactDigest": digest,
@@ -119,6 +133,8 @@ def main(argv=None):
     for name in ("rpc", "deployer", "job", "result-document", "creation-code", "constructor-args", "source-hash",
                  "build-hash", "runtime-hash", "pool-manager", "permissions"):
         p.add_argument("--" + name, required=True)
+    p.add_argument("--binding-mode", choices=["automatic", "owner-confirmed"], default="automatic")
+    p.add_argument("--approval-document", help="accepted approval file; must match the canonical bytes exactly")
     args = p.parse_args(argv)
     try:
         out = prepare(
@@ -127,7 +143,8 @@ def main(argv=None):
             creation_code=Path(args.creation_code).read_text().strip(),
             constructor_args=Path(args.constructor_args).read_text().strip(),
             source_hash=args.source_hash, build_hash=args.build_hash, runtime_hash=args.runtime_hash,
-            pool_manager=args.pool_manager, permissions=args.permissions,
+            pool_manager=args.pool_manager, permissions=args.permissions, binding_mode=args.binding_mode,
+            approval_document=Path(args.approval_document).read_bytes() if args.approval_document else None,
         )
     except StoreError as exc:
         print(json.dumps({"error": str(exc)}), file=sys.stderr)

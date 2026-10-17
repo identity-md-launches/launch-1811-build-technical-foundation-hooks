@@ -1,0 +1,10 @@
+{
+  "action": "oracle.request",
+  "input": {
+    "question": "For the job opened by Intake request 0x500f39df6cebe2b63246479b575e66955d2c5ce731d3a8e0ca35058d582d04a9 on chain 1, does its exact completion snapshot committed by resultHash contain a unique accepted hooksStoreApproval file whose canonical artifact digest describes the accepted source and reproducible build, and did the independent adversarial review accept that exact artifact with no unresolved findings? True only when the immutable completion snapshot, accepted source bundle and named approval file hashes verify; the HookArtifact binds the exact source/build, creation code, constructor args, runtime, chain, deployer, PoolManager and code hash, and permissions; and the independent review accepted this exact artifact without unresolved findings. Missing, pending, rejected, duplicate or unverifiable evidence means false. Use the byte-for-byte Intake completion URI or /intake-results/:id; resultHash is keccak256 of the control-plane /jobs/:id/result snapshot, not worker JSON. Only top-level source and files are accepted. File and bundle hashes are SHA-256.",
+    "chainId": 1,
+    "answerType": "bool",
+    "evidence": "panel",
+    "panelSize": 7
+  }
+}

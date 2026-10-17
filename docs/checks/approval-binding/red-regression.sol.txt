@@ -1,0 +1,41 @@
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.26;
+
+import {GatedHookDeployerTest} from "./GatedHookDeployer.t.sol";
+import {GatedHookDeployer} from "../src/deployment/GatedHookDeployer.sol";
+import {HookJobRequester} from "../src/imd/HookJobRequester.sol";
+import {GeneratedHook} from "./helpers/GeneratedHooks.sol";
+
+contract ApprovalBindingRegressionTest is GatedHookDeployerTest {
+    function testRegressionRejectedNestedArtifactCannotDeploy() public {
+        Case memory c;
+        c.jobId = _open();
+        c.code = type(GeneratedHook).creationCode;
+        c.args = abi.encode(address(manager), FLAGS);
+        c.a = _artifact(c.jobId, c.code, c.args, keccak256(type(GeneratedHook).runtimeCode), FLAGS);
+        GatedHookDeployer.Artifact memory approved = _artifact(
+            c.jobId, c.code, c.args, keccak256(type(GeneratedHook).runtimeCode), FLAGS
+        );
+        approved.buildHash = keccak256("approved build A");
+        c.doc = bytes.concat('{', deployer.artifactMarker(approved), ',"rejected":{', deployer.artifactMarker(c.a), '}}');
+        assertTrue(intake.complete(c.jobId, abi.encode(c.jobId, keccak256(c.doc), "ipfs://regression")));
+        _pass(c.jobId, true);
+        (c.salt, c.hook) = _mine(bytes.concat(c.code, c.args), FLAGS);
+        vm.prank(creator);
+        vm.expectRevert();
+        deployer.deploy(c.a, c.doc, c.code, c.args, c.salt, c.hook);
+    }
+
+    function testRegressionBindFirstRevokedEpochCannotDeploy() public {
+        Case memory c = _generic(FLAGS);
+        bytes32 ask = _pass(c.jobId, true);
+        uint32 epoch = requester.oracleSignerEpoch();
+        vm.startPrank(owner);
+        requester.setOracleSigner(makeAddr("replacement oracle"));
+        requester.revokeSignerEpoch(epoch, keccak256("incident evidence"));
+        vm.stopPrank();
+        _expectDeployRevert(c, abi.encodeWithSelector(GatedHookDeployer.ReviewRevoked.selector, ask));
+        assertEq(uint8(_review(c.jobId)), uint8(HookJobRequester.ReviewStatus.Passed));
+        assertTrue(requester.consumed(requester.getReviewAsk(ask).oracleRequestId));
+    }
+}

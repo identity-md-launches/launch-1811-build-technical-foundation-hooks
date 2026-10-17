@@ -16,7 +16,7 @@
    - the signature is valid on arrival, `now <= expiresAt`, `issuedAt <= now + 300`, and `issuedAt + 300 >= askedAt`,
    - the answer decodes as bool and the oracle UUID is not consumed. Another ask's reservation does not block a retained receipt; it still blocks binding/finalization.
 
-   If every signed identity/question/window field matches the existing owner binding, the callback consumes the UUID and sets `Passed` or `NotPassed`. Otherwise, including a wrong pre-binding, it stores a `ReviewReceipt` and emits `ReviewReceived`, **without consuming/reserving the UUID or setting a verdict**. A later matching `bindReview` finalizes that receipt atomically, with no second callback, signature submission or Intake fee. The digest matches the protocol vector (`test/OracleConformance.t.sol`).
+   If every signed identity/question/window field matches the existing owner binding, the callback retains its verification epoch in the preallocated metadata word, then consumes the UUID and sets `Passed` or `NotPassed`. Otherwise, including a wrong pre-binding, it stores a `ReviewReceipt` and emits `ReviewReceived`, **without consuming/reserving the UUID or setting a verdict**. A later matching `bindReview` finalizes that receipt atomically, with no second callback, signature submission or Intake fee. The digest matches the protocol vector (`test/OracleConformance.t.sol`).
 
    A refused or unagreed ask (`onReviewFailure`, before a receipt) sets `Unanswered` and permits a new paid ask. After `reviewTimeout`, the requester can call `expireReview(jobId)` **only without a receipt**, but this now requests closure: the ask stays `Pending`, accepts delivery/binding, and blocks retries. Only the owner's `confirmReviewExpiry(intakeId)` closes it strictly after the ask deadline and after independently checking that no valid answer will be delivered. The owner can also close an abandoned overdue ask without a requester expiry request. Both callback/expiry-request orders preserve a late valid answer. Owner-confirmed closure is terminal for that Intake ID. A retained answer can only be finalized or closed through guarded owner recovery below.
 
@@ -33,7 +33,11 @@ unchanged, keeps `JobDelivered(requestId, resultHash)`, and additionally emits
 assumption was incorrect; the [RED/GREEN evidence](checks/job-protocol-tuple/README.md)
 reproduces the resulting lost callback. Oracle tuples, signatures and failure tuples are unchanged.
 
-`resultHash` commits to the bytes of the completed result document. It is neither a hash of
+`resultHash` commits to the exact control-plane `/jobs/:id/result` snapshot at completion
+(`jobId`, `source`, accepted `files`, `launch`, `delivery` and status metadata), **not arbitrary
+worker JSON**. Retrieve the original completion URI or `/intake-results/:id`. Workers publish named
+outputs; they cannot inject top-level completion fields. The accepted-file deployment path and
+canonical approval format are specified in [GATED_DEPLOYMENT.md](GATED_DEPLOYMENT.md). It is neither a hash of
 the URI nor a hash of the callback's ABI encoding. The contract authenticates the configured
 Intake and its recorded request ID, but does not fetch the document, check its hash or infer
 review approval. A consumer that retrieves a document must hash its exact bytes before trusting
@@ -58,6 +62,12 @@ after their deadline, and locally Expired jobs accept the first valid completion
 review, including a finalized `NotPassed`, cannot be cleared by delivery.
 
 ## Binding each review to its signed answer
+
+The automatic path remains disabled. `GatedHookDeployer.automaticBindingSupported()` is false,
+and the SDK requires explicit manual `owner-confirmed` mode. The missing protocol-signed or
+onchain Intake/body-to-oracle/question proof is detailed in [GATED_DEPLOYMENT.md](GATED_DEPLOYMENT.md#authenticated-binding-automatic-route-disabled).
+A retained answer or unsigned HTTP lookup cannot authenticate its own pairing.
+
 
 The Intake callback's first `bytes32` identifies the paid ask. The signed attestation's `requestId`
 identifies an oracle request UUID. The supplied protocol reference says these differ; the audit's
@@ -267,6 +277,8 @@ For compromise, the owner must:
 2. Call `revokeSignerEpoch(oldEpoch, incidentHash)` with a nonzero hash of retained incident evidence.
    Only a past, nonzero, not-already-revoked epoch is accepted. Revocation is permanent and **all**
    retained receipts verified in that epoch immediately fail binding, even before individual closure.
+   Gated deployment also refuses finalized approvals from that epoch in **both callback orders**,
+   and refuses missing provenance. Historical verdicts and consumed UUIDs are unchanged.
    Monitor `OracleSignerEpochRevoked` and `revokedSignerEpochs(epoch)`. The hash records the owner's
    assertion; the contract cannot prove compromise or inspect the evidence.
 3. Call `closeRevokedReviewReceipt(intakeId)` for each affected pending receipt. It marks
@@ -387,8 +399,8 @@ Until the owner calls these setters, `openJob` reverts `NotConfigured("jobTempla
 
 | Setter | What to set | Where the owner gets it |
 |---|---|---|
-| `setJobTemplate(action, prefix, middle, suffix)` | `job.open` action id and body template. The historical `test/helpers/ImdTemplates.sol` is a local fixture only; its job shape is not the current paid body schema. Use an approved, free-checked bundle as described in [deployment preparation](DEPLOYMENT_PREPARATION.md#template-activation-and-a-real-paid-pilot). | The action id string and the `job.open` body schema come from IdentityMD's `docs/onchain-intake.md`. They are **not** guessed here: the tests use `"job.open@test"`. Check the price with `Intake.priceOf(action, imd)`. |
-| `setReviewTemplate(action, prefix, suffix, minPanel, minAgreed)` | `bytes32("oracle.request@oracle-1")`, the review question with the right `chainId`, and panel minimums matching the body (7 seats / 5 agreement in the example). Relative `window.hours:1` uses receipt-first confirmation; `validForSeconds:3600` limits arrival | Oracle-consumer reference. Fix `chainId` and the definitions for the launch chain. Confirm the wording with `POST /requests/check` from an operator machine. |
+| `setJobTemplate(action, prefix, middle, suffix)` | `job.open` action id and body template. The current `test/helpers/ImdTemplates.sol` uses the local-chain form of the actual schema; its 31337 chain and mock action id are test-only. Use a configured, free-checked bundle as described in [deployment preparation](DEPLOYMENT_PREPARATION.md#template-activation-and-a-real-paid-pilot). | The action id string and the `job.open` body schema come from IdentityMD's `docs/onchain-intake.md`. They are **not** guessed here: the tests use `"job.open@test"`. Check the price with `Intake.priceOf(action, imd)`. |
+| `setReviewTemplate(action, prefix, suffix, minPanel, minAgreed)` | `bytes32("oracle.request@oracle-1")`, the review question with the right `chainId`, and panel minimums matching the body (7 seats / 5 agreement in the example). The current checked draft uses relative `window.hours:24` and `validForSeconds:86400`; authenticate the resolved blocks before binding | Oracle-consumer reference. Fix `chainId` and the definitions for the launch chain. Confirm the wording with `POST /requests/check` from an operator machine. |
 | `bindReview(intakeId, bodyHash, oracleId, questionHash, chainId, fromBlock, toBlock)` | Once per pending review, normally **after receipt**: independently verify the exact UUID/canonical question/window and confirm the body fingerprint. A matching retained receipt finalizes immediately; no additional Intake fee | Authenticated protocol mapping and canonical question document; live post-delivery availability not yet verified |
 | `discardReviewReceipt(intakeId, bodyHash, oracleId, questionHash, chainId, fromBlock, toBlock)` | Close an unbound misdelivery with a different available true UUID, or an exact matching receipt with an onchain UUID conflict. Preserve history and UUID state | Check mapping offchain as for binding; no mapping proof is verified onchain |
 | `discardMismatchedReviewReceipt(intakeId, bodyHash, receiptHash, questionHash, chainId, fromBlock, toBlock)` | Close an unbound receipt carrying this ask's own UUID but another signed question/chain/window. A receipt matching the true context cannot be closed this way | True context as for binding; `receiptHash` from `reviewReceiptHash(intakeId)` after inspecting the receipt and its verdict |
@@ -440,3 +452,16 @@ owner's powers or recover an already accepted wrong handover.
 - Whether live Intake IDs or oracle UUIDs repeat across actions, retries or protocol migrations. All used Intake IDs remain reserved. Consumed UUIDs can never be reused. An unused reservation can be released only by the owner after its holder closes without a receipt or explicitly closes a revoked receipt, with independently authenticated retry mapping. Unconfirmed receipts deliberately do not reserve UUIDs.
 
 None of this live pilot was run: no paid request was submitted and nothing was deployed. The project's supplied references do not provide a Base Intake; Base support remains unverified. An independent adversarial review is still needed before this holds anyone's IMD.
+
+## Targeted approval-binding update
+
+Current runtime is 24,166 bytes, 410 below EIP-170. Callback ABI and the 200k cap are unchanged.
+`reviewReceiptSignerEpoch` now retains verification provenance for bind-first as well as receipt-first
+answers; `getReviewReceipt` still returns empty context for the bind-first path. The site displays
+missing/revoked provenance for Passed history as deployment-disabled. See
+[the current check logs](checks/approval-binding/README.md) for measured cold callbacks. Older gas
+tables above are historical evidence.
+
+Use `sdk/request_templates.py` and `deployment/hook-templates.json` for the current schema. The
+local Solidity fixture now uses its local-chain form. Both final assembled free-check samples and
+responses are retained; they do not prove a paid job or authenticate an oracle binding.

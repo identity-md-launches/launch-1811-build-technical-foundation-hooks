@@ -22,8 +22,8 @@
 <nav><a href="listings.html">Listings and featured #ad placements</a></nav>
 <h1>IMD job status</h1>
 <p class="note">Read directly from the HookJobRequester contract over JSON-RPC (<code>eth_call</code> and <code>eth_getLogs</code>). No backend, and no request to api.imd.fun.
-"Review passed" means a signed panel answer matched the pending review's owner-pinned question and oracle identity. An answer awaiting binding or correction stays pending. It is not an audit. The contract owner controls binding and can replace the trusted Intake or signer, including for pending requests. The owner can explicitly revoke retained answers from a compromised signer epoch; finalized verdicts remain historical.</p>
-<p class="note">Delivery is not review approval. The result hash commits to the result document's bytes. The result URI appears in event history as unverified text; this page does not open it, fetch it or verify its contents. Include the delivery block in the history range to see it.</p>
+"Review passed" means a signed panel answer matched the pending review's owner-pinned question and oracle identity. An answer awaiting binding or correction stays pending. It is not an audit. The contract owner controls binding and can replace the trusted Intake or signer, including for pending requests. The owner can revoke a compromised signer epoch in either callback order. Finalized verdicts remain historical, while revoked approvals cannot deploy.</p>
+<p class="note">Automatic deployment preparation is disabled until IMD supplies authenticated Intake-to-oracle binding evidence. The manual route requires an owner-confirmed binding for each review. Delivery is not review approval. The result hash commits to the exact control-plane completion snapshot, including accepted source and file metadata. The result URI appears in event history as unverified text; this page does not open it, fetch it or verify its contents. Include the delivery block in the history range to see it.</p>
 <form id="f">
   <label>JSON-RPC URL (a public node of the chain; leave empty to use your wallet's provider)<input id="rpc" placeholder="https://..."></label>
   <label>HookJobRequester address<input id="addr" required pattern="0x[0-9a-fA-F]{40}"></label>
@@ -125,13 +125,17 @@ function jobRows(w) {
 }
 
 async function receiptRows(url, addr, w) {
-  if (Number(num(w[4])) !== 1) return [];
+  const review = Number(num(w[4]));
+  if (review !== 1 && review !== 2) return [];
   const epochHex = await rpc(url, "eth_call", [{ to: addr, data: RECEIPT_EPOCH + w[13] }, "latest"]);
   if (!/^0x[0-9a-fA-F]{64}$/.test(epochHex)) throw new Error("invalid receipt epoch response");
   const epoch = BigInt(epochHex);
-  if (epoch === 0n) return [["Review receipt", "Awaiting a signed answer"]];
+  if (epoch === 0n) return [["Review receipt", review === 1 ? "Awaiting a signed answer" : "Signer provenance missing; deployment disabled"]];
   const incident = await rpc(url, "eth_call", [{ to: addr, data: REVOKED_EPOCH + epoch.toString(16).padStart(64, "0") }, "latest"]);
   if (!/^0x[0-9a-fA-F]{64}$/.test(incident)) throw new Error("invalid signer revocation response");
+  if (review === 2) return BigInt(incident) === 0n
+    ? [["Approval signer epoch", `${epoch}; historical Passed verdict (deployment still requires artifact checks)`]]
+    : [["Deployment approval", `Signer epoch ${epoch} revoked; deployment disabled; historical Passed verdict unchanged`], ["Incident evidence hash", incident]];
   return BigInt(incident) === 0n
     ? [["Review receipt", `Retained in signer epoch ${epoch}; awaiting owner binding or correction`]]
     : [["Review receipt", `Signer epoch ${epoch} revoked; cannot finalize, awaiting owner closure`], ["Incident evidence hash", incident]];

@@ -1,0 +1,9 @@
+{
+  "kind": "SYNTHETIC offline shape/hash fixture, never a live approval",
+  "snapshotJobId": "Uses the preceding project UUID only to exercise the documented UUID shape; this is not its result. The actual fetched result is in ../sources/previous-job-result.json.",
+  "artifactDigest": "0xe67ea4e163c3d4b11fa56459d83a4f26102bb04b9e3b2c3bc93e4a1c54ad7bca",
+  "sourceSha256": "73522766af1c30035865371c4b96d490f9fc71f4f197ccf1fc89862123630414",
+  "buildKeccak256": "0x9ab2a06b90262db1b07f8a837c5e43eeec5a8898986de43b5b87d5a9fb0870aa",
+  "approvalSha256": "35d5bdf0e61813d2a3a582770d49fe1aa0ab456a9a6b65e8dc25992ec6c576ac",
+  "resultHash": "0x51578aca718ee02ec247b17e2112fe28f5b891c3df6c26728f5e4456d4c5b431"
+}

@@ -80,5 +80,7 @@ def local_templates(chain):
         ('oracle.request', json.loads(t['reviewPrefix'] + t['sampleJobId'] + t['reviewSuffix']))]:
         t['checks'][action] = {'inputSha256': sha256(canonical(body)), 'response': {'action': action, 'blockers': []},
                                'reference': 'LOCAL MOCK free-check response; not live evidence'}
+        if action == 'oracle.request':
+            t['checks'][action]['response']['request'] = body
     return t
 

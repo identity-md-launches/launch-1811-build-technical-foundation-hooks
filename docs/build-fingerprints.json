@@ -18,11 +18,31 @@
       "runtimeCodeBytes": 13970
     },
     "HookJobRequester": {
-      "creationCodeHash": "0x53fb7eedb85776d8dfb3dd35370bd86010d1523fa3a435a9592a2ee6d21ab88f",
-      "runtimeCodeHash": "0xd42800946989390534b8a0a42c66c618f2bf334d46e9ab59e033ad0009f42949",
-      "creationCodeBytes": 25861,
-      "runtimeCodeBytes": 24117,
-      "note": "Runtime hash is of the compiler artifact; deployed runtime differs because EIP712 immutables (chain id, address, domain separator) are filled at construction."
+      "creationCodeHash": "0x3a6d25d71d086daa7636df5684b9a69e7c07fd265fba14683eaf2158e233e17f",
+      "runtimeCodeHash": "0x06b8ea40c5eadc70bebd1603ddc8292e4d5127ba148a08d85d8c2c875b878bfc",
+      "creationCodeBytes": 25910,
+      "runtimeCodeBytes": 24166,
+      "note": "Compiler runtime template; constructor fills immutables, so live code hashes differ."
+    },
+    "HookListingRegistry": {
+      "creationCodeBytes": 9063,
+      "creationCodeHash": "0x538f98c75f7699464e2621fd5299400c05a286243c8cde9875faa143f63599d1",
+      "runtimeCodeBytes": 9035,
+      "runtimeCodeHash": "0x03700c30c74aeec61bb82f2dcb6a9048164fc277f2450e4593ccf1402da0a512"
+    },
+    "FeaturedPlacements": {
+      "creationCodeBytes": 8606,
+      "creationCodeHash": "0x8adff3489737c1069b453099a9d4e9289a5dddda5a59e401f31c7752dd10ccfa",
+      "runtimeCodeBytes": 8232,
+      "runtimeCodeHash": "0xf21b4e86707e828879de1f266e7397010e3e0c24127a91bbed5ba97b626c997f",
+      "note": "Compiler runtime template; constructor fills immutables, so live code hashes differ."
+    },
+    "GatedHookDeployer": {
+      "creationCodeBytes": 17286,
+      "creationCodeHash": "0x9768c3331a4a66acb5559b406ff1006f0e34649243d794044a99697517479efd",
+      "runtimeCodeBytes": 16890,
+      "runtimeCodeHash": "0x3fc4a7b421330f39fcf5501c5b1101ea1ed64089fe1492e680f68476a40ad7b3",
+      "note": "Compiler runtime template; constructor fills immutables, so live code hashes differ."
     }
   }
 }

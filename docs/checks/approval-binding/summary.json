@@ -1,0 +1,89 @@
+{
+  "baseCommit": "2aef6408eabb45b8f149e16a96c7734d4b4b5b07",
+  "newCommit": null,
+  "commitNote": "No commit created because the assignment prohibits touching .git; submission assigns the commit.",
+  "checks": {
+    "forgeBuild": "passed (Solc 0.8.26)",
+    "forgeTest": {
+      "passed": 358,
+      "failed": 0,
+      "suites": 31
+    },
+    "assignmentSeed": {
+      "passed": 61,
+      "failed": 0,
+      "seed": "0x345090baf5788add2566899a490658fcb1471984505f18b0671c8e41b224bfec"
+    },
+    "forgeFmtCheck": "passed",
+    "python": {
+      "passed": 49,
+      "failed": 0
+    },
+    "siteABI": {
+      "passed": 22,
+      "failed": 0
+    },
+    "coldCallbacks": {
+      "passed": 10,
+      "failed": 0,
+      "stipend": 200000,
+      "largestMeasuredReviewCallback": 192286
+    },
+    "protectedPaths": "unchanged"
+  },
+  "runtimeBytes": {
+    "HookJobRequester": 24166,
+    "GatedHookDeployer": 16890
+  },
+  "red": {
+    "failedAsExpected": 2
+  },
+  "green": {
+    "passed": 3
+  },
+  "automaticBindingSupported": false,
+  "auditClaim": false,
+  "liveReadinessClaim": false,
+  "logs": {
+    "assignment-seed.log": {
+      "sha256": "dbd3fabf0971c40e56db3b5ce78e4eb192f28a737441dc681b7ebed83f1e5bcb",
+      "bytes": 4222
+    },
+    "build-identity.log": {
+      "sha256": "87e85d1eec94b99e1356da308a2912dc9584fc4ca14b4cd955d6aab75fcf3a2c",
+      "bytes": 2061
+    },
+    "build.log": {
+      "sha256": "9a2cb6bcc73a8d0bf08b697e561bf7776eb628d6026efb4742974cdaba4bf292",
+      "bytes": 120778
+    },
+    "cold-gas.log": {
+      "sha256": "5f752d51401a7215592460a539b5f35f286f829995f0009fdb5826b7a8e8414a",
+      "bytes": 2319
+    },
+    "fmt.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "foundry.log": {
+      "sha256": "08a0791b0b3d770756c5082c8b3744f3bbdde60a867fffe3322d61ba16de665a",
+      "bytes": 45179
+    },
+    "green.log": {
+      "sha256": "d0cb25d6859db86c756ff3e2ea554fcd2f8671efa338acef42b1a3a3723930b4",
+      "bytes": 542
+    },
+    "red.log": {
+      "sha256": "b4701d8620fc95e37d8efdc831b6ea62619514e31febd1aad17fef5e937d8121",
+      "bytes": 1148
+    },
+    "sdk.log": {
+      "sha256": "9aae24996a72926a025e339dbc68ff0ae23451cfd65815d5f93708a0f231d1c9",
+      "bytes": 7665
+    },
+    "site-abi.log": {
+      "sha256": "6dc2a03e9ac0f6133d1c3e7bf222e9812083ed22cf130e9f65748b255b6a9b9e",
+      "bytes": 2223
+    }
+  }
+}

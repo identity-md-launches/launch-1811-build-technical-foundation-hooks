@@ -156,10 +156,13 @@ A full 131,072-candidate page costs about 46M gas, more than common RPC `eth_cal
 ## Oracle-gated generated-hook deployment (2026-10-17)
 
 `src/deployment/GatedHookDeployer.sol` deploys a job-generated hook only after the oracle signs a
-`Passed` review verdict through `HookJobRequester`. The reviewed result document must name the
-exact artifact digest (source/build identity, initcode, constructor arguments, runtime hash, chain,
-PoolManager and callback mask). The contract then reads back the deployed code and configuration.
-`python3 -m sdk.gated_deploy` prints unsigned `deploy` calldata. See
+`Passed` review verdict through `HookJobRequester`. The exact control-plane completion snapshot
+must commit a unique accepted approval file and the accepted source bundle; a marker inside arbitrary
+worker JSON is insufficient. Its artifact digest binds source/build, bytecode, constructor, runtime,
+chain, deployer, PoolManager and callback permissions. Both callback orders retain signer-epoch
+provenance; revoked or missing provenance blocks deployment without rewriting historical verdicts.
+`python3 -m sdk.gated_deploy --binding-mode owner-confirmed ...` prepares unsigned calldata.
+The automatic route is disabled pending an official authenticated Intake-to-oracle binding proof. See
 [docs/GATED_DEPLOYMENT.md](docs/GATED_DEPLOYMENT.md) for trust assumptions, the per-chain manager
 pins, "After launch" settings and the remaining live-pilot gates. `HooksStoreFactory` remains a
 legacy **ungated** testnet-only BoundedSwapHook route. Local code and tests only: not audited and
