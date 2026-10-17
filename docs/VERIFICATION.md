@@ -401,3 +401,42 @@ Foundry emits advisory lint warnings; compilation succeeds. No Slither/Mythril, 
 live Intake pilot, deployment, paid request or funded-wallet operation was performed. Whether the
 live Intake refuses synchronously or after payment is listed with the other pilot items in
 [the pilot checklist](IMD_INTEGRATION.md#requires-a-live-ethereum-or-robinhood-chain-pilot).
+
+
+## Follow-up: protocol job callback tuple
+
+Continues `575e8a8f74da581298a8527f493e9eab8a45901f`. The requested protocol-tuple test was
+run **before** production/fixture changes and failed because the old `(bytes32,bytes)` callback
+could not decode `(bytes32,bytes32,string)`. Its [RED trace](checks/job-protocol-tuple/red.log)
+is retained alongside the [GREEN trace](checks/job-protocol-tuple/green.log) from immediately
+after the targeted fix. The contract now stores the supplied document hash exactly, keeps
+`JobDelivered` and emits `JobResultURI`. No URI string storage, oracle tuple change, mock
+translation, skipped test, dependency or compiler-setting change was introduced.
+
+| Command | Result |
+|---|---|
+| `forge build` | Pass; pinned Solidity 0.8.26, Cancun, optimizer 200; advisory lints |
+| `forge test` | **252 passed**, 27 suites, zero failures/skips, repository-pinned seed; both escrow invariants passed 128,000 calls each |
+| Assignment seed + full `--gas-report` | **252 passed**, 27 suites, zero failures/skips; both escrow invariants passed 128,000 calls each |
+| `forge fmt --check` | Pass |
+| `node --test test/requester-abi.test.cjs test/listings-reader.test.cjs` | **18 passed**, zero failures/skips |
+| `python3 -m unittest discover -s test -p 'test_*.py' -v` | **10 passed**, disposable local Anvil |
+| `forge test --isolate --match-contract 'JobProtocolGasTest\|ReviewReceiptGasTest' -vv` | **9 passed**; job tuple with 4,096-byte URI **67,052** cold forwarded gas; oracle gas unchanged |
+| Requester runtime | **24,117 bytes**, **459 bytes** below the 24,576-byte limit |
+| Vendored checksum verification | 96 files verified, 24 recorded formatting-only differences; used a writable scratch temp directory |
+
+The 12 additional Foundry tests cover exact hash/event data, unauthorized and duplicate calls,
+unknown/legacy/malformed callbacks, one-attempt fee loss, expiry and late completion without
+resetting a negative review. All 240 preceding tests remain. Existing hash assertions now compare
+the supplied result-document hash. The site decodes bounded URI event data and renders only
+unverified text; malicious HTML/schemes, bad ABI/UTF-8, wrong emitters/IDs and removed logs are
+covered. It neither fetches the URI nor turns it into a link or review approval.
+
+The published ABI exactly matches compiler output; only the job callback changed and the URI
+event was added. Tests verify refreshed requester fingerprints and unchanged hook/factory ones.
+[Full command results, raw logs, gas measurements and operational assumptions](checks/job-protocol-tuple/README.md)
+are retained. No live Intake, public-chain transaction, deployment, paid request, Slither/Mythril
+or independent security audit was performed. See the [live pilot requirements](IMD_INTEGRATION.md#requires-a-live-ethereum-or-robinhood-chain-pilot)
+for the remaining writer/action/body, payment, document availability, oracle mapping and signer
+gas assumptions. Owner-trust disclosures and the distinction between delivery and review approval
+remain in force.

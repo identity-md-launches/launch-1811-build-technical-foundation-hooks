@@ -72,7 +72,8 @@ Before accepting paid production asks, the operator must establish:
   prove that association. No pre-dispatch mapping or dispatch coordination is required anymore.
 - Live `job.open` action/body/callback ABI, `oracle.request` body support and review evidence
   accessibility. Callback delivery must be asynchronous after the request call returns and the
-  Intake ID has been recorded. The existing `onJobResult(bytes32,bytes)` remains an assumption.
+  Intake ID has been recorded. At that revision, `onJobResult(bytes32,bytes)` remained an assumption. It is superseded by the
+  [protocol tuple correction](IMD_INTEGRATION.md#job-result-callback-and-uri); the live pilot is still pending.
 - Actual callback gas with the production signer/registry under the Intake's stipend, signing
   timestamps/lifetime and delivery latency, and ID uniqueness across actions/retries/migrations.
 - Current chain contracts/prices, safe token behavior, finality and RPC/log access. This assignment

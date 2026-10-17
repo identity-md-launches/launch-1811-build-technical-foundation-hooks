@@ -207,6 +207,7 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
         bytes32 indexed requestId, address indexed requester, bytes32 indexed specHash, uint256 price, bytes body
     );
     event JobDelivered(bytes32 indexed requestId, bytes32 resultHash);
+    event JobResultURI(bytes32 indexed requestId, string uri);
     event JobFailed(bytes32 indexed requestId, uint8 status, bytes32 reason, uint16 agreed, uint16 answered);
     event JobExpired(bytes32 indexed requestId);
     event ReviewRequested(bytes32 indexed jobRequestId, bytes32 indexed intakeRequestId, uint256 price, bytes body);
@@ -324,19 +325,16 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
 
     /// @notice First completion notice for an open or locally expired job, from Intake only.
     /// Local expiry never suppresses a late result/failure or changes any review verdict.
-    /// Unsigned: it says
-    /// the Intake reported the job complete, never that its review passed.
-    /// @dev The `job.open` callback ABI was not part of this task's protocol references; this
-    /// `(bytes32, bytes)` shape must be confirmed in a live pilot. If the Intake calls with another
-    /// shape, this reverts inside the Intake's try, the job stays Open, and its requester can
-    /// expire it after the deadline. Nothing of value moves either way.
-    function onJobResult(bytes32 requestId, bytes calldata result) external onlyIntake {
+    /// Unsigned: it says the Intake reported the job complete, never that its review passed.
+    /// @dev Protocol tuple: the supplied hash commits to the result document's bytes, not its URI.
+    /// The URI is emitted for offchain readers; no string is stored or fetched by this contract.
+    function onJobResult(bytes32 requestId, bytes32 resultHash, string calldata uri) external onlyIntake {
         Job storage job = jobs[requestId];
         if (job.status != JobStatus.Open && job.status != JobStatus.Expired) revert UnknownOrSettled(requestId);
         job.status = JobStatus.Delivered;
-        bytes32 resultHash = keccak256(result);
         job.resultHash = resultHash;
         emit JobDelivered(requestId, resultHash);
+        emit JobResultURI(requestId, uri);
     }
 
     /// @notice Version 2 failure function: the ask was refused (status 1) or ended without a result

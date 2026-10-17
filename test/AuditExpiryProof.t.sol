@@ -145,7 +145,7 @@ contract ExpiryFrontRunShoppingTest is Test {
     function testRequesterFrontRunsLateNotPassedWithExpiryAndReasks() public {
         vm.prank(creator);
         bytes32 jobId = requester.openJob(keccak256("spec"), "hook brief", 0.5 ether);
-        assertTrue(intake.complete(jobId, abi.encode(jobId, bytes("ipfs://result"))));
+        assertTrue(intake.complete(jobId, abi.encode(jobId, keccak256("result document"), "ipfs://result")));
         vm.prank(creator);
         bytes32 askId = requester.requestReview(jobId, 0.5 ether);
 

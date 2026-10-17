@@ -18,10 +18,10 @@
       "runtimeCodeBytes": 13970
     },
     "HookJobRequester": {
-      "creationCodeHash": "0xa06778d3f112bbfb2095129947bbfc7cfe711631f091828bf04751e07bad620e",
-      "runtimeCodeHash": "0xb53c555c31c4f9531a32d41045bdc39d3a5d5f61e8c071e22a951b6ec12db12a",
-      "creationCodeBytes": 25825,
-      "runtimeCodeBytes": 24081,
+      "creationCodeHash": "0x53fb7eedb85776d8dfb3dd35370bd86010d1523fa3a435a9592a2ee6d21ab88f",
+      "runtimeCodeHash": "0xd42800946989390534b8a0a42c66c618f2bf334d46e9ab59e033ad0009f42949",
+      "creationCodeBytes": 25861,
+      "runtimeCodeBytes": 24117,
       "note": "Runtime hash is of the compiler artifact; deployed runtime differs because EIP712 immutables (chain id, address, domain separator) are filled at construction."
     }
   }

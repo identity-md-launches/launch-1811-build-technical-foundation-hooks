@@ -125,7 +125,7 @@ contract StuckReceiptProofTest is Test {
     function _unboundAsk() internal returns (bytes32 jobId, bytes32 askId) {
         vm.prank(creator);
         jobId = requester.openJob(keccak256("spec"), "A swap cap hook", 0.5 ether);
-        assertTrue(intake.complete(jobId, abi.encode(jobId, bytes("ipfs://result"))));
+        assertTrue(intake.complete(jobId, abi.encode(jobId, keccak256("result document"), "ipfs://result")));
         vm.prank(creator);
         askId = requester.requestReview(jobId, 0.5 ether);
     }

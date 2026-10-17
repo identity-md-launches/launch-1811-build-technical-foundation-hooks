@@ -292,7 +292,7 @@ contract ReviewBindingTest is HookJobRequesterFixture {
         vm.startPrank(owner);
         requester.setIntake(owner);
         requester.setOracleSigner(vm.addr(ownerKey));
-        requester.onJobResult(openJobId, "owner-controlled completion");
+        requester.onJobResult(openJobId, keccak256("owner-controlled completion"), "ipfs://result");
         requester.onReviewResult(askId, a, sig);
         requester.setIntake(address(intake));
         requester.setOracleSigner(signer);

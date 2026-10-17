@@ -1,0 +1,998 @@
+diff --git a/README.md b/README.md
+index d009eba..8a52106 100644
+--- a/README.md
++++ b/README.md
+@@ -27,6 +27,7 @@ Requirements: Foundry (`forge`, `cast`, `anvil`), solc **0.8.26**, and Python 3.
+ ```sh
+ forge build
+ forge test
++forge test --gas-report
+ forge fmt --check
+ sh script/verify-vendored.sh
+ python3 -m unittest discover -s test -p 'test_*.py' -v
+@@ -36,7 +37,7 @@ node --test test/listings-reader.test.cjs test/requester-abi.test.cjs
+ 
+ The repository fuzz seed is pinned in `foundry.toml`:
+ `0x936d89b088020ddf36122a88c4c9aed7130c7a410f5c44680a7d121950c99345`.
+-This follow-up also runs with `FOUNDRY_FUZZ_SEED=0x7b504948825fc356a810f67b6458a77924e9ee1fb1e4281a7e4787866c8d0c12` supplied to the runner. Tests do not read or mutate environment variables. Python integration tests start and stop their own disposable Anvil instance on loopback; they never use a remote RPC or a private key. The earlier IMD requester hardening follow-up recorded all 10 passing. The listing/ads follow-up did not modify or rerun those SDK tests.
++This follow-up also runs `forge test --fuzz-seed 0xf26a9b5634efd5ce7b559826e3d88cfde1d1b356c70d58ff3025a15e862a9578 --gas-report` with the assignment seed. Tests do not read or mutate environment variables. Python integration tests start and stop their own disposable Anvil instance on loopback; they never use a remote RPC or a private key. The earlier IMD requester hardening follow-up recorded all 10 passing. The listing/ads follow-up did not modify or rerun those SDK tests.
+ 
+ The listings/ads follow-up also checks the supplied seed directly using
+ `forge test --fuzz-seed 0x897ccfb85f71eb00ada949c5387d8bc41b650fda2a7d704b3960c7edf39b4654`.
+@@ -99,6 +100,11 @@ oracle review. Paid calls are now `openJob(specHash, brief, userMaxPrice)` and
+ caller's submitted limit and the owner's ceiling. Exact incoming transfers and exact Intake spending
+ are checked atomically: partial spending reverts the request, leaving no caller funds to sweep.
+ The full [site ABI](site/HookJobRequester.abi.json) is checked against compiler output.
++Job delivery now uses the protocol tuple `onJobResult(bytes32,bytes32,string)`: the supplied
++result-document hash is stored exactly, and the URI is emitted as `JobResultURI` without string
++storage. The status page shows the URI as unverified text in event history, with no link or fetch.
++Delivery remains separate from signed review approval. [RED/GREEN traces and check results](docs/checks/job-protocol-tuple/README.md)
++cover the regression, malicious/malformed inputs, late completion, callback gas and runtime size.
+ 
+ Local job expiry still accepts the first late Intake result/failure. Delivered, failed and expired
+ jobs are equally reviewable; unsigned callback ordering cannot dictate a signed verdict. A review
+@@ -133,7 +139,7 @@ See [audit 648ba2e5 remediation](docs/AUDIT_648BA2E5.md), [audit 6b607200 remedi
+ and the [integration guide](docs/IMD_INTEGRATION.md) for deployment parameters and operator duties.
+ A synchronous Intake refusal rolls the whole ask back without debit; an asynchronous one spends the
+ fee. Which shape the live Intake uses is something only a live pilot can prove.
+-Real IMD Intake testing remains necessary for the job action/body/callback ABI, exact spending,
++Real IMD Intake testing remains necessary for the job action/body, live delivery of the documented tuple, exact spending,
+ authenticated post-delivery mapping and canonicalization, and production signer gas under 200k.
+ No deployment, paid request or fund movement was performed.
+ 
+diff --git a/docs/AUDIT_5F43F94D.md b/docs/AUDIT_5F43F94D.md
+index 7272992..0e7219b 100644
+--- a/docs/AUDIT_5F43F94D.md
++++ b/docs/AUDIT_5F43F94D.md
+@@ -72,7 +72,8 @@ Before accepting paid production asks, the operator must establish:
+   prove that association. No pre-dispatch mapping or dispatch coordination is required anymore.
+ - Live `job.open` action/body/callback ABI, `oracle.request` body support and review evidence
+   accessibility. Callback delivery must be asynchronous after the request call returns and the
+-  Intake ID has been recorded. The existing `onJobResult(bytes32,bytes)` remains an assumption.
++  Intake ID has been recorded. At that revision, `onJobResult(bytes32,bytes)` remained an assumption. It is superseded by the
++  [protocol tuple correction](IMD_INTEGRATION.md#job-result-callback-and-uri); the live pilot is still pending.
+ - Actual callback gas with the production signer/registry under the Intake's stipend, signing
+   timestamps/lifetime and delivery latency, and ID uniqueness across actions/retries/migrations.
+ - Current chain contracts/prices, safe token behavior, finality and RPC/log access. This assignment
+diff --git a/docs/DEPLOYMENT.md b/docs/DEPLOYMENT.md
+index 2e9e579..302d118 100644
+--- a/docs/DEPLOYMENT.md
++++ b/docs/DEPLOYMENT.md
+@@ -58,6 +58,22 @@ forge script script/DeployHookJobRequester.s.sol:DeployHookJobRequester \
+ 
+ All `HOOKS_*` and `IMD_*` values are explicit operator inputs; there are no supplied keys or default addresses. `sdk.hooks_store.abi_tuple(spec)` produces the exact tuple. Simulation does not persist the factory, so it cannot supply a real deployed factory address for a subsequent run. An operator who later elects to submit a testnet transaction must use their own signing workflow and preserve the receipt; no such transaction was submitted in this assignment. The client in [STORE_API.md](STORE_API.md) instead gives the Store a complete unsigned transaction for its wallet integration.
+ 
++## Requester callback compatibility
++
++This source patch changes the job callback selector from `0x5dd4c70b` to `0x325a77b4`
++(`onJobResult(bytes32,bytes32,string)`). Constructor parameters, owner settings, review and failure
++callbacks are unchanged. No deployment or migration was performed. Existing non-upgradeable
++requesters retain their old code and already-registered selectors; changing the site ABI cannot
++repair their pending callbacks. An operator must separately review any future requester release,
++configure the existing required owner/Intake/payment/signer/templates, and point the reader to that
++exact contract and its deployment block. No token is replaced or re-minted by this patch.
++
++Index `JobResultURI` only from that requester and the selected chain/request ID; keep the supplied
++hash beside it, verify fetched document bytes independently, and apply finality/reorg handling.
++Delivery is not review approval. The owner still controls Intake/signer rotation for pending asks
++and independent review binding/recovery. The [integration guide](IMD_INTEGRATION.md#after-launch)
++lists all configuration duties and the remaining live pilot checks.
++
+ ## Evidence and lifecycle
+ 
+ Before submission, review the spec, limit units, allowed chain, exact factory, manager code hash, salt, predicted address, init-code hash, expected runtime hash and transaction destination/data/value. Re-simulate against current state. Mining output from a prior block can become stale if someone has deployed the same plan or if dependencies have changed.
+diff --git a/docs/IMD_INTEGRATION.md b/docs/IMD_INTEGRATION.md
+index 5e800ee..06f00f4 100644
+--- a/docs/IMD_INTEGRATION.md
++++ b/docs/IMD_INTEGRATION.md
+@@ -22,6 +22,38 @@
+ 
+ Callbacks run under the Intake's 200,000-gas stipend. `ReviewDelivery.t.sol` and `ReviewReceiptGas.t.sol` use the mock's one-attempt path with cold requester/signer access, including ECDSA, EIP-7702 key signatures, a 5-of-7 ERC-1271 signer and the audit's 22-cold-read stressor. They verify retained answers and irrevocable fee loss for invalid or over-budget callbacks. Direct calls in other tests probe revert reasons; they do not claim that Intake retries. See the callback budget below; the actual production signer and Intake still require a pilot.
+ 
++## Job result callback and URI
++
++The [protocol's completion tuple](https://imd.fun/docs/#what-comes-back) is
++`(bytes32 requestId, bytes32 resultHash, string uri)`. The requester registers
++`onJobResult(bytes32,bytes32,string)` (selector `0x325a77b4`), stores the **supplied** hash
++unchanged, keeps `JobDelivered(requestId, resultHash)`, and additionally emits
++`JobResultURI(bytes32 indexed requestId, string uri)`. The previous `(bytes32,bytes)`
++assumption was incorrect; the [RED/GREEN evidence](checks/job-protocol-tuple/README.md)
++reproduces the resulting lost callback. Oracle tuples, signatures and failure tuples are unchanged.
++
++`resultHash` commits to the bytes of the completed result document. It is neither a hash of
++the URI nor a hash of the callback's ABI encoding. The contract authenticates the configured
++Intake and its recorded request ID, but does not fetch the document, check its hash or infer
++review approval. A consumer that retrieves a document must hash its exact bytes before trusting
++its contents; parsing and reserializing JSON may change those bytes. A matching hash still does
++not prove code safety or that an independent review passed. Intake/owner trust remains unchanged.
++
++The URI lives only in event data: `Job` and its 15-word `getJob` return stay unchanged. Index
++`JobResultURI` by **chain, requester contract and request ID**, retaining block/transaction/log
++identity and handling reorgs. The static page displays it only as unverified `textContent` in
++history. It creates no link and never fetches the location. Empty strings are shown explicitly;
++malformed ABI, invalid UTF-8 or data over the reader's 32 KiB display limit produce an unavailable
++message without hiding the remaining history. That display limit is not a protocol or contract
++length restriction. An excessive URI can exhaust the fixed callback gas: no finite stipend can
++accept an unbounded string. A cold 4,096-byte URI is tested under the unchanged 200,000-gas cap.
++
++A malformed callback leaves the job unchanged while Intake consumes its one attempt and keeps
++the fee; local expiry remains possible. The test mock forwards `selector ++ args` without any
++translation. Unknown, already delivered or failed jobs reject the callback. Open jobs, including
++after their deadline, and locally Expired jobs accept the first valid completion. An existing
++review, including a finalized `NotPassed`, cannot be cleared by delivery.
++
+ ## Binding each review to its signed answer
+ 
+ The Intake callback's first `bytes32` identifies the paid ask. The signed attestation's `requestId`
+@@ -251,7 +283,7 @@ Normal rotation preserves historical verification until the owner explicitly rev
+ 
+ ## Callback gas budget
+ 
+-The callback stores four full-width context words and one packed metadata word; it does not
++The review callback stores four full-width context words and one packed metadata word; it does not
+ truncate UUIDs, chain IDs or question hashes. `requestReview` preallocates bit 255 of the metadata
+ word (about 22.1k additional request-transaction storage gas). Receipt writes that existing word
+ once at a nonzero-to-nonzero cost, instead of initializing it and repeatedly updating packed
+@@ -259,12 +291,17 @@ fields inside the callback. Allocation alone returns an empty receipt and cannot
+ The already verified EIP-712 digest is reused in `ReviewReceived` instead of rehashed. Read ABIs
+ remain 15 words for `getJob` and 10 each for `getReviewAsk` and `getReviewReceipt`.
+ 
+-With pinned Solidity 0.8.26/Cancun/optimizer 200, local minimum **forwarded** receipt gas is 125,296
+-for ECDSA, 170,389 for the 5-of-7 signer (five ECDSA recoveries, membership, per-key expiry and
+-duplicate checks; 325-byte signature), and 187,543 for the audit's registry with 22 extra cold
++With pinned Solidity 0.8.26/Cancun/optimizer 200, local minimum **forwarded** receipt gas is 124,984
++for ECDSA, 170,077 for the 5-of-7 signer (five ECDSA recoveries, membership, per-key expiry and
++duplicate checks; 325-byte signature), and 187,231 for the audit's registry with 22 extra cold
+ mapping reads (65-byte signature). Each also passes the exact 200,000-gas one-attempt Intake call.
+ Binary-search measurements restore state and cool the consumer/signer for every trial; isolated
+-transaction checks avoid dirty-slot discounts. Wrong-prebinding receipt delivery uses 175,435 gas with the 5-of-7 signer and 192,598 with the 22-read stress signer. The 5-of-7 receipt also uses 170,389 gas after an expiry request and before a retry reservation is released.
++transaction checks avoid dirty-slot discounts. Wrong-prebinding receipt delivery uses 175,123 gas with the 5-of-7 signer and 192,286 with the 22-read stress signer. The 5-of-7 receipt also uses 170,077 gas after an expiry request and before a retry reservation is released.
++
++The job callback with a 4,096-byte URI needs **67,052 gas** with cold requester access and a clean
++status slot. It emits the URI without storing it. The requester runtime is **24,117 bytes**,
++459 bytes below EIP-170. The [isolated gas log](checks/job-protocol-tuple/cold-gas.log) records
++these measurements; larger URIs and arbitrary signer implementations are not covered by them.
+ 
+ Use **60,000 gas as the maximum cold `isValidSignature` execution budget**, with canonical 32-byte
+ bool answers and signatures no larger than the tested 325 bytes, then measure the entire callback
+@@ -304,12 +341,13 @@ independent protocol digest/signature vector. The pinned Cancun tests emulate th
+ 
+ ## Showing status on a static website
+ 
+-`site/index.html` is one HTML file with no dependencies. On a JSON-RPC endpoint the visitor chooses (a public RPC of the chain, or the wallet's injected provider) it calls `getJob(bytes32)` with `eth_call` for one job, `jobsOf(address)` to list a creator wallet's jobs with each one's status, and `eth_getLogs` filtered on the contract address, the thirteen job/review event topics and the request id for the job's history (block, event, transaction hash). It never contacts api.imd.fun, so browser CORS on that API is irrelevant. The selectors and topic hashes it hard-codes are pinned by `testStaticSiteReadContract`. Earlier local Anvil verification covered the unchanged wallet-list and 15-word job reads; binding-reset and receipt-revocation events are included. Pending receipt reads also check its signer epoch and explicit revocation, so a revoked answer is visible before closure. The full site-facing ABI is [`site/HookJobRequester.abi.json`](../site/HookJobRequester.abi.json), checked against compiler output by `test/requester-abi.test.cjs`. Reservation-release events are monitored separately by oracle/Intake ID. Many public nodes cap `eth_getLogs` block ranges, so the page takes a "from block" (give the contract's deployment block); when the range is refused the job status still shows and the history row says so. It shows:
++`site/index.html` is one HTML file with no dependencies. On a JSON-RPC endpoint the visitor chooses (a public RPC of the chain, or the wallet's injected provider) it calls `getJob(bytes32)` with `eth_call` for one job, `jobsOf(address)` to list a creator wallet's jobs with each one's status, and `eth_getLogs` filtered on the contract address, the fourteen job/review event topics and the request id for the job's history (block, event, transaction hash and result URI). It never contacts api.imd.fun, so browser CORS on that API is irrelevant. The selectors and topic hashes it hard-codes are pinned by `testStaticSiteReadContract`. Earlier local Anvil verification covered the unchanged wallet-list and 15-word job reads; binding-reset and receipt-revocation events are included. Pending receipt reads also check its signer epoch and explicit revocation, so a revoked answer is visible before closure. The full site-facing ABI is [`site/HookJobRequester.abi.json`](../site/HookJobRequester.abi.json), checked against compiler output by `test/requester-abi.test.cjs`. Reservation-release events are monitored separately by oracle/Intake ID. Many public nodes cap `eth_getLogs` block ranges, so the page takes a "from block" (give the contract's deployment block); when the range is refused the job status still shows and the history row says so. It shows:
+ 
+ | On chain | Shown as |
+ |---|---|
+ | `status` Open / Delivered / Failed (+status, reason) / Expired | Job status, labelled "reported by the Intake". Delivery is an unsigned completion notice. |
+ | `review` None / Pending / Unanswered | "No verified review result"; Pending may mean awaiting an answer **or owner confirmation**; Unanswered means closed without a finalized verdict |
++| `JobResultURI` history event | Unverified result URI as text only; never fetched, linked or treated as review approval |
+ | `ReviewReceived` history event | Signed answer retained, awaiting owner confirmation; no verdict yet |
+ | `ReviewReceiptDiscarded` history event | Owner closed a misdelivery or UUID conflict; original receipt kept in history |
+ | `ReviewExpiryRequested` history event | Awaiting owner closure; callbacks remain open |
+@@ -320,7 +358,7 @@ The page never shows "audited". `Passed` means a signed oracle panel answer that
+ 
+ ### Blocker for a static review status
+ 
+-Without the oracle step, a static website **cannot reliably tell whether review passed**. The Intake's job completion is unsigned, carries no review verdict, and its `job.open` callback ABI was not in this task's protocol references. The job page on api.imd.fun cannot be read from an arbitrary origin and would not be chain-verifiable anyway. With the oracle step, review status depends on a live pilot confirming that the panel can read the job's review outcome, the definitions pin it unambiguously, and the owner can authenticate the exact oracle identity and canonical question after receipt. A receipt by itself remains "No verified review result" until the owner confirms it.
++Without the oracle step, a static website **cannot reliably tell whether review passed**. The Intake's job completion is unsigned, carries no review verdict, and its result hash/URI carry no signed review approval. The job page on api.imd.fun cannot be read from an arbitrary origin and would not be chain-verifiable anyway. With the oracle step, review status depends on a live pilot confirming that the panel can read the job's review outcome, the definitions pin it unambiguously, and the owner can authenticate the exact oracle identity and canonical question after receipt. A receipt by itself remains "No verified review result" until the owner confirms it.
+ 
+ ## After launch
+ 
+@@ -376,7 +414,7 @@ owner's powers or recover an already accepted wrong handover.
+ 
+ ## Requires a live Ethereum or Robinhood Chain pilot
+ 
+-- The `job.open` action id, body schema, price and **callback ABI**. `onJobResult(bytes32,bytes)` is this contract's assumption. If the live callback has another shape, it reverts inside the Intake's try, the job stays Open, and the requester expires it after the deadline. That path is tested, and it fails safe, but delivery then never shows.
++- The live `job.open` action id, accepted body schema and price. The callback now matches the documented `(bytes32,bytes32,string)` tuple; this removes the former ABI guess, but local mocks do not prove that a particular live Intake/writer uses it correctly. Confirm the registered selector, request-ID routing, exact result-document hash, URI availability/length and the one-shot 200k delivery behavior end to end before paid use. Malformed or over-budget calls can still consume the callback and fee without recording delivery.
+ - Callbacks must be asynchronous, after `request`/`requestWithFailure` returns and this contract records its Intake ID. A synchronous callback during payment is unsupported.
+ - A **synchronous refusal**, where `request`/`requestWithFailure` itself reverts (an unsold action, `ActionNotSold`, or a body the Intake refuses before taking payment), is handled: the revert propagates, the whole ask rolls back, and the caller keeps the fee with no job, ask, Intake ID or allowance recorded (`AuditContextMismatchProofTest`). An **asynchronous refusal** after payment (status 1 through the failure function) closes the ask as `Unanswered` and the fee is spent. Which shape the live Intake uses for which refusal, and whether it ever refuses after pulling the price without calling the failure function, is behavior only a live pilot can prove; the contract is compatible with both shapes, but the fee outcome differs between them and the mock's choice is not evidence of the live one.
+ - Exact IMD transfer and Intake spend behavior at the quoted price, including price changes between quoting and requesting. Any net underspend now reverts the entire transaction; verify this against both configured Intake paths.
+diff --git a/docs/THREAT_MODEL.md b/docs/THREAT_MODEL.md
+index 9f3ae75..627886f 100644
+--- a/docs/THREAT_MODEL.md
++++ b/docs/THREAT_MODEL.md
+@@ -37,6 +37,7 @@ The creator, transaction caller, pool initializer, routers, hookData, RPC result
+ | Mainnet broadcast | This release's factory constructor/deploy, scripts, shared integration and adapter allow only local/named test chains. The hook template is chain-agnostic by design, and a direct deployment outside the factory is not recognised by `verify` | Named mainnets and fuzzed unknown chain IDs rejected on every release path; direct template deployment on chain 1 shown unregistered |
+ | Exact-output input exceeds limit | By design: the limit caps only `amountSpecified`. Users bound input with router slippage limits | `testLimitCapsOnlySpecifiedSideNotUnspecifiedSide` |
+ | Salt mining fails under RPC gas caps | Pages stop early on low gas and return a resume nonce; `InsufficientGas` when no progress is possible | Capped-gas walk equals uncapped result |
++| Job callback shape or untrusted URI | Protocol `(bytes32,bytes32,string)` stores the supplied hash and emits URI only; only the current Intake can settle Open/Expired jobs once. Delivery cannot change a review. The page uses bounded ABI decoding and textContent, never a link or fetch. Malformed or over-budget calls may consume the fee/one attempt; URI content/hash availability still requires offchain verification | `JobProtocolTuple.t.sol`, `test/requester-abi.test.cjs`; RED/GREEN traces in `docs/checks/job-protocol-tuple/` |
+ | Swapped IMD verdicts, replay, reused IDs | Verdicts require exact owner-bound oracle UUID, canonical question hash, chain and window, snapshotted panel minimums and consumer-domain signature. Unbound verified answers remain receipts with no verdict or UUID reservation. A matching confirmation consumes once; Intake IDs and consumed UUIDs remain permanently protected. Unused reservations can be owner-released after closure without a receipt or explicit revoked-receipt closure; a pending incorrect binding can be explicitly reset | `ReviewBinding.t.sol`, `ReviewDelivery.t.sol`, `ReviewRecovery.t.sol`, `OracleConformance.t.sol` |
+ | Callback arrives before or against an incorrect owner binding | Verify on arrival and retain four context words plus one metadata word preallocated at request creation. Pending pre-bindings can be reset by the owner with history preserved. Later exact binding finalizes with no new callback or fee. A second callback/failure cannot replace the receipt. Invalid ABI/signature or excessive signer gas can still lose the one-shot answer | Cold exact-200k Intake calls, binary gas search, 5-of-7 ERC-1271 signer and audit's +22 cold-read reproduction in `ReviewReceiptGas.t.sol`; full-width packing fuzz in `ReviewReceiptPacking.t.sol` |
+ | Incorrect or missing body-to-oracle mapping | Owner must independently authenticate the mapping and canonical question, including after receipt. Receipt fields alone are not proof of the pairing. Wrong owner mapping can approve the wrong question; missing mapping prevents finalization. Live post-delivery evidence remains unverified | Binding procedure and pilot requirements in `IMD_INTEGRATION.md`; swapped early yes/no receipts cannot confirm under their correct bindings |
+diff --git a/docs/VERIFICATION.md b/docs/VERIFICATION.md
+index 7cbba40..da29d21 100644
+--- a/docs/VERIFICATION.md
++++ b/docs/VERIFICATION.md
+@@ -401,3 +401,42 @@ Foundry emits advisory lint warnings; compilation succeeds. No Slither/Mythril,
+ live Intake pilot, deployment, paid request or funded-wallet operation was performed. Whether the
+ live Intake refuses synchronously or after payment is listed with the other pilot items in
+ [the pilot checklist](IMD_INTEGRATION.md#requires-a-live-ethereum-or-robinhood-chain-pilot).
++
++
++## Follow-up: protocol job callback tuple
++
++Continues `575e8a8f74da581298a8527f493e9eab8a45901f`. The requested protocol-tuple test was
++run **before** production/fixture changes and failed because the old `(bytes32,bytes)` callback
++could not decode `(bytes32,bytes32,string)`. Its [RED trace](checks/job-protocol-tuple/red.log)
++is retained alongside the [GREEN trace](checks/job-protocol-tuple/green.log) from immediately
++after the targeted fix. The contract now stores the supplied document hash exactly, keeps
++`JobDelivered` and emits `JobResultURI`. No URI string storage, oracle tuple change, mock
++translation, skipped test, dependency or compiler-setting change was introduced.
++
++| Command | Result |
++|---|---|
++| `forge build` | Pass; pinned Solidity 0.8.26, Cancun, optimizer 200; advisory lints |
++| `forge test` | **252 passed**, 27 suites, zero failures/skips, repository-pinned seed; both escrow invariants passed 128,000 calls each |
++| Assignment seed + full `--gas-report` | **252 passed**, 27 suites, zero failures/skips; both escrow invariants passed 128,000 calls each |
++| `forge fmt --check` | Pass |
++| `node --test test/requester-abi.test.cjs test/listings-reader.test.cjs` | **18 passed**, zero failures/skips |
++| `python3 -m unittest discover -s test -p 'test_*.py' -v` | **10 passed**, disposable local Anvil |
++| `forge test --isolate --match-contract 'JobProtocolGasTest\|ReviewReceiptGasTest' -vv` | **9 passed**; job tuple with 4,096-byte URI **67,052** cold forwarded gas; oracle gas unchanged |
++| Requester runtime | **24,117 bytes**, **459 bytes** below the 24,576-byte limit |
++| Vendored checksum verification | 96 files verified, 24 recorded formatting-only differences; used a writable scratch temp directory |
++
++The 12 additional Foundry tests cover exact hash/event data, unauthorized and duplicate calls,
++unknown/legacy/malformed callbacks, one-attempt fee loss, expiry and late completion without
++resetting a negative review. All 240 preceding tests remain. Existing hash assertions now compare
++the supplied result-document hash. The site decodes bounded URI event data and renders only
++unverified text; malicious HTML/schemes, bad ABI/UTF-8, wrong emitters/IDs and removed logs are
++covered. It neither fetches the URI nor turns it into a link or review approval.
++
++The published ABI exactly matches compiler output; only the job callback changed and the URI
++event was added. Tests verify refreshed requester fingerprints and unchanged hook/factory ones.
++[Full command results, raw logs, gas measurements and operational assumptions](checks/job-protocol-tuple/README.md)
++are retained. No live Intake, public-chain transaction, deployment, paid request, Slither/Mythril
++or independent security audit was performed. See the [live pilot requirements](IMD_INTEGRATION.md#requires-a-live-ethereum-or-robinhood-chain-pilot)
++for the remaining writer/action/body, payment, document availability, oracle mapping and signer
++gas assumptions. Owner-trust disclosures and the distinction between delivery and review approval
++remain in force.
+diff --git a/docs/build-fingerprints.json b/docs/build-fingerprints.json
+index d7a49a9..7743aae 100644
+--- a/docs/build-fingerprints.json
++++ b/docs/build-fingerprints.json
+@@ -18,10 +18,10 @@
+       "runtimeCodeBytes": 13970
+     },
+     "HookJobRequester": {
+-      "creationCodeHash": "0xa06778d3f112bbfb2095129947bbfc7cfe711631f091828bf04751e07bad620e",
+-      "runtimeCodeHash": "0xb53c555c31c4f9531a32d41045bdc39d3a5d5f61e8c071e22a951b6ec12db12a",
+-      "creationCodeBytes": 25825,
+-      "runtimeCodeBytes": 24081,
++      "creationCodeHash": "0x53fb7eedb85776d8dfb3dd35370bd86010d1523fa3a435a9592a2ee6d21ab88f",
++      "runtimeCodeHash": "0xd42800946989390534b8a0a42c66c618f2bf334d46e9ab59e033ad0009f42949",
++      "creationCodeBytes": 25861,
++      "runtimeCodeBytes": 24117,
+       "note": "Runtime hash is of the compiler artifact; deployed runtime differs because EIP712 immutables (chain id, address, domain separator) are filled at construction."
+     }
+   }
+diff --git a/site/HookJobRequester.abi.json b/site/HookJobRequester.abi.json
+index bdcb6d7..474d3de 100644
+--- a/site/HookJobRequester.abi.json
++++ b/site/HookJobRequester.abi.json
+@@ -979,9 +979,14 @@
+         "internalType": "bytes32"
+       },
+       {
+-        "name": "result",
+-        "type": "bytes",
+-        "internalType": "bytes"
++        "name": "resultHash",
++        "type": "bytes32",
++        "internalType": "bytes32"
++      },
++      {
++        "name": "uri",
++        "type": "string",
++        "internalType": "string"
+       }
+     ],
+     "outputs": [],
+@@ -1774,6 +1779,25 @@
+     ],
+     "anonymous": false
+   },
++  {
++    "type": "event",
++    "name": "JobResultURI",
++    "inputs": [
++      {
++        "name": "requestId",
++        "type": "bytes32",
++        "indexed": true,
++        "internalType": "bytes32"
++      },
++      {
++        "name": "uri",
++        "type": "string",
++        "indexed": false,
++        "internalType": "string"
++      }
++    ],
++    "anonymous": false
++  },
+   {
+     "type": "event",
+     "name": "JobTemplateSet",
+diff --git a/site/index.html b/site/index.html
+index c421d47..5427532 100644
+--- a/site/index.html
++++ b/site/index.html
+@@ -22,6 +22,7 @@
+ <h1>IMD job status</h1>
+ <p class="note">Read directly from the HookJobRequester contract over JSON-RPC (<code>eth_call</code> and <code>eth_getLogs</code>). No backend, and no request to api.imd.fun.
+ "Review passed" means a signed panel answer matched the pending review's owner-pinned question and oracle identity. An answer awaiting binding or correction stays pending. It is not an audit. The contract owner controls binding and can replace the trusted Intake or signer, including for pending requests. The owner can explicitly revoke retained answers from a compromised signer epoch; finalized verdicts remain historical.</p>
++<p class="note">Delivery is not review approval. The result hash commits to the result document's bytes. The result URI appears in event history as unverified text; this page does not open it, fetch it or verify its contents. Include the delivery block in the history range to see it.</p>
+ <form id="f">
+   <label>JSON-RPC URL (a public node of the chain; leave empty to use your wallet's provider)<input id="rpc" placeholder="https://..."></label>
+   <label>HookJobRequester address<input id="addr" required pattern="0x[0-9a-fA-F]{40}"></label>
+@@ -31,14 +32,16 @@
+   <p><button type="submit" name="what" value="job">Show job</button><button type="submit" name="what" value="wallet">List wallet's jobs</button></p>
+ </form>
+ <dl id="out"></dl>
+-<table id="history" hidden><thead><tr><th>Block</th><th>Event</th><th>Transaction</th></tr></thead><tbody></tbody></table>
++<table id="history" hidden><thead><tr><th>Block</th><th>Event</th><th>Transaction</th><th>Details</th></tr></thead><tbody></tbody></table>
+ <script>
+ // Selectors and topics from `cast sig` / `cast keccak`; pinned by testStaticSiteReadContract.
+ const GET_JOB = "0xf729cf0d";                 // getJob(bytes32)
+ const JOBS_OF = "0x6373d2ea";                 // jobsOf(address)
+ const RECEIPT_EPOCH = "0x585ae49a";           // reviewReceiptSignerEpoch(bytes32)
+ const REVOKED_EPOCH = "0xbc31fa7d";           // revokedSignerEpochs(uint32)
++const JOB_RESULT_URI = "0xb7024b3387ec94e50f20e6f13d42c52ecb72ae8b532d7c595b5a094954a78e0b";
+ const EVENTS = {
++  [JOB_RESULT_URI]: "JobResultURI (unverified result location; not a verdict)",
+   "0xc2fb9a43f3dcc26552dfb9d7ab90fca39cf424c525429f116561e89ea002b3ed": "ReviewBindingReset (owner cleared a pending binding; receipt preserved)",
+   "0x1ced4637dae900f6eb47de5b9e760f163bbe8ae0586e3dbe3bead03e537f12de": "ReviewReceiptRevoked (compromised signer epoch; receipt preserved, no verdict)",
+   "0xa7024fcc5fd62012d81f0e16c29223c201804a965e2bdb516254ed5a4b138d2a": "ReviewExpiryRequested (awaiting owner closure; callbacks remain open)",
+@@ -132,6 +135,21 @@ async function receiptRows(url, addr, w) {
+     : [["Review receipt", `Signer epoch ${epoch} revoked; cannot finalize, awaiting owner closure`], ["Incident evidence hash", incident]];
+ }
+ 
++// Decode the canonical single-string event data, with bounded work on an untrusted RPC response.
++// This 32 KiB display limit is not a contract restriction. Solidity strings need not be UTF-8.
++function decodeResultURI(data) {
++  if (typeof data !== "string" || data.length > 2 + (64 + 32768) * 2 ||
++      !/^0x(?:[0-9a-fA-F]{64}){2,}$/.test(data)) throw new Error("malformed URI event data");
++  const w = words(data);
++  if (num(w[0]) !== 32n || num(w[1]) > 32768n) throw new Error("invalid URI offset or length");
++  const length = Number(num(w[1])), hex = data.slice(130);
++  if (hex.length !== Math.ceil(length / 32) * 64 || /[^0]/.test(hex.slice(length * 2))) {
++    throw new Error("truncated or noncanonical URI event data");
++  }
++  const bytes = Uint8Array.from(hex.slice(0, length * 2).match(/../g) || [], b => parseInt(b, 16));
++  return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
++}
++
+ // The contract's own events for one request id: topic 1 is the request id on every one of them.
+ async function history(url, addr, job, from) {
+   const fromBlock = from ? (from.startsWith("0x") ? from : "0x" + BigInt(from).toString(16)) : "earliest";
+@@ -139,15 +157,26 @@ async function history(url, addr, job, from) {
+     topics: [Object.keys(EVENTS), "0x" + pad(job)] }]);
+   const body = document.querySelector("#history tbody");
+   body.replaceChildren();
++  let shown = 0;
+   for (const l of logs) {
++    if (l.removed || l.address?.toLowerCase() !== addr.toLowerCase() ||
++        l.topics?.[1]?.toLowerCase() !== "0x" + pad(job) || !Object.hasOwn(EVENTS, l.topics[0])) continue;
++    let details = "";
++    if (l.topics[0] === JOB_RESULT_URI) {
++      try {
++        if (l.topics.length !== 2) throw new Error("invalid URI event topics");
++        details = "Result URI (unverified): " + (decodeResultURI(l.data) || "(empty URI)");
++      } catch (err) { details = "Result URI unavailable: " + err.message; }
++    }
+     const tr = document.createElement("tr");
+-    for (const t of [String(num(l.blockNumber.slice(2))), EVENTS[l.topics[0]] ?? l.topics[0], l.transactionHash]) {
++    for (const t of [String(num(l.blockNumber.slice(2))), EVENTS[l.topics[0]], l.transactionHash, details]) {
+       const td = document.createElement("td"); td.textContent = t; tr.append(td);
+     }
+     body.append(tr);
++    shown++;
+   }
+-  document.getElementById("history").hidden = logs.length === 0;
+-  return logs.length;
++  document.getElementById("history").hidden = shown === 0;
++  return shown;
+ }
+ 
+ document.getElementById("f").addEventListener("submit", async (e) => {
+diff --git a/src/imd/HookJobRequester.sol b/src/imd/HookJobRequester.sol
+index 81f2b49..8a5d993 100644
+--- a/src/imd/HookJobRequester.sol
++++ b/src/imd/HookJobRequester.sol
+@@ -207,6 +207,7 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
+         bytes32 indexed requestId, address indexed requester, bytes32 indexed specHash, uint256 price, bytes body
+     );
+     event JobDelivered(bytes32 indexed requestId, bytes32 resultHash);
++    event JobResultURI(bytes32 indexed requestId, string uri);
+     event JobFailed(bytes32 indexed requestId, uint8 status, bytes32 reason, uint16 agreed, uint16 answered);
+     event JobExpired(bytes32 indexed requestId);
+     event ReviewRequested(bytes32 indexed jobRequestId, bytes32 indexed intakeRequestId, uint256 price, bytes body);
+@@ -324,19 +325,16 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
+ 
+     /// @notice First completion notice for an open or locally expired job, from Intake only.
+     /// Local expiry never suppresses a late result/failure or changes any review verdict.
+-    /// Unsigned: it says
+-    /// the Intake reported the job complete, never that its review passed.
+-    /// @dev The `job.open` callback ABI was not part of this task's protocol references; this
+-    /// `(bytes32, bytes)` shape must be confirmed in a live pilot. If the Intake calls with another
+-    /// shape, this reverts inside the Intake's try, the job stays Open, and its requester can
+-    /// expire it after the deadline. Nothing of value moves either way.
+-    function onJobResult(bytes32 requestId, bytes calldata result) external onlyIntake {
++    /// Unsigned: it says the Intake reported the job complete, never that its review passed.
++    /// @dev Protocol tuple: the supplied hash commits to the result document's bytes, not its URI.
++    /// The URI is emitted for offchain readers; no string is stored or fetched by this contract.
++    function onJobResult(bytes32 requestId, bytes32 resultHash, string calldata uri) external onlyIntake {
+         Job storage job = jobs[requestId];
+         if (job.status != JobStatus.Open && job.status != JobStatus.Expired) revert UnknownOrSettled(requestId);
+         job.status = JobStatus.Delivered;
+-        bytes32 resultHash = keccak256(result);
+         job.resultHash = resultHash;
+         emit JobDelivered(requestId, resultHash);
++        emit JobResultURI(requestId, uri);
+     }
+ 
+     /// @notice Version 2 failure function: the ask was refused (status 1) or ended without a result
+diff --git a/test/AuditExpiryProof.t.sol b/test/AuditExpiryProof.t.sol
+index 01c0ec9..1f56b97 100644
+--- a/test/AuditExpiryProof.t.sol
++++ b/test/AuditExpiryProof.t.sol
+@@ -145,7 +145,7 @@ contract ExpiryFrontRunShoppingTest is Test {
+     function testRequesterFrontRunsLateNotPassedWithExpiryAndReasks() public {
+         vm.prank(creator);
+         bytes32 jobId = requester.openJob(keccak256("spec"), "hook brief", 0.5 ether);
+-        assertTrue(intake.complete(jobId, abi.encode(jobId, bytes("ipfs://result"))));
++        assertTrue(intake.complete(jobId, abi.encode(jobId, keccak256("result document"), "ipfs://result")));
+         vm.prank(creator);
+         bytes32 askId = requester.requestReview(jobId, 0.5 ether);
+ 
+diff --git a/test/AuditReceiptConflictProof.t.sol b/test/AuditReceiptConflictProof.t.sol
+index 709e26c..a32b6c6 100644
+--- a/test/AuditReceiptConflictProof.t.sol
++++ b/test/AuditReceiptConflictProof.t.sol
+@@ -125,7 +125,7 @@ contract StuckReceiptProofTest is Test {
+     function _unboundAsk() internal returns (bytes32 jobId, bytes32 askId) {
+         vm.prank(creator);
+         jobId = requester.openJob(keccak256("spec"), "A swap cap hook", 0.5 ether);
+-        assertTrue(intake.complete(jobId, abi.encode(jobId, bytes("ipfs://result"))));
++        assertTrue(intake.complete(jobId, abi.encode(jobId, keccak256("result document"), "ipfs://result")));
+         vm.prank(creator);
+         askId = requester.requestReview(jobId, 0.5 ether);
+     }
+diff --git a/test/HookJobRequester.t.sol b/test/HookJobRequester.t.sol
+index db10edc..4cd5183 100644
+--- a/test/HookJobRequester.t.sol
++++ b/test/HookJobRequester.t.sol
+@@ -15,6 +15,7 @@ abstract contract HookJobRequesterFixture is Test {
+     bytes32 internal constant ORACLE_ACTION = "oracle.request@oracle-1";
+     uint256 internal constant PRICE = 0.5 ether;
+     bytes32 internal constant SPEC_HASH = keccak256("hook spec");
++    bytes32 internal constant RESULT_HASH = keccak256("result document");
+ 
+     TestToken internal imd;
+     MockIntake internal intake;
+@@ -52,7 +53,7 @@ abstract contract HookJobRequesterFixture is Test {
+ 
+     function _delivered() internal returns (bytes32 id) {
+         id = _open();
+-        assertTrue(intake.complete(id, abi.encode(id, bytes("ipfs://result"))));
++        assertTrue(intake.complete(id, abi.encode(id, RESULT_HASH, "ipfs://result")));
+     }
+ 
+     function _reviewPending() internal returns (bytes32 jobId, bytes32 oracleId) {
+@@ -203,7 +204,7 @@ contract HookJobRequesterTest is HookJobRequesterFixture {
+         assertEq(uint8(_status(id)), uint8(HookJobRequester.JobStatus.Expired));
+         // And a completion for a version 1 ask is accepted the same way.
+         bytes32 id2 = _open();
+-        assertTrue(intake.complete(id2, abi.encode(id2, bytes("ipfs://result"))));
++        assertTrue(intake.complete(id2, abi.encode(id2, RESULT_HASH, "ipfs://result")));
+         assertEq(uint8(_status(id2)), uint8(HookJobRequester.JobStatus.Delivered));
+         // The review ask on a version 1 intake is a plain request too.
+         vm.prank(creator);
+@@ -425,20 +426,20 @@ contract HookJobRequesterTest is HookJobRequesterFixture {
+         bytes32 id = _open();
+         vm.prank(stranger);
+         vm.expectRevert(HookJobRequester.NotTheIntake.selector);
+-        requester.onJobResult(id, "forged");
+-        assertTrue(intake.complete(id, abi.encode(id, bytes("ipfs://result"))));
++        requester.onJobResult(id, keccak256("forged"), "ipfs://result");
++        assertTrue(intake.complete(id, abi.encode(id, RESULT_HASH, "ipfs://result")));
+         HookJobRequester.Job memory job = requester.getJob(id);
+         assertEq(uint8(job.status), uint8(HookJobRequester.JobStatus.Delivered));
+-        assertEq(job.resultHash, keccak256("ipfs://result"));
++        assertEq(job.resultHash, RESULT_HASH);
+         assertEq(uint8(job.review), uint8(HookJobRequester.ReviewStatus.None), "delivery is not a review verdict");
+         // Replays from the Intake itself, of either callback, are refused.
+         vm.startPrank(address(intake));
+         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.UnknownOrSettled.selector, id));
+-        requester.onJobResult(id, "again");
++        requester.onJobResult(id, keccak256("again"), "ipfs://result");
+         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.UnknownOrSettled.selector, id));
+         requester.onJobFailure(id, 2, "disagreed", 0, 0, "");
+         vm.stopPrank();
+-        assertEq(requester.getJob(id).resultHash, keccak256("ipfs://result"));
++        assertEq(requester.getJob(id).resultHash, RESULT_HASH);
+     }
+ 
+     function testJobFailureClosesJobOnceAndIsNotAVerdict() public {
+@@ -453,7 +454,7 @@ contract HookJobRequesterTest is HookJobRequesterFixture {
+         assertEq(job.failureReason, bytes32("body_invalid"));
+         vm.startPrank(address(intake));
+         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.UnknownOrSettled.selector, id));
+-        requester.onJobResult(id, "late");
++        requester.onJobResult(id, keccak256("late"), "ipfs://result");
+         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.UnknownOrSettled.selector, id));
+         requester.onJobFailure(id, 2, "disagreed", 0, 0, "");
+         vm.stopPrank();
+@@ -466,7 +467,7 @@ contract HookJobRequesterTest is HookJobRequesterFixture {
+         bytes32 unknown = keccak256("someone else's request naming this contract");
+         vm.startPrank(address(intake));
+         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.UnknownOrSettled.selector, unknown));
+-        requester.onJobResult(unknown, "");
++        requester.onJobResult(unknown, RESULT_HASH, "");
+         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.UnknownOrSettled.selector, unknown));
+         requester.onJobFailure(unknown, 2, "disagreed", 0, 0, "");
+         OracleAttestation.Attestation memory a = _attestation(unknown, true);
+@@ -479,7 +480,7 @@ contract HookJobRequesterTest is HookJobRequesterFixture {
+ 
+     function testCallbackWithUnexpectedAbiFailsSafeAndJobCanExpire() public {
+         bytes32 id = _open();
+-        // If the live job.open callback has another ABI, the call reverts inside the Intake's try.
++        // Malformed tuple data reverts inside the Intake's one-shot call.
+         assertFalse(intake.complete(id, hex"deadbeef"));
+         assertEq(uint8(_status(id)), uint8(HookJobRequester.JobStatus.Open));
+         vm.prank(creator);
+@@ -495,7 +496,7 @@ contract HookJobRequesterTest is HookJobRequesterFixture {
+         requester.expireJob(id);
+         assertEq(uint8(_status(id)), uint8(HookJobRequester.JobStatus.Expired));
+         vm.prank(address(intake));
+-        requester.onJobResult(id, "late authenticated result");
++        requester.onJobResult(id, keccak256("late authenticated result"), "ipfs://result");
+         assertEq(uint8(_status(id)), uint8(HookJobRequester.JobStatus.Delivered));
+         vm.prank(creator);
+         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.UnknownOrSettled.selector, id));
+@@ -504,7 +505,7 @@ contract HookJobRequesterTest is HookJobRequesterFixture {
+ 
+     function testCallbacksFitTheIntakeStipend() public {
+         bytes32 id = _open();
+-        assertTrue(intake.complete(id, abi.encode(id, new bytes(1024))));
++        assertTrue(intake.complete(id, abi.encode(id, RESULT_HASH, string(new bytes(1024)))));
+         bytes32 id2 = _open();
+         assertTrue(intake.fail(id2, 2, "disagreed", 3, 7));
+     }
+@@ -733,6 +734,9 @@ contract HookJobRequesterTest is HookJobRequesterFixture {
+         assertEq(
+             HookJobRequester.JobDelivered.selector, 0xcf3572188b51dfe2ff3d594bd6f949f6d927563dccd01a16ed91de08773031f3
+         );
++        assertEq(
++            HookJobRequester.JobResultURI.selector, 0xb7024b3387ec94e50f20e6f13d42c52ecb72ae8b532d7c595b5a094954a78e0b
++        );
+         assertEq(
+             HookJobRequester.JobFailed.selector, 0x109fbcdb2357a12dbc99347a26add088ce1785932ff8fd91290dd66e482e3f52
+         );
+diff --git a/test/OracleConformance.t.sol b/test/OracleConformance.t.sol
+index bc19575..8854e65 100644
+--- a/test/OracleConformance.t.sol
++++ b/test/OracleConformance.t.sol
+@@ -89,7 +89,7 @@ contract OracleConformanceTest is Test {
+     function testProtocolSignatureVerifiesBeforeItsNonBoolAnswerIsRefused() public {
+         vm.prank(creator);
+         bytes32 jobId = consumer.openJob(keccak256("spec"), "brief", 0.5 ether);
+-        assertTrue(intake.complete(jobId, abi.encode(jobId, bytes("result"))));
++        assertTrue(intake.complete(jobId, abi.encode(jobId, keccak256("result document"), "ipfs://result")));
+         vm.prank(creator);
+         bytes32 askId = consumer.requestReview(jobId, 0.5 ether);
+         OracleAttestation.Attestation memory a = vector();
+@@ -116,7 +116,7 @@ contract OracleConformanceTest is Test {
+     function test_acceptsAFreshSignatureFromTheVectorKeyAsDelivered() public {
+         vm.prank(creator);
+         bytes32 jobId = consumer.openJob(keccak256("spec"), "brief", 0.5 ether);
+-        assertTrue(intake.complete(jobId, abi.encode(jobId, bytes("result"))));
++        assertTrue(intake.complete(jobId, abi.encode(jobId, keccak256("result document"), "ipfs://result")));
+         vm.prank(creator);
+         bytes32 oracleId = consumer.requestReview(jobId, 0.5 ether);
+         OracleAttestation.Attestation memory a = vector();
+diff --git a/test/ReviewBinding.t.sol b/test/ReviewBinding.t.sol
+index 0e0fe2f..a9dacad 100644
+--- a/test/ReviewBinding.t.sol
++++ b/test/ReviewBinding.t.sol
+@@ -292,7 +292,7 @@ contract ReviewBindingTest is HookJobRequesterFixture {
+         vm.startPrank(owner);
+         requester.setIntake(owner);
+         requester.setOracleSigner(vm.addr(ownerKey));
+-        requester.onJobResult(openJobId, "owner-controlled completion");
++        requester.onJobResult(openJobId, keccak256("owner-controlled completion"), "ipfs://result");
+         requester.onReviewResult(askId, a, sig);
+         requester.setIntake(address(intake));
+         requester.setOracleSigner(signer);
+diff --git a/test/ReviewRecovery.t.sol b/test/ReviewRecovery.t.sol
+index 2f03ade..1892812 100644
+--- a/test/ReviewRecovery.t.sol
++++ b/test/ReviewRecovery.t.sol
+@@ -333,7 +333,7 @@ contract ReviewRecoveryTest is HookJobRequesterFixture {
+         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.NotReviewable.selector, jobId));
+         requester.requestReview(jobId, 0.5 ether);
+         vm.prank(address(intake));
+-        requester.onJobResult(jobId, "later review passed");
++        requester.onJobResult(jobId, keccak256("later review passed"), "ipfs://result");
+         assertEq(uint8(_status(jobId)), uint8(HookJobRequester.JobStatus.Delivered));
+         assertEq(uint8(_review(jobId)), uint8(HookJobRequester.ReviewStatus.NotPassed));
+         assertEq(imd.balanceOf(address(intake)), 2 * PRICE);
+diff --git a/test/requester-abi.test.cjs b/test/requester-abi.test.cjs
+index 33999ba..28e4b8c 100644
+--- a/test/requester-abi.test.cjs
++++ b/test/requester-abi.test.cjs
+@@ -13,13 +13,28 @@ const script = html.match(/<script>([\s\S]*?)<\/script>/)[1];
+ const word = value => BigInt(value).toString(16).padStart(64, "0");
+ 
+ function load(responses = []) {
+-  const calls = [];
++  const calls = [], elements = new Map(), created = [];
++  const element = tag => {
++    const el = { tag, children: [], textContent: "", hidden: false, addEventListener() {},
++      append(...children) { this.children.push(...children); },
++      replaceChildren(...children) { this.children = children; },
++      set innerHTML(_) { throw new Error("untrusted HTML rendering"); },
++    };
++    created.push(el);
++    return el;
++  };
++  const get = id => {
++    if (!elements.has(id)) elements.set(id, element(id));
++    return elements.get(id);
++  };
+   const ctx = vm.createContext({
+-    document: { getElementById: () => ({ addEventListener() {} }) },
++    TextDecoder,
++    document: { getElementById: get, querySelector: get, createElement: element },
+     window: { ethereum: { async request(call) { calls.push(call); return responses.shift(); } } },
++    fetch() { throw new Error("unexpected network fetch"); },
+   });
+   vm.runInContext(script, ctx);
+-  return { ctx, calls };
++  return { ctx, calls, elements, created };
+ }
+ 
+ test("published requester ABI is exactly the compiler ABI and has only capped paid calls", () => {
+@@ -77,3 +92,115 @@ test("malformed revocation reads fail rather than display a verified receipt", a
+   ctx.w = Array(15).fill(word(0)); ctx.w[4] = word(1);
+   await assert.rejects(vm.runInContext('receiptRows("", "requester", w)', ctx), /invalid signer revocation response/);
+ });
++
++test("job callback and URI event use the protocol tuple without changing the static Job or oracle ABI", () => {
++  assert.equal(artifact.methodIdentifiers["onJobResult(bytes32,bytes32,string)"], "325a77b4");
++  assert.equal(artifact.methodIdentifiers["onJobResult(bytes32,bytes)"], undefined);
++  const callback = abi.find(e => e.type === "function" && e.name === "onJobResult");
++  assert.deepEqual(callback.inputs.map(i => [i.name, i.type]),
++    [["requestId", "bytes32"], ["resultHash", "bytes32"], ["uri", "string"]]);
++  const event = abi.find(e => e.type === "event" && e.name === "JobResultURI");
++  assert.deepEqual(event.inputs.map(i => [i.type, i.indexed]), [["bytes32", true], ["string", false]]);
++  const fields = abi.find(e => e.type === "function" && e.name === "getJob").outputs[0].components;
++  assert.equal(fields.length, 15);
++  assert.ok(fields.every(f => f.type !== "string" && f.type !== "bytes"));
++  assert.equal(fields[11].name, "resultHash");
++  const oracle = abi.find(e => e.type === "function" && e.name === "onReviewResult");
++  assert.deepEqual(oracle.inputs.map(i => i.type), ["bytes32", "tuple", "bytes"]);
++});
++
++test("URI event decoder agrees with cast for IPFS, HTTPS, Unicode and empty strings", () => {
++  const { ctx } = load();
++  for (const uri of ["ipfs://fixture/result.json", "https://example.invalid/intake-results/123", "ipfs://résultat/😀", ""]) {
++    ctx.data = execFileSync("cast", ["abi-encode", "f(string)", uri], { encoding: "utf8" }).trim();
++    assert.equal(vm.runInContext("decodeResultURI(data)", ctx), uri);
++  }
++});
++
++test("URI decoder rejects malformed offsets, lengths, padding, oversized data and invalid UTF-8", () => {
++  const { ctx } = load();
++  const cases = [null, "0x", "0xzz", "0x" + word(32), "0x" + word(64) + word(0),
++    "0x" + word(32) + word(1), "0x" + word(32) + word(1n << 255n),
++    "0x" + word(32) + word(32769), "0x" + word(32) + word(0) + word(0),
++    "0x" + word(32) + word(1) + "61" + "0".repeat(61) + "1",
++    "0x" + word(32) + word(1) + "c3" + "0".repeat(62),
++    "0x" + word(32) + word(32769) + "00".repeat(32800)];
++  for (const data of cases) {
++    ctx.data = data;
++    assert.throws(() => vm.runInContext("decodeResultURI(data)", ctx));
++  }
++});
++
++const requesterAddress = "0x" + "12".repeat(20), requestId = "0x" + "34".repeat(32);
++const uriTopic = "0xb7024b3387ec94e50f20e6f13d42c52ecb72ae8b532d7c595b5a094954a78e0b";
++function uriLog(uri) {
++  return { address: requesterAddress, topics: [uriTopic, requestId], blockNumber: "0x123",
++    transactionHash: "0x" + "56".repeat(32),
++    data: execFileSync("cast", ["abi-encode", "f(string)", uri], { encoding: "utf8" }).trim() };
++}
++
++test("history exposes URI only as unverified text, with no HTML, links or content fetching", async () => {
++  const values = ["javascript:alert(1)", "data:text/html,<script>alert(1)</script>",
++    '<img src=x onerror="alert(1)">', "ipfs://fixture/result.json", ""];
++  const { ctx, calls, elements, created } = load([values.map(uriLog)]);
++  ctx.addr = requesterAddress; ctx.id = requestId;
++  assert.equal(await vm.runInContext('history("", addr, id, "256")', ctx), values.length);
++  assert.equal(calls.length, 1);
++  assert.equal(calls[0].method, "eth_getLogs");
++  const filter = calls[0].params[0];
++  assert.equal(filter.address, requesterAddress);
++  assert.equal(filter.fromBlock, "0x100");
++  assert.equal(filter.topics[1], requestId);
++  assert.ok(filter.topics[0].includes(uriTopic));
++  const rows = elements.get("#history tbody").children;
++  values.forEach((uri, i) => {
++    assert.equal(rows[i].children[3].textContent, "Result URI (unverified): " + (uri || "(empty URI)"));
++    assert.equal(rows[i].children[3].children.length, 0);
++  });
++  assert.ok(created.every(el => ["f", "history", "#history tbody", "tr", "td"].includes(el.tag)));
++  assert.equal(elements.get("history").hidden, false);
++});
++
++test("history filters other contracts, requests, unknown topics and removed logs", async () => {
++  const good = uriLog("ipfs://fixture");
++  const logs = [{ ...good, address: "0x" + "ab".repeat(20) },
++    { ...good, topics: [uriTopic, "0x" + "cd".repeat(32)] },
++    { ...good, topics: ["0x" + "ef".repeat(32), requestId] }, { ...good, removed: true }, good];
++  const { ctx, elements } = load([logs, logs.slice(0, -1)]);
++  ctx.addr = requesterAddress; ctx.id = requestId;
++  assert.equal(await vm.runInContext('history("", addr, id, "")', ctx), 1);
++  assert.equal(elements.get("#history tbody").children.length, 1);
++  assert.equal(await vm.runInContext('history("", addr, id, "")', ctx), 0);
++  assert.equal(elements.get("history").hidden, true);
++});
++
++test("malformed URI logs show unavailable without hiding later history or granting review approval", async () => {
++  const good = uriLog("ipfs://fixture");
++  const { ctx, elements } = load([[{ ...good, data: "0x" },
++    { ...good, topics: [...good.topics, requestId] }, good]]);
++  ctx.addr = requesterAddress; ctx.id = requestId;
++  assert.equal(await vm.runInContext('history("", addr, id, "")', ctx), 3);
++  const rows = elements.get("#history tbody").children;
++  assert.match(rows[0].children[3].textContent, /Result URI unavailable/);
++  assert.match(rows[1].children[3].textContent, /Result URI unavailable/);
++  assert.equal(rows[2].children[3].textContent, "Result URI (unverified): ipfs://fixture");
++  ctx.w = Array(15).fill(word(0)); ctx.w[3] = word(2); ctx.w[11] = "ab".repeat(32);
++  const job = vm.runInContext("jobRows(w)", ctx);
++  assert.equal(job.find(r => r[0] === "Result hash")[1], "0x" + ctx.w[11]);
++  assert.equal(job.find(r => r[0] === "Review")[1], "No verified review result");
++});
++
++test("build fingerprints match compiler artifacts and requester runtime stays below EIP-170", () => {
++  const fingerprints = JSON.parse(readFileSync(path.join(root, "docs/build-fingerprints.json")));
++  assert.equal(fingerprints.compiler, "0.8.26");
++  for (const [name, expected] of Object.entries(fingerprints.contracts)) {
++    const built = JSON.parse(readFileSync(path.join(root, `out/${name}.sol/${name}.json`)));
++    for (const [key, field] of [["creationCode", "bytecode"], ["runtimeCode", "deployedBytecode"]]) {
++      const code = built[field].object;
++      assert.equal((code.length - 2) / 2, expected[key + "Bytes"], `${name} ${key} bytes`);
++      assert.equal(execFileSync("cast", ["keccak", code], { encoding: "utf8" }).trim(),
++        expected[key + "Hash"], `${name} ${key} hash`);
++    }
++  }
++  assert.ok(fingerprints.contracts.HookJobRequester.runtimeCodeBytes < 24576);
++});
+diff --git a/test/JobProtocolTuple.t.sol b/test/JobProtocolTuple.t.sol
+new file mode 100644
+index 0000000..1ad9cec
+--- /dev/null
++++ b/test/JobProtocolTuple.t.sol
+@@ -0,0 +1,220 @@
++// SPDX-License-Identifier: MIT
++pragma solidity 0.8.26;
++
++import {HookJobRequesterFixture} from "./HookJobRequester.t.sol";
++import {HookJobRequester} from "../src/imd/HookJobRequester.sol";
++import {OracleAttestation} from "../src/imd/OracleAttestation.sol";
++import {Vm} from "forge-std/Vm.sol";
++
++contract JobProtocolTupleTest is HookJobRequesterFixture {
++    function testProtocolTuple() public {
++        bytes32 id = _open();
++        bytes32 h = keccak256("result document");
++        assertTrue(intake.complete(id, abi.encode(id, h, "ipfs://fixture")));
++        assertEq(requester.getJob(id).resultHash, h);
++    }
++
++    function testRegisteredSelectorAndResultEventsMatchProtocol() public {
++        bytes32 id = _open();
++        (,,, address target, bytes4 selector,,) = intake.reqs(id);
++        assertEq(target, address(requester));
++        assertEq(selector, bytes4(keccak256("onJobResult(bytes32,bytes32,string)")));
++        assertEq(selector, bytes4(0x325a77b4));
++        assertTrue(RESULT_HASH != keccak256("ipfs://fixture"), "document hash differs from URI hash");
++        bytes memory beforeJob = abi.encode(requester.getJob(id));
++        vm.recordLogs();
++        assertTrue(intake.complete(id, abi.encode(id, RESULT_HASH, "ipfs://fixture")));
++        Vm.Log[] memory logs = vm.getRecordedLogs();
++        assertEq(logs.length, 3, "two requester events and Intake completion");
++        assertEq(logs[0].emitter, address(requester));
++        assertEq(logs[0].topics.length, 2);
++        assertEq(logs[0].topics[0], HookJobRequester.JobDelivered.selector);
++        assertEq(logs[0].topics[1], id);
++        assertEq(abi.decode(logs[0].data, (bytes32)), RESULT_HASH);
++        assertEq(logs[1].emitter, address(requester));
++        assertEq(logs[1].topics.length, 2);
++        assertEq(logs[1].topics[0], keccak256("JobResultURI(bytes32,string)"));
++        assertEq(logs[1].topics[1], id);
++        assertEq(abi.decode(logs[1].data, (string)), "ipfs://fixture");
++        HookJobRequester.Job memory afterJob = requester.getJob(id);
++        assertEq(afterJob.resultHash, RESULT_HASH);
++        assertEq(uint8(afterJob.status), uint8(HookJobRequester.JobStatus.Delivered));
++        assertEq(uint8(afterJob.review), uint8(HookJobRequester.ReviewStatus.None));
++        // No URI storage: the existing static Job ABI and all other fields stay unchanged.
++        assertEq(abi.encode(afterJob).length, 15 * 32);
++        afterJob.status = HookJobRequester.JobStatus.Open;
++        afterJob.resultHash = bytes32(0);
++        assertEq(abi.encode(afterJob), beforeJob);
++    }
++
++    function testFuzzSuppliedHashAndURIBytesArePreserved(bytes32 hash, uint16 length) public {
++        bytes32 id = _open();
++        bytes memory raw = new bytes(bound(length, 0, 1024));
++        for (uint256 i; i < raw.length; ++i) {
++            raw[i] = hash[i % 32];
++        }
++        // Solidity strings can contain arbitrary bytes. Readers must treat them as untrusted.
++        vm.expectEmit(true, false, false, true, address(requester));
++        emit HookJobRequester.JobDelivered(id, hash);
++        vm.expectEmit(true, false, false, true, address(requester));
++        emit HookJobRequester.JobResultURI(id, string(raw));
++        assertTrue(intake.complete(id, abi.encode(id, hash, string(raw))));
++        assertEq(requester.getJob(id).resultHash, hash);
++        assertEq(uint8(_review(id)), uint8(HookJobRequester.ReviewStatus.None));
++    }
++
++    function testEmptyURICanBeReportedWithoutReviewApproval() public {
++        bytes32 id = _open();
++        vm.expectEmit(true, false, false, true, address(requester));
++        emit HookJobRequester.JobResultURI(id, "");
++        assertTrue(intake.complete(id, abi.encode(id, RESULT_HASH, "")));
++        assertEq(requester.getJob(id).resultHash, RESULT_HASH);
++        assertEq(uint8(_review(id)), uint8(HookJobRequester.ReviewStatus.None));
++    }
++
++    function testUnauthorizedTupleLeavesJobAndLogsUntouched() public {
++        bytes32 id = _open();
++        bytes memory beforeJob = abi.encode(requester.getJob(id));
++        address[3] memory unauthorized = [creator, owner, stranger];
++        vm.recordLogs();
++        for (uint256 i; i < unauthorized.length; ++i) {
++            vm.prank(unauthorized[i]);
++            vm.expectRevert(HookJobRequester.NotTheIntake.selector);
++            requester.onJobResult(id, RESULT_HASH, "javascript:untrusted");
++        }
++        assertEq(vm.getRecordedLogs().length, 0);
++        assertEq(abi.encode(requester.getJob(id)), beforeJob);
++        assertTrue(intake.complete(id, abi.encode(id, RESULT_HASH, "ipfs://fixture")));
++    }
++
++    function testDuplicateCannotReplaceHashOrURI() public {
++        bytes32 id = _delivered();
++        bytes memory beforeJob = abi.encode(requester.getJob(id));
++        vm.recordLogs();
++        vm.prank(address(intake));
++        vm.expectRevert(abi.encodeWithSelector(HookJobRequester.UnknownOrSettled.selector, id));
++        requester.onJobResult(id, keccak256("replacement document"), "ipfs://replacement");
++        assertEq(vm.getRecordedLogs().length, 0);
++        assertEq(abi.encode(requester.getJob(id)), beforeJob);
++        bytes memory payload = abi.encode(id, RESULT_HASH, "ipfs://result");
++        vm.expectRevert("not pending");
++        intake.complete(id, payload);
++    }
++
++    function testObsoleteSelectorIsNotAnAlias() public {
++        bytes32 id = _open();
++        vm.prank(address(intake));
++        (bool ok,) = address(requester).call(abi.encodeWithSignature("onJobResult(bytes32,bytes)", id, bytes("old")));
++        assertFalse(ok);
++        assertEq(uint8(_status(id)), uint8(HookJobRequester.JobStatus.Open));
++        assertTrue(intake.complete(id, abi.encode(id, RESULT_HASH, "ipfs://fixture")));
++    }
++
++    function testMalformedTuplesLoseOnlyTheSingleIntakeAttempt() public {
++        for (uint256 fault; fault < 6; ++fault) {
++            bytes32 id = _open();
++            bytes memory payload;
++            if (fault == 0) payload = abi.encode(id, bytes("ipfs://legacy"));
++            if (fault == 1) payload = abi.encode(id, RESULT_HASH); // Missing string offset.
++            if (fault == 2) payload = abi.encode(id, RESULT_HASH, type(uint256).max); // Offset outside data.
++            if (fault == 3) payload = abi.encode(id, RESULT_HASH, uint256(96), type(uint256).max); // Length overflow.
++            if (fault == 4) payload = abi.encode(id, RESULT_HASH, uint256(96), uint256(1)); // Missing string byte.
++            if (fault == 5) payload = hex"deadbeef";
++            bytes memory beforeJob = abi.encode(requester.getJob(id));
++            vm.recordLogs();
++            assertFalse(intake.complete(id, payload));
++            Vm.Log[] memory logs = vm.getRecordedLogs();
++            assertEq(logs.length, 1, "failed callback emits no result events");
++            assertEq(logs[0].emitter, address(intake));
++            assertFalse(abi.decode(logs[0].data, (bool)));
++            assertEq(abi.encode(requester.getJob(id)), beforeJob);
++            (,,,,,, bool settled) = intake.reqs(id);
++            assertTrue(settled, "Intake consumes even an unsuccessful attempt");
++            bytes memory corrected = abi.encode(id, RESULT_HASH, "ipfs://fixture");
++            vm.expectRevert("not pending");
++            intake.complete(id, corrected);
++            vm.warp(requester.getJob(id).deadline + 1);
++            vm.prank(creator);
++            requester.expireJob(id);
++            assertEq(uint8(_status(id)), uint8(HookJobRequester.JobStatus.Expired));
++        }
++        assertEq(imd.balanceOf(address(intake)), 6 * PRICE, "failed callbacks do not refund payment");
++    }
++
++    function testUnknownTupleCannotDeliverAnotherRequest() public {
++        bytes32 id = _open();
++        bytes memory beforeJob = abi.encode(requester.getJob(id));
++        bytes32 unknown = keccak256("unregistered request");
++        assertFalse(intake.complete(id, abi.encode(unknown, RESULT_HASH, "ipfs://fixture")));
++        assertEq(abi.encode(requester.getJob(id)), beforeJob);
++        assertEq(uint8(_status(unknown)), uint8(HookJobRequester.JobStatus.None));
++    }
++
++    function testFuzzLateTupleWorksBeforeOrAfterLocalExpiry(bool expireFirst) public {
++        bytes32 id = _open();
++        vm.warp(requester.getJob(id).deadline + 1);
++        if (expireFirst) {
++            vm.prank(creator);
++            requester.expireJob(id);
++        }
++        vm.expectEmit(true, false, false, true, address(requester));
++        emit HookJobRequester.JobResultURI(id, "ipfs://late");
++        assertTrue(intake.complete(id, abi.encode(id, RESULT_HASH, "ipfs://late")));
++        assertEq(uint8(_status(id)), uint8(HookJobRequester.JobStatus.Delivered));
++        assertEq(requester.getJob(id).resultHash, RESULT_HASH);
++        assertEq(uint8(_review(id)), uint8(HookJobRequester.ReviewStatus.None));
++    }
++
++    function testLateTuplePreservesFinalizedNegativeReview() public {
++        bytes32 id = _open();
++        vm.warp(requester.getJob(id).deadline + 1);
++        vm.prank(creator);
++        requester.expireJob(id);
++        bytes32 ask = _requestReview(id);
++        OracleAttestation.Attestation memory a = _attestation(ask, false);
++        assertTrue(intake.complete(ask, abi.encode(ask, a, _sign(a, signerKey))));
++        bytes memory receipt = abi.encode(requester.getReviewReceipt(ask));
++        assertTrue(intake.complete(id, abi.encode(id, RESULT_HASH, "ipfs://late")));
++        assertEq(uint8(_status(id)), uint8(HookJobRequester.JobStatus.Delivered));
++        assertEq(requester.getJob(id).resultHash, RESULT_HASH);
++        assertEq(uint8(_review(id)), uint8(HookJobRequester.ReviewStatus.NotPassed));
++        assertTrue(requester.consumed(a.requestId));
++        assertEq(abi.encode(requester.getReviewReceipt(ask)), receipt);
++        assertEq(imd.balanceOf(address(intake)), 2 * PRICE);
++    }
++}
++
++contract JobProtocolGasTest is HookJobRequesterFixture {
++    bytes32 private id;
++
++    function setUp() public override {
++        super.setUp();
++        // Allocate the Open job in an earlier transaction so the status slot is clean.
++        id = _open();
++    }
++
++    function testColdTupleWithLongURIFits200kAndRuntimeLimit() public {
++        string memory uri = string(new bytes(4096));
++        bytes memory payload = abi.encodeCall(requester.onJobResult, (id, RESULT_HASH, uri));
++        uint256 low = 0;
++        uint256 high = 200_000;
++        while (low < high) {
++            uint256 cap = (low + high) / 2;
++            uint256 snapshot = vm.snapshotState();
++            vm.cool(address(requester));
++            vm.prank(address(intake));
++            (bool success,) = address(requester).call{gas: cap}(payload);
++            assertTrue(vm.revertToStateAndDelete(snapshot));
++            if (success) high = cap;
++            else low = cap + 1;
++        }
++        emit log_named_uint("Cold job tuple with 4096-byte URI minimum forwarded gas", high);
++        assertLt(high, 100_000, "at least 100k headroom for tested URI length");
++        assertEq(intake.STIPEND(), 200_000);
++        vm.cool(address(requester));
++        assertTrue(intake.complete(id, abi.encode(id, RESULT_HASH, uri)));
++        assertEq(requester.getJob(id).resultHash, RESULT_HASH);
++        emit log_named_uint("Requester deployed runtime bytes", address(requester).code.length);
++        assertLt(address(requester).code.length, 24_576);
++    }
++}

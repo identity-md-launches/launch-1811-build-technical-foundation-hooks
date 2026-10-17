@@ -333,7 +333,7 @@ contract ReviewRecoveryTest is HookJobRequesterFixture {
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.NotReviewable.selector, jobId));
         requester.requestReview(jobId, 0.5 ether);
         vm.prank(address(intake));
-        requester.onJobResult(jobId, "later review passed");
+        requester.onJobResult(jobId, keccak256("later review passed"), "ipfs://result");
         assertEq(uint8(_status(jobId)), uint8(HookJobRequester.JobStatus.Delivered));
         assertEq(uint8(_review(jobId)), uint8(HookJobRequester.ReviewStatus.NotPassed));
         assertEq(imd.balanceOf(address(intake)), 2 * PRICE);

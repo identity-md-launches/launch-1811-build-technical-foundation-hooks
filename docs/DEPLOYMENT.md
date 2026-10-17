@@ -58,6 +58,22 @@ forge script script/DeployHookJobRequester.s.sol:DeployHookJobRequester \
 
 All `HOOKS_*` and `IMD_*` values are explicit operator inputs; there are no supplied keys or default addresses. `sdk.hooks_store.abi_tuple(spec)` produces the exact tuple. Simulation does not persist the factory, so it cannot supply a real deployed factory address for a subsequent run. An operator who later elects to submit a testnet transaction must use their own signing workflow and preserve the receipt; no such transaction was submitted in this assignment. The client in [STORE_API.md](STORE_API.md) instead gives the Store a complete unsigned transaction for its wallet integration.
 
+## Requester callback compatibility
+
+This source patch changes the job callback selector from `0x5dd4c70b` to `0x325a77b4`
+(`onJobResult(bytes32,bytes32,string)`). Constructor parameters, owner settings, review and failure
+callbacks are unchanged. No deployment or migration was performed. Existing non-upgradeable
+requesters retain their old code and already-registered selectors; changing the site ABI cannot
+repair their pending callbacks. An operator must separately review any future requester release,
+configure the existing required owner/Intake/payment/signer/templates, and point the reader to that
+exact contract and its deployment block. No token is replaced or re-minted by this patch.
+
+Index `JobResultURI` only from that requester and the selected chain/request ID; keep the supplied
+hash beside it, verify fetched document bytes independently, and apply finality/reorg handling.
+Delivery is not review approval. The owner still controls Intake/signer rotation for pending asks
+and independent review binding/recovery. The [integration guide](IMD_INTEGRATION.md#after-launch)
+lists all configuration duties and the remaining live pilot checks.
+
 ## Evidence and lifecycle
 
 Before submission, review the spec, limit units, allowed chain, exact factory, manager code hash, salt, predicted address, init-code hash, expected runtime hash and transaction destination/data/value. Re-simulate against current state. Mining output from a prior block can become stale if someone has deployed the same plan or if dependencies have changed.

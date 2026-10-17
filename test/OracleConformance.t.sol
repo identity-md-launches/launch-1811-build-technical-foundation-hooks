@@ -89,7 +89,7 @@ contract OracleConformanceTest is Test {
     function testProtocolSignatureVerifiesBeforeItsNonBoolAnswerIsRefused() public {
         vm.prank(creator);
         bytes32 jobId = consumer.openJob(keccak256("spec"), "brief", 0.5 ether);
-        assertTrue(intake.complete(jobId, abi.encode(jobId, bytes("result"))));
+        assertTrue(intake.complete(jobId, abi.encode(jobId, keccak256("result document"), "ipfs://result")));
         vm.prank(creator);
         bytes32 askId = consumer.requestReview(jobId, 0.5 ether);
         OracleAttestation.Attestation memory a = vector();
@@ -116,7 +116,7 @@ contract OracleConformanceTest is Test {
     function test_acceptsAFreshSignatureFromTheVectorKeyAsDelivered() public {
         vm.prank(creator);
         bytes32 jobId = consumer.openJob(keccak256("spec"), "brief", 0.5 ether);
-        assertTrue(intake.complete(jobId, abi.encode(jobId, bytes("result"))));
+        assertTrue(intake.complete(jobId, abi.encode(jobId, keccak256("result document"), "ipfs://result")));
         vm.prank(creator);
         bytes32 oracleId = consumer.requestReview(jobId, 0.5 ether);
         OracleAttestation.Attestation memory a = vector();

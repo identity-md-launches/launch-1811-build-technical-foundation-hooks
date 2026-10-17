@@ -1,0 +1,30 @@
+Compiling 2 files with Solc 0.8.26
+Solc 0.8.26 finished in 10.83s
+Compiler run successful!
+
+Ran 1 test for test/JobProtocolTuple.t.sol:JobProtocolGasTest
+[PASS] testColdTupleWithLongURIFits200kAndRuntimeLimit() (gas: 894390)
+Logs:
+  Cold job tuple with 4096-byte URI minimum forwarded gas: 67052
+  Requester deployed runtime bytes: 24117
+
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 21.91ms (11.18ms CPU time)
+
+Ran 11 tests for test/JobProtocolTuple.t.sol:JobProtocolTupleTest
+[PASS] testDuplicateCannotReplaceHashOrURI() (gas: 1092073)
+[PASS] testEmptyURICanBeReportedWithoutReviewApproval() (gas: 1026753)
+[PASS] testFuzzLateTupleWorksBeforeOrAfterLocalExpiry(bool) (runs: 256, μ: 1105516, ~: 1121219)
+[PASS] testFuzzSuppliedHashAndURIBytesArePreserved(bytes32,uint16) (runs: 256, μ: 1117937, ~: 1077165)
+Logs:
+  Bound result 0
+
+[PASS] testLateTuplePreservesFinalizedNegativeReview() (gas: 2468528)
+[PASS] testMalformedTuplesLoseOnlyTheSingleIntakeAttempt() (gas: 6654115)
+[PASS] testObsoleteSelectorIsNotAnAlias() (gas: 1024978)
+[PASS] testProtocolTuple() (gas: 996399)
+[PASS] testRegisteredSelectorAndResultEventsMatchProtocol() (gas: 1102173)
+[PASS] testUnauthorizedTupleLeavesJobAndLogsUntouched() (gas: 1117916)
+[PASS] testUnknownTupleCannotDeliverAnotherRequest() (gas: 1029152)
+Suite result: ok. 11 passed; 0 failed; 0 skipped; finished in 503.44ms (516.14ms CPU time)
+
+Ran 2 test suites in 506.90ms (525.35ms CPU time): 12 tests passed, 0 failed, 0 skipped (12 total tests)

@@ -1,0 +1,15 @@
+test_chain_mismatch_and_mainnets_rejected (test_store_sdk.StoreSdkTest.test_chain_mismatch_and_mainnets_rejected) ... ok
+test_chat_and_visual_use_identical_canonical_spec (test_store_sdk.StoreSdkTest.test_chat_and_visual_use_identical_canonical_spec) ... ok
+test_every_required_field_is_required (test_store_sdk.StoreSdkTest.test_every_required_field_is_required) ... ok
+test_manager_code_and_factory_must_match (test_store_sdk.StoreSdkTest.test_manager_code_and_factory_must_match) ... ok
+test_numeric_boundaries_and_no_float_coercion (test_store_sdk.StoreSdkTest.test_numeric_boundaries_and_no_float_coercion) ... ok
+test_plan_deploy_and_verify_real_create2_locally (test_store_sdk.StoreSdkTest.test_plan_deploy_and_verify_real_create2_locally) ... ok
+test_read_only_client_refuses_transaction_submission (test_store_sdk.StoreSdkTest.test_read_only_client_refuses_transaction_submission) ... ok
+test_schema_document_matches_shared_constants (test_store_sdk.StoreSdkTest.test_schema_document_matches_shared_constants) ... ok
+test_unknown_fields_and_duplicate_json_keys_rejected (test_store_sdk.StoreSdkTest.test_unknown_fields_and_duplicate_json_keys_rejected) ... ok
+test_versions_templates_and_permissions_fail_closed (test_store_sdk.StoreSdkTest.test_versions_templates_and_permissions_fail_closed) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 5.323s
+
+OK

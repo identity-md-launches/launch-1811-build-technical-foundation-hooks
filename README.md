@@ -27,6 +27,7 @@ Requirements: Foundry (`forge`, `cast`, `anvil`), solc **0.8.26**, and Python 3.
 ```sh
 forge build
 forge test
+forge test --gas-report
 forge fmt --check
 sh script/verify-vendored.sh
 python3 -m unittest discover -s test -p 'test_*.py' -v
@@ -36,7 +37,7 @@ node --test test/listings-reader.test.cjs test/requester-abi.test.cjs
 
 The repository fuzz seed is pinned in `foundry.toml`:
 `0x936d89b088020ddf36122a88c4c9aed7130c7a410f5c44680a7d121950c99345`.
-This follow-up also runs with `FOUNDRY_FUZZ_SEED=0x7b504948825fc356a810f67b6458a77924e9ee1fb1e4281a7e4787866c8d0c12` supplied to the runner. Tests do not read or mutate environment variables. Python integration tests start and stop their own disposable Anvil instance on loopback; they never use a remote RPC or a private key. The earlier IMD requester hardening follow-up recorded all 10 passing. The listing/ads follow-up did not modify or rerun those SDK tests.
+This follow-up also runs `forge test --fuzz-seed 0xf26a9b5634efd5ce7b559826e3d88cfde1d1b356c70d58ff3025a15e862a9578 --gas-report` with the assignment seed. Tests do not read or mutate environment variables. Python integration tests start and stop their own disposable Anvil instance on loopback; they never use a remote RPC or a private key. The earlier IMD requester hardening follow-up recorded all 10 passing. The listing/ads follow-up did not modify or rerun those SDK tests.
 
 The listings/ads follow-up also checks the supplied seed directly using
 `forge test --fuzz-seed 0x897ccfb85f71eb00ada949c5387d8bc41b650fda2a7d704b3960c7edf39b4654`.
@@ -99,6 +100,11 @@ oracle review. Paid calls are now `openJob(specHash, brief, userMaxPrice)` and
 caller's submitted limit and the owner's ceiling. Exact incoming transfers and exact Intake spending
 are checked atomically: partial spending reverts the request, leaving no caller funds to sweep.
 The full [site ABI](site/HookJobRequester.abi.json) is checked against compiler output.
+Job delivery now uses the protocol tuple `onJobResult(bytes32,bytes32,string)`: the supplied
+result-document hash is stored exactly, and the URI is emitted as `JobResultURI` without string
+storage. The status page shows the URI as unverified text in event history, with no link or fetch.
+Delivery remains separate from signed review approval. [RED/GREEN traces and check results](docs/checks/job-protocol-tuple/README.md)
+cover the regression, malicious/malformed inputs, late completion, callback gas and runtime size.
 
 Local job expiry still accepts the first late Intake result/failure. Delivered, failed and expired
 jobs are equally reviewable; unsigned callback ordering cannot dictate a signed verdict. A review
@@ -133,7 +139,7 @@ See [audit 648ba2e5 remediation](docs/AUDIT_648BA2E5.md), [audit 6b607200 remedi
 and the [integration guide](docs/IMD_INTEGRATION.md) for deployment parameters and operator duties.
 A synchronous Intake refusal rolls the whole ask back without debit; an asynchronous one spends the
 fee. Which shape the live Intake uses is something only a live pilot can prove.
-Real IMD Intake testing remains necessary for the job action/body/callback ABI, exact spending,
+Real IMD Intake testing remains necessary for the job action/body, live delivery of the documented tuple, exact spending,
 authenticated post-delivery mapping and canonicalization, and production signer gas under 200k.
 No deployment, paid request or fund movement was performed.
 

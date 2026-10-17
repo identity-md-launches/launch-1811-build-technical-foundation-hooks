@@ -1,0 +1,1 @@
+script/verify-vendored.sh: 8: cannot create /tmp/up.3: Directory nonexistent

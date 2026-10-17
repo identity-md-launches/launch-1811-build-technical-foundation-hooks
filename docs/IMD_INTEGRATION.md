@@ -22,6 +22,38 @@
 
 Callbacks run under the Intake's 200,000-gas stipend. `ReviewDelivery.t.sol` and `ReviewReceiptGas.t.sol` use the mock's one-attempt path with cold requester/signer access, including ECDSA, EIP-7702 key signatures, a 5-of-7 ERC-1271 signer and the audit's 22-cold-read stressor. They verify retained answers and irrevocable fee loss for invalid or over-budget callbacks. Direct calls in other tests probe revert reasons; they do not claim that Intake retries. See the callback budget below; the actual production signer and Intake still require a pilot.
 
+## Job result callback and URI
+
+The [protocol's completion tuple](https://imd.fun/docs/#what-comes-back) is
+`(bytes32 requestId, bytes32 resultHash, string uri)`. The requester registers
+`onJobResult(bytes32,bytes32,string)` (selector `0x325a77b4`), stores the **supplied** hash
+unchanged, keeps `JobDelivered(requestId, resultHash)`, and additionally emits
+`JobResultURI(bytes32 indexed requestId, string uri)`. The previous `(bytes32,bytes)`
+assumption was incorrect; the [RED/GREEN evidence](checks/job-protocol-tuple/README.md)
+reproduces the resulting lost callback. Oracle tuples, signatures and failure tuples are unchanged.
+
+`resultHash` commits to the bytes of the completed result document. It is neither a hash of
+the URI nor a hash of the callback's ABI encoding. The contract authenticates the configured
+Intake and its recorded request ID, but does not fetch the document, check its hash or infer
+review approval. A consumer that retrieves a document must hash its exact bytes before trusting
+its contents; parsing and reserializing JSON may change those bytes. A matching hash still does
+not prove code safety or that an independent review passed. Intake/owner trust remains unchanged.
+
+The URI lives only in event data: `Job` and its 15-word `getJob` return stay unchanged. Index
+`JobResultURI` by **chain, requester contract and request ID**, retaining block/transaction/log
+identity and handling reorgs. The static page displays it only as unverified `textContent` in
+history. It creates no link and never fetches the location. Empty strings are shown explicitly;
+malformed ABI, invalid UTF-8 or data over the reader's 32 KiB display limit produce an unavailable
+message without hiding the remaining history. That display limit is not a protocol or contract
+length restriction. An excessive URI can exhaust the fixed callback gas: no finite stipend can
+accept an unbounded string. A cold 4,096-byte URI is tested under the unchanged 200,000-gas cap.
+
+A malformed callback leaves the job unchanged while Intake consumes its one attempt and keeps
+the fee; local expiry remains possible. The test mock forwards `selector ++ args` without any
+translation. Unknown, already delivered or failed jobs reject the callback. Open jobs, including
+after their deadline, and locally Expired jobs accept the first valid completion. An existing
+review, including a finalized `NotPassed`, cannot be cleared by delivery.
+
 ## Binding each review to its signed answer
 
 The Intake callback's first `bytes32` identifies the paid ask. The signed attestation's `requestId`
@@ -251,7 +283,7 @@ Normal rotation preserves historical verification until the owner explicitly rev
 
 ## Callback gas budget
 
-The callback stores four full-width context words and one packed metadata word; it does not
+The review callback stores four full-width context words and one packed metadata word; it does not
 truncate UUIDs, chain IDs or question hashes. `requestReview` preallocates bit 255 of the metadata
 word (about 22.1k additional request-transaction storage gas). Receipt writes that existing word
 once at a nonzero-to-nonzero cost, instead of initializing it and repeatedly updating packed
@@ -259,12 +291,17 @@ fields inside the callback. Allocation alone returns an empty receipt and cannot
 The already verified EIP-712 digest is reused in `ReviewReceived` instead of rehashed. Read ABIs
 remain 15 words for `getJob` and 10 each for `getReviewAsk` and `getReviewReceipt`.
 
-With pinned Solidity 0.8.26/Cancun/optimizer 200, local minimum **forwarded** receipt gas is 125,296
-for ECDSA, 170,389 for the 5-of-7 signer (five ECDSA recoveries, membership, per-key expiry and
-duplicate checks; 325-byte signature), and 187,543 for the audit's registry with 22 extra cold
+With pinned Solidity 0.8.26/Cancun/optimizer 200, local minimum **forwarded** receipt gas is 124,984
+for ECDSA, 170,077 for the 5-of-7 signer (five ECDSA recoveries, membership, per-key expiry and
+duplicate checks; 325-byte signature), and 187,231 for the audit's registry with 22 extra cold
 mapping reads (65-byte signature). Each also passes the exact 200,000-gas one-attempt Intake call.
 Binary-search measurements restore state and cool the consumer/signer for every trial; isolated
-transaction checks avoid dirty-slot discounts. Wrong-prebinding receipt delivery uses 175,435 gas with the 5-of-7 signer and 192,598 with the 22-read stress signer. The 5-of-7 receipt also uses 170,389 gas after an expiry request and before a retry reservation is released.
+transaction checks avoid dirty-slot discounts. Wrong-prebinding receipt delivery uses 175,123 gas with the 5-of-7 signer and 192,286 with the 22-read stress signer. The 5-of-7 receipt also uses 170,077 gas after an expiry request and before a retry reservation is released.
+
+The job callback with a 4,096-byte URI needs **67,052 gas** with cold requester access and a clean
+status slot. It emits the URI without storing it. The requester runtime is **24,117 bytes**,
+459 bytes below EIP-170. The [isolated gas log](checks/job-protocol-tuple/cold-gas.log) records
+these measurements; larger URIs and arbitrary signer implementations are not covered by them.
 
 Use **60,000 gas as the maximum cold `isValidSignature` execution budget**, with canonical 32-byte
 bool answers and signatures no larger than the tested 325 bytes, then measure the entire callback
@@ -304,12 +341,13 @@ independent protocol digest/signature vector. The pinned Cancun tests emulate th
 
 ## Showing status on a static website
 
-`site/index.html` is one HTML file with no dependencies. On a JSON-RPC endpoint the visitor chooses (a public RPC of the chain, or the wallet's injected provider) it calls `getJob(bytes32)` with `eth_call` for one job, `jobsOf(address)` to list a creator wallet's jobs with each one's status, and `eth_getLogs` filtered on the contract address, the thirteen job/review event topics and the request id for the job's history (block, event, transaction hash). It never contacts api.imd.fun, so browser CORS on that API is irrelevant. The selectors and topic hashes it hard-codes are pinned by `testStaticSiteReadContract`. Earlier local Anvil verification covered the unchanged wallet-list and 15-word job reads; binding-reset and receipt-revocation events are included. Pending receipt reads also check its signer epoch and explicit revocation, so a revoked answer is visible before closure. The full site-facing ABI is [`site/HookJobRequester.abi.json`](../site/HookJobRequester.abi.json), checked against compiler output by `test/requester-abi.test.cjs`. Reservation-release events are monitored separately by oracle/Intake ID. Many public nodes cap `eth_getLogs` block ranges, so the page takes a "from block" (give the contract's deployment block); when the range is refused the job status still shows and the history row says so. It shows:
+`site/index.html` is one HTML file with no dependencies. On a JSON-RPC endpoint the visitor chooses (a public RPC of the chain, or the wallet's injected provider) it calls `getJob(bytes32)` with `eth_call` for one job, `jobsOf(address)` to list a creator wallet's jobs with each one's status, and `eth_getLogs` filtered on the contract address, the fourteen job/review event topics and the request id for the job's history (block, event, transaction hash and result URI). It never contacts api.imd.fun, so browser CORS on that API is irrelevant. The selectors and topic hashes it hard-codes are pinned by `testStaticSiteReadContract`. Earlier local Anvil verification covered the unchanged wallet-list and 15-word job reads; binding-reset and receipt-revocation events are included. Pending receipt reads also check its signer epoch and explicit revocation, so a revoked answer is visible before closure. The full site-facing ABI is [`site/HookJobRequester.abi.json`](../site/HookJobRequester.abi.json), checked against compiler output by `test/requester-abi.test.cjs`. Reservation-release events are monitored separately by oracle/Intake ID. Many public nodes cap `eth_getLogs` block ranges, so the page takes a "from block" (give the contract's deployment block); when the range is refused the job status still shows and the history row says so. It shows:
 
 | On chain | Shown as |
 |---|---|
 | `status` Open / Delivered / Failed (+status, reason) / Expired | Job status, labelled "reported by the Intake". Delivery is an unsigned completion notice. |
 | `review` None / Pending / Unanswered | "No verified review result"; Pending may mean awaiting an answer **or owner confirmation**; Unanswered means closed without a finalized verdict |
+| `JobResultURI` history event | Unverified result URI as text only; never fetched, linked or treated as review approval |
 | `ReviewReceived` history event | Signed answer retained, awaiting owner confirmation; no verdict yet |
 | `ReviewReceiptDiscarded` history event | Owner closed a misdelivery or UUID conflict; original receipt kept in history |
 | `ReviewExpiryRequested` history event | Awaiting owner closure; callbacks remain open |
@@ -320,7 +358,7 @@ The page never shows "audited". `Passed` means a signed oracle panel answer that
 
 ### Blocker for a static review status
 
-Without the oracle step, a static website **cannot reliably tell whether review passed**. The Intake's job completion is unsigned, carries no review verdict, and its `job.open` callback ABI was not in this task's protocol references. The job page on api.imd.fun cannot be read from an arbitrary origin and would not be chain-verifiable anyway. With the oracle step, review status depends on a live pilot confirming that the panel can read the job's review outcome, the definitions pin it unambiguously, and the owner can authenticate the exact oracle identity and canonical question after receipt. A receipt by itself remains "No verified review result" until the owner confirms it.
+Without the oracle step, a static website **cannot reliably tell whether review passed**. The Intake's job completion is unsigned, carries no review verdict, and its result hash/URI carry no signed review approval. The job page on api.imd.fun cannot be read from an arbitrary origin and would not be chain-verifiable anyway. With the oracle step, review status depends on a live pilot confirming that the panel can read the job's review outcome, the definitions pin it unambiguously, and the owner can authenticate the exact oracle identity and canonical question after receipt. A receipt by itself remains "No verified review result" until the owner confirms it.
 
 ## After launch
 
@@ -376,7 +414,7 @@ owner's powers or recover an already accepted wrong handover.
 
 ## Requires a live Ethereum or Robinhood Chain pilot
 
-- The `job.open` action id, body schema, price and **callback ABI**. `onJobResult(bytes32,bytes)` is this contract's assumption. If the live callback has another shape, it reverts inside the Intake's try, the job stays Open, and the requester expires it after the deadline. That path is tested, and it fails safe, but delivery then never shows.
+- The live `job.open` action id, accepted body schema and price. The callback now matches the documented `(bytes32,bytes32,string)` tuple; this removes the former ABI guess, but local mocks do not prove that a particular live Intake/writer uses it correctly. Confirm the registered selector, request-ID routing, exact result-document hash, URI availability/length and the one-shot 200k delivery behavior end to end before paid use. Malformed or over-budget calls can still consume the callback and fee without recording delivery.
 - Callbacks must be asynchronous, after `request`/`requestWithFailure` returns and this contract records its Intake ID. A synchronous callback during payment is unsupported.
 - A **synchronous refusal**, where `request`/`requestWithFailure` itself reverts (an unsold action, `ActionNotSold`, or a body the Intake refuses before taking payment), is handled: the revert propagates, the whole ask rolls back, and the caller keeps the fee with no job, ask, Intake ID or allowance recorded (`AuditContextMismatchProofTest`). An **asynchronous refusal** after payment (status 1 through the failure function) closes the ask as `Unanswered` and the fee is spent. Which shape the live Intake uses for which refusal, and whether it ever refuses after pulling the price without calling the failure function, is behavior only a live pilot can prove; the contract is compatible with both shapes, but the fee outcome differs between them and the mock's choice is not evidence of the live one.
 - Exact IMD transfer and Intake spend behavior at the quoted price, including price changes between quoting and requesting. Any net underspend now reverts the entire transaction; verify this against both configured Intake paths.

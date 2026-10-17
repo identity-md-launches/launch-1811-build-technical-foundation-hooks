@@ -1,0 +1,46 @@
+No files changed, compilation skipped
+
+Ran 1 test for test/JobProtocolTuple.t.sol:JobProtocolGasTest
+[PASS] testColdTupleWithLongURIFits200kAndRuntimeLimit() (gas: 894390)
+Logs:
+  Cold job tuple with 4096-byte URI minimum forwarded gas: 67052
+  Requester deployed runtime bytes: 24117
+
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 22.30ms (7.08ms CPU time)
+
+Ran 8 tests for test/ReviewReceiptGas.t.sol:ReviewReceiptGasTest
+[PASS] testAudit22ColdReadsNowRetainsOneShotReceiptAndBoundVerdict() (gas: 4150823)
+Logs:
+  Cold audit registry +22 reads receipt minimum forwarded gas: 187231
+  Cold audit registry +22 reads bound minimum forwarded gas: 149726
+
+[PASS] testColdEoaReceiptGasAndExactStipend() (gas: 1521757)
+Logs:
+  Cold EOA receipt minimum forwarded gas: 124984
+
+[PASS] testColdFiveOfSevenReceiptAfterExpiryRequestFitsStipend() (gas: 2836682)
+Logs:
+  Cold 5-of-7 receipt after expiry request minimum forwarded gas: 170077
+
+[PASS] testColdFiveOfSevenReceiptAndBoundCallbacksFitStipend() (gas: 4114308)
+Logs:
+  Cold 5-of-7 receipt minimum forwarded gas: 170077
+  Cold 5-of-7 bound minimum forwarded gas: 132553
+
+[PASS] testColdFiveOfSevenRetryReceiptBeforeReservationReleaseFitsStipend() (gas: 2938567)
+Logs:
+  Cold 5-of-7 reserved retry receipt minimum forwarded gas: 170077
+
+[PASS] testColdWrongPrebindingRetainsReceiptWithFiveOfSevenAndAuditSigner() (gas: 4934759)
+Logs:
+  Cold 5-of-7 mismatched pre-binding minimum forwarded gas: 175123
+  Cold audit +22 reads mismatched pre-binding minimum forwarded gas: 192286
+
+[PASS] testFuzzMultisignerRefusesWrongKeyDuplicateRevokedExpiredOrInsufficientSignatures(uint8) (runs: 256, μ: 381986, ~: 385495)
+Logs:
+  Bound result 1
+
+[PASS] testOverBudgetSignerStillFailsClosedAndLosesSingleAttemptWithoutPartialReceipt() (gas: 711516)
+Suite result: ok. 8 passed; 0 failed; 0 skipped; finished in 830.84ms (981.94ms CPU time)
+
+Ran 2 test suites in 837.98ms (853.15ms CPU time): 9 tests passed, 0 failed, 0 skipped (9 total tests)

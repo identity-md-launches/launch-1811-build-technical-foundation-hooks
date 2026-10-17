@@ -1,0 +1,26 @@
+✔ browser selectors match compiler artifacts (5.664882ms)
+✔ decode static listing and dynamic metadata including label offsets (60.829152ms)
+✔ decode ordered featured and organic pages with continuation cursors (157.96218ms)
+✔ every paid card visibly carries #ad and renders hostile text as text (171.028138ms)
+✔ reject malformed ABI, absent ad labels and unexpected placement status (106.706144ms)
+✔ label encoding matches independent ABI encoder and rejects noncanonical search text (22.072606ms)
+✔ published requester ABI is exactly the compiler ABI and has only capped paid calls (13.078542ms)
+✔ status page selectors and job event topics match the compiled contract (474.49223ms)
+✔ pending receipt shows explicit signer revocation before individual closure (7.436242ms)
+✔ receipt reads distinguish pending arrival, retained answer and terminal job (19.011819ms)
+✔ malformed revocation reads fail rather than display a verified receipt (6.052079ms)
+✔ job callback and URI event use the protocol tuple without changing the static Job or oracle ABI (3.275702ms)
+✔ URI event decoder agrees with cast for IPFS, HTTPS, Unicode and empty strings (144.863406ms)
+✔ URI decoder rejects malformed offsets, lengths, padding, oversized data and invalid UTF-8 (3.757488ms)
+✔ history exposes URI only as unverified text, with no HTML, links or content fetching (207.829324ms)
+✔ history filters other contracts, requests, unknown topics and removed logs (47.317788ms)
+✔ malformed URI logs show unavailable without hiding later history or granting review approval (46.768541ms)
+✔ build fingerprints match compiler artifacts and requester runtime stays below EIP-170 (266.985158ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2364.570753

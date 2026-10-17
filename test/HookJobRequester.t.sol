@@ -15,6 +15,7 @@ abstract contract HookJobRequesterFixture is Test {
     bytes32 internal constant ORACLE_ACTION = "oracle.request@oracle-1";
     uint256 internal constant PRICE = 0.5 ether;
     bytes32 internal constant SPEC_HASH = keccak256("hook spec");
+    bytes32 internal constant RESULT_HASH = keccak256("result document");
 
     TestToken internal imd;
     MockIntake internal intake;
@@ -52,7 +53,7 @@ abstract contract HookJobRequesterFixture is Test {
 
     function _delivered() internal returns (bytes32 id) {
         id = _open();
-        assertTrue(intake.complete(id, abi.encode(id, bytes("ipfs://result"))));
+        assertTrue(intake.complete(id, abi.encode(id, RESULT_HASH, "ipfs://result")));
     }
 
     function _reviewPending() internal returns (bytes32 jobId, bytes32 oracleId) {
@@ -203,7 +204,7 @@ contract HookJobRequesterTest is HookJobRequesterFixture {
         assertEq(uint8(_status(id)), uint8(HookJobRequester.JobStatus.Expired));
         // And a completion for a version 1 ask is accepted the same way.
         bytes32 id2 = _open();
-        assertTrue(intake.complete(id2, abi.encode(id2, bytes("ipfs://result"))));
+        assertTrue(intake.complete(id2, abi.encode(id2, RESULT_HASH, "ipfs://result")));
         assertEq(uint8(_status(id2)), uint8(HookJobRequester.JobStatus.Delivered));
         // The review ask on a version 1 intake is a plain request too.
         vm.prank(creator);
@@ -425,20 +426,20 @@ contract HookJobRequesterTest is HookJobRequesterFixture {
         bytes32 id = _open();
         vm.prank(stranger);
         vm.expectRevert(HookJobRequester.NotTheIntake.selector);
-        requester.onJobResult(id, "forged");
-        assertTrue(intake.complete(id, abi.encode(id, bytes("ipfs://result"))));
+        requester.onJobResult(id, keccak256("forged"), "ipfs://result");
+        assertTrue(intake.complete(id, abi.encode(id, RESULT_HASH, "ipfs://result")));
         HookJobRequester.Job memory job = requester.getJob(id);
         assertEq(uint8(job.status), uint8(HookJobRequester.JobStatus.Delivered));
-        assertEq(job.resultHash, keccak256("ipfs://result"));
+        assertEq(job.resultHash, RESULT_HASH);
         assertEq(uint8(job.review), uint8(HookJobRequester.ReviewStatus.None), "delivery is not a review verdict");
         // Replays from the Intake itself, of either callback, are refused.
         vm.startPrank(address(intake));
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.UnknownOrSettled.selector, id));
-        requester.onJobResult(id, "again");
+        requester.onJobResult(id, keccak256("again"), "ipfs://result");
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.UnknownOrSettled.selector, id));
         requester.onJobFailure(id, 2, "disagreed", 0, 0, "");
         vm.stopPrank();
-        assertEq(requester.getJob(id).resultHash, keccak256("ipfs://result"));
+        assertEq(requester.getJob(id).resultHash, RESULT_HASH);
     }
 
     function testJobFailureClosesJobOnceAndIsNotAVerdict() public {
@@ -453,7 +454,7 @@ contract HookJobRequesterTest is HookJobRequesterFixture {
         assertEq(job.failureReason, bytes32("body_invalid"));
         vm.startPrank(address(intake));
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.UnknownOrSettled.selector, id));
-        requester.onJobResult(id, "late");
+        requester.onJobResult(id, keccak256("late"), "ipfs://result");
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.UnknownOrSettled.selector, id));
         requester.onJobFailure(id, 2, "disagreed", 0, 0, "");
         vm.stopPrank();
@@ -466,7 +467,7 @@ contract HookJobRequesterTest is HookJobRequesterFixture {
         bytes32 unknown = keccak256("someone else's request naming this contract");
         vm.startPrank(address(intake));
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.UnknownOrSettled.selector, unknown));
-        requester.onJobResult(unknown, "");
+        requester.onJobResult(unknown, RESULT_HASH, "");
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.UnknownOrSettled.selector, unknown));
         requester.onJobFailure(unknown, 2, "disagreed", 0, 0, "");
         OracleAttestation.Attestation memory a = _attestation(unknown, true);
@@ -479,7 +480,7 @@ contract HookJobRequesterTest is HookJobRequesterFixture {
 
     function testCallbackWithUnexpectedAbiFailsSafeAndJobCanExpire() public {
         bytes32 id = _open();
-        // If the live job.open callback has another ABI, the call reverts inside the Intake's try.
+        // Malformed tuple data reverts inside the Intake's one-shot call.
         assertFalse(intake.complete(id, hex"deadbeef"));
         assertEq(uint8(_status(id)), uint8(HookJobRequester.JobStatus.Open));
         vm.prank(creator);
@@ -495,7 +496,7 @@ contract HookJobRequesterTest is HookJobRequesterFixture {
         requester.expireJob(id);
         assertEq(uint8(_status(id)), uint8(HookJobRequester.JobStatus.Expired));
         vm.prank(address(intake));
-        requester.onJobResult(id, "late authenticated result");
+        requester.onJobResult(id, keccak256("late authenticated result"), "ipfs://result");
         assertEq(uint8(_status(id)), uint8(HookJobRequester.JobStatus.Delivered));
         vm.prank(creator);
         vm.expectRevert(abi.encodeWithSelector(HookJobRequester.UnknownOrSettled.selector, id));
@@ -504,7 +505,7 @@ contract HookJobRequesterTest is HookJobRequesterFixture {
 
     function testCallbacksFitTheIntakeStipend() public {
         bytes32 id = _open();
-        assertTrue(intake.complete(id, abi.encode(id, new bytes(1024))));
+        assertTrue(intake.complete(id, abi.encode(id, RESULT_HASH, string(new bytes(1024)))));
         bytes32 id2 = _open();
         assertTrue(intake.fail(id2, 2, "disagreed", 3, 7));
     }
@@ -732,6 +733,9 @@ contract HookJobRequesterTest is HookJobRequesterFixture {
         );
         assertEq(
             HookJobRequester.JobDelivered.selector, 0xcf3572188b51dfe2ff3d594bd6f949f6d927563dccd01a16ed91de08773031f3
+        );
+        assertEq(
+            HookJobRequester.JobResultURI.selector, 0xb7024b3387ec94e50f20e6f13d42c52ecb72ae8b532d7c595b5a094954a78e0b
         );
         assertEq(
             HookJobRequester.JobFailed.selector, 0x109fbcdb2357a12dbc99347a26add088ce1785932ff8fd91290dd66e482e3f52
