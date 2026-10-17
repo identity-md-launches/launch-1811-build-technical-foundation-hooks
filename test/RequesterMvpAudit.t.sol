@@ -76,6 +76,10 @@ contract RequesterMvpLifecycleTest is HookJobRequesterFixture {
 
     function testFuzzWrongPrebindingRetainsOneShotAnswerAndCanBeCorrected(uint8 field, bool passed) public {
         field = uint8(bound(field, 0, 4));
+        // Exercise correction after ask expiry, within the positive receipt's freshness window.
+        // The separate stale-positive regression requires a new review after 23 hours.
+        vm.prank(owner);
+        requester.setTimeouts(30 days, 1 hours);
         (bytes32 jobId, bytes32 askId) = _unbound();
         OracleAttestation.Attestation memory wrong = _attestation(askId, passed);
         if (field == 0) wrong.requestId = keccak256("operator UUID typo");

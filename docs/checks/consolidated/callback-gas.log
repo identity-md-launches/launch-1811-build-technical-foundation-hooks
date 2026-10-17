@@ -1,0 +1,38 @@
+No files changed, compilation skipped
+
+Ran 8 tests for test/ReviewReceiptGas.t.sol:ReviewReceiptGasTest
+[PASS] testAudit22ColdReadsNowRetainsOneShotReceiptAndBoundVerdict() (gas: 3610289)
+Logs:
+  Cold audit registry +22 reads receipt minimum forwarded gas: 187209
+  Cold audit registry +22 reads bound minimum forwarded gas: 157006
+
+[PASS] testColdEoaReceiptGasAndExactStipend() (gas: 1707977)
+Logs:
+  Cold EOA receipt minimum forwarded gas: 124962
+
+[PASS] testColdFiveOfSevenReceiptAfterExpiryRequestFitsStipend() (gas: 2897936)
+Logs:
+  Cold 5-of-7 receipt after expiry request minimum forwarded gas: 170055
+
+[PASS] testColdFiveOfSevenReceiptAndBoundCallbacksFitStipend() (gas: 4850809)
+Logs:
+  Cold 5-of-7 receipt minimum forwarded gas: 170055
+  Cold 5-of-7 bound minimum forwarded gas: 140113
+
+[PASS] testColdFiveOfSevenRetryReceiptBeforeReservationReleaseFitsStipend() (gas: 2999837)
+Logs:
+  Cold 5-of-7 reserved retry receipt minimum forwarded gas: 170055
+
+[PASS] testColdWrongPrebindingRetainsReceiptWithFiveOfSevenAndAuditSigner() (gas: 4636431)
+Logs:
+  Cold 5-of-7 mismatched pre-binding minimum forwarded gas: 175101
+  Cold audit +22 reads mismatched pre-binding minimum forwarded gas: 192264
+
+[PASS] testFuzzMultisignerRefusesWrongKeyDuplicateRevokedExpiredOrInsufficientSignatures(uint8) (runs: 256, μ: 443637, ~: 446707)
+Logs:
+  Bound result 3
+
+[PASS] testOverBudgetSignerStillFailsClosedAndLosesSingleAttemptWithoutPartialReceipt() (gas: 833901)
+Suite result: ok. 8 passed; 0 failed; 0 skipped; finished in 224.43ms (320.12ms CPU time)
+
+Ran 1 test suite in 235.33ms (224.43ms CPU time): 8 tests passed, 0 failed, 0 skipped (8 total tests)

@@ -1,0 +1,78 @@
+{
+  "date": "2026-10-17",
+  "baseCommit": "cc847d8f35bc0b814d390eb76092eed6051c5ae3",
+  "compiler": "0.8.26",
+  "automaticBindingSupported": false,
+  "deployed": false,
+  "paidRequests": false,
+  "localChecks": {
+    "foundry.log": {
+      "passed": 536,
+      "failed": 0,
+      "skipped": 0,
+      "sha256": "5b729c0c9b0592292109bc2264cde7b0950fb757b967ec60c06ec966af0ae476"
+    },
+    "assignment-seed.log": {
+      "passed": 536,
+      "failed": 0,
+      "skipped": 0,
+      "sha256": "a0fb6a57cc470f1ec8452ef9bfd5e9f3e935c472432384e53cf98bbb37b24647"
+    },
+    "green.log": {
+      "passed": 58,
+      "failed": 0,
+      "skipped": 0,
+      "sha256": "bbcb079d5e62ca5c18902b35b369d2668abba8c093cfc19cba71f87c16ac0fda"
+    },
+    "callback-gas.log": {
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0,
+      "sha256": "7a73777afb6a729e47828a9decb90985148af855325c37f607aebf8c8d6d967d"
+    },
+    "job-callback-gas.log": {
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "sha256": "b76b19db1e2794d41ce980fa10a86dade5ad302689266d11968a389e8939fafa"
+    },
+    "max-deployment-gas.log": {
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0,
+      "sha256": "74268053872d5b75439a4fd50f791a7f74fffa107bbfa6c87571cfde6ee14da9"
+    },
+    "sdk.log": {
+      "passed": 54,
+      "failed": 0,
+      "sha256": "d6a6ee460f04ea5aeb523ca82469a56109a759ce072ed3913f9d37e32211130f"
+    },
+    "site.log": {
+      "passed": 22,
+      "failed": 0,
+      "sha256": "5406fe059080e533e3a8a8d86a9f671241ed67fb9a016bdcfd121645c709f838"
+    }
+  },
+  "runtimeBytes": {
+    "BoundedSwapHook": 3431,
+    "HooksStoreFactory": 13970,
+    "HookJobRequester": 24559,
+    "HookListingRegistry": 9035,
+    "FeaturedPlacements": 8232,
+    "GatedHookDeployer": 20427
+  },
+  "maxRuntimeBytes": 24576,
+  "snapshotLimits": {
+    "bytes": 12288,
+    "tokens": 512,
+    "objectMembers": 32,
+    "arrayItems": 128,
+    "depth": 16
+  },
+  "sdkCheckGasLimit": 10000000,
+  "maxMeasuredCallbackForwardedGas": 192264,
+  "maxMeasuredFullCheckExecutionGas": 8999236,
+  "maxMeasuredDeploymentExecutionGas": 14298632,
+  "launchBlockersDocument": "../../INTEGRATION_RESOLUTION.md",
+  "evidenceScope": "Local proof and public read-only observations; no live Hooks Store pilot or independent audit."
+}

@@ -18,7 +18,7 @@ def templates(chain_id):
         {'skill': 'adversarial-review',
          'objective': 'Perform adversarial review of the accepted implementation and tests, including constructor, runtime, manager and permissions. Record reproducible findings; write no files.'},
         {'skill': 'research-report',
-         'objective': 'Publish evidence only after the independent adversarial review is accepted with no unresolved findings. Identify the exact earlier accepted source bundle reviewed, so its SHA-256 does not include this report. Reproduce the build. Compute HookArtifact per the supplied GatedHookDeployer ABI: jobRequestId is the originating Intake job id; sourceHash is that accepted bundle SHA-256; buildHash is keccak256 of the exact build identity file; bind creation code, constructor args, runtime, chain, deployer, manager/code hash and permissions. Emit hooksStoreApproval as the exact approvalDocument(artifact) bytes without a newline, and evidence with the source submission, build identity, bytecode and independent review submission references. If any fact or parameter is missing, or review failed, emit no passed approval and state why. Never invent parameters, attestations, a review, a top-level completion field or a source hash.',
+         'objective': 'Publish evidence only after the independent adversarial review is accepted with no unresolved findings. Require the full HookSpec, its ABI hash, originating Intake id and chain, requester and gated deployer addresses, PoolManager/code hash, exact accepted source and independent review submissions, and reviewed build identity. These are required inputs, not values to guess from a spec hash or an unsigned API pairing. If any is absent or cannot be authenticated, publish no approval and explain the blocker. Select the earlier accepted source bundle reviewed, before this report, and reproduce its build. Compute HookArtifactV2 using the supplied GatedHookDeployer ABI: sourceSubmissionHash is that source entry submissionHash; reviewSubmissionHash is the exact accepted adversarial review covering it; buildHash is keccak256 of the exact build identity file. First set evidenceHash to zero only for the evidenceDocument preimage, then set it to SHA-256 of those exact evidenceDocument bytes. Compute approvalDocument with the final artifact. Emit hooksStoreEvidence and hooksStoreApproval exactly, without newlines, in the same publication submission. Both are worker publications; neither grants oracle approval. Preserve build/test/review records for the oracle panel. Never invent a protocol mapping, signature, source hash or top-level completion field.',
          'outputs': [
              {'name': 'hooksStoreApproval', 'path': 'artifacts/hooks-store-approval.json', 'mediaType': 'application/json'},
              {'name': 'hooksStoreEvidence', 'path': 'artifacts/hooks-store-evidence.json', 'mediaType': 'application/json'},
@@ -32,14 +32,16 @@ def templates(chain_id):
     review_prefix = '{"v":1,"question":"Do the public IMD completion and accepted-submission records for the job opened by Intake request '
     question_end = (' on chain ' + str(chain_id) + ' record a passed independent adversarial review for the exact artifact '
                     'named by the accepted hooksStoreApproval file? Answer true only if the completed snapshot names '
-                    'that unique accepted file, the file records review passed, and the accepted independent review '
+                    'that unique accepted file and hooksStoreEvidence from the same publication submission, both match '
+                    'the HookArtifactV2 canonical bytes, and its exact reviewSubmissionHash names an accepted independent '
+                    'adversarial review with no unresolved findings. Verify the exact sourceSubmissionHash and that this review '
                     'covers the same source bundle and build identity, creation bytecode, constructor arguments, '
                     'runtime code, chain, deployer, PoolManager code and callback permissions without unresolved findings. '
                     'The snapshot is the immutable control-plane result linked by the Intake completion, whose bytes '
                     'are committed by resultHash. Accepted source and file entries carry SHA-256 hashes. '
                     'A top-level worker marker, a rejected submission or a user-provided review URL is insufficient. '
                     'Missing, pending, failed, ambiguous or unverifiable public evidence means false. '
-                    'This asks about published records, not for execution of any command.')
+                    'Worker publication is not oracle approval. This asks about published records, not for execution of any command.')
     fields = {'chainId': chain_id, 'window': {'hours': 24}, 'answerType': 'bool', 'evidence': 'panel',
               'panelSize': 7, 'quorum': 5, 'validForSeconds': 86400}
     suffix = question_end + '\",' + json.dumps(fields, separators=(',', ':'))[1:]

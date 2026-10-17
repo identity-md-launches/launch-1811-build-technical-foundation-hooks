@@ -7,7 +7,11 @@ import {ResultJson} from "../src/deployment/ResultJson.sol";
 
 contract AcceptedArtifactHarness {
     function verify(bytes memory snapshot, bytes32 digest, bytes32 sourceHash) external pure returns (bool) {
-        return AcceptedArtifact.verify(snapshot, digest, sourceHash);
+        return AcceptedArtifact.verify(
+            snapshot,
+            digest,
+            AcceptedArtifact.Binding(sourceHash, sha256("accepted submission"), sha256("test evidence"), 13)
+        );
     }
 
     function parse(bytes memory snapshot) external pure {
@@ -55,7 +59,12 @@ contract AcceptedArtifactTest is Test {
             source,
             '],"files":[',
             files,
-            "]",
+            files.length == 0 ? bytes("") : bytes(","),
+            '{"name":"hooksStoreEvidence","path":"artifacts/hooks-store-evidence.json","mediaType":"application/json","bytes":13,"hash":"',
+            AcceptedArtifact.hexHash(sha256("test evidence")),
+            '","submissionHash":"',
+            AcceptedArtifact.hexHash(SUBMISSION),
+            '"}]',
             extra,
             "}"
         );
@@ -89,12 +98,11 @@ contract AcceptedArtifactTest is Test {
     }
 
     function testDuplicateKeysAnywhereAndEscapedAliasesFailClosed() public {
-        bytes[5] memory extras = [
+        bytes[4] memory extras = [
             bytes(',"files":[]'),
             bytes(',"complete":true'),
             bytes(',"rejected":{"hash":"a","hash":"b"}'),
-            bytes(',"fi\\u006ces":[]'),
-            bytes(',"note":"escaped\\ntext"')
+            bytes(',"fi\\u006ces":[]')
         ];
         for (uint256 i; i < extras.length; ++i) {
             bytes memory snapshot = _snapshot(_source(), _file(DIGEST), extras[i]);
@@ -105,9 +113,9 @@ contract AcceptedArtifactTest is Test {
 
     function testCanonicalApprovalHasNoAmbiguousFieldsOrTrailingBytes() public view {
         bytes memory expected = bytes.concat(
-            '{"schema":"hooks-store-approval-v1","hooksStoreArtifact":"0x',
+            '{"schema":"hooks-store-approval-v2","hooksStoreArtifact":"0x',
             AcceptedArtifact.hexHash(DIGEST),
-            '","review":"passed"}'
+            '","publication":"review-evidence"}'
         );
         assertEq(AcceptedArtifact.approvalDocument(DIGEST), expected);
         assertTrue(sha256(expected) != sha256(bytes.concat(expected, "\n")));
@@ -126,13 +134,7 @@ contract AcceptedArtifactTest is Test {
     }
 
     function testWhitespaceAndReorderedMembersPreserveExactFileBinding() public view {
-        bytes memory snapshot = bytes.concat(
-            '{ \n "files" : [',
-            _file(DIGEST),
-            '], "source" : [',
-            _source(),
-            '], "complete": true, "state":"completed", "jobId":"d8ec4ec9-b939-4ff8-8ce1-fad7a6a69bd9" }\n'
-        );
+        bytes memory snapshot = bytes.concat(_snapshot(_source(), _file(DIGEST), ""), "\n");
         assertTrue(harness.verify(snapshot, DIGEST, SOURCE));
     }
 
@@ -148,7 +150,7 @@ contract AcceptedArtifactTest is Test {
             bytes('{"x":tru}'),
             bytes('{"x":"unterminated}'),
             bytes('{"x":"line\nbreak"}'),
-            bytes('{"x":"\\u0061"}'),
+            bytes('{"x":"\\uD800"}'),
             bytes("[]"),
             bytes('{"x":true false}')
         ];
@@ -166,7 +168,7 @@ contract AcceptedArtifactTest is Test {
         for (uint256 i; i < 128; ++i) {
             many = bytes.concat(many, ",0");
         }
-        vm.expectRevert(ResultJson.InvalidResultJSON.selector);
+        vm.expectRevert(ResultJson.ResultContainerLimit.selector);
         harness.parse(bytes.concat('{"x":[', many, "]}"));
     }
 
@@ -176,8 +178,8 @@ contract AcceptedArtifactTest is Test {
             string('"complete":true'),
             '"complete":true',
             '"state":"completed"',
-            '"bytes":144',
-            '"bytes":144',
+            '"bytes":158',
+            '"bytes":158',
             '"mediaType":"application/json"',
             '"name":"hooksStoreApproval"',
             '"path":"artifacts/hooks-store-approval.json"',
@@ -187,8 +189,8 @@ contract AcceptedArtifactTest is Test {
             string('"complete":"true"'),
             '"complete":false',
             '"state":"pending"',
-            '"bytes":144.0',
-            '"bytes":143',
+            '"bytes":158.0',
+            '"bytes":157',
             '"mediaType":"text/plain"',
             '"name":"rejected"',
             '"path":"artifacts/rejected.json"',

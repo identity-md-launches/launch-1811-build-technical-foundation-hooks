@@ -289,6 +289,19 @@
   },
   {
     "type": "function",
+    "name": "closeRevokedVerdict",
+    "inputs": [
+      {
+        "name": "jobRequestId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "confirmReviewExpiry",
     "inputs": [
       {
@@ -1385,6 +1398,25 @@
     "type": "function",
     "name": "reviewTimeout",
     "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "reviewVerifiedAt",
+    "inputs": [
+      {
+        "name": "intakeRequestId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
     "outputs": [
       {
         "name": "",

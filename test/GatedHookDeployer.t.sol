@@ -62,6 +62,9 @@ contract GatedHookDeployerTest is HookJobRequesterFixture {
         a = GatedHookDeployer.Artifact({
             jobRequestId: jobId,
             sourceHash: sha256("generated source bundle"),
+            sourceSubmissionHash: sha256("accepted source submission"),
+            reviewSubmissionHash: sha256("accepted independent review submission"),
+            evidenceHash: bytes32(0),
             buildHash: keccak256("solc 0.8.26 cancun optimizer 200"),
             creationCodeHash: keccak256(code),
             constructorArgsHash: keccak256(args),
@@ -72,6 +75,7 @@ contract GatedHookDeployerTest is HookJobRequesterFixture {
             poolManagerCodeHash: address(manager).codehash,
             permissions: flags
         });
+        a.evidenceHash = sha256(deployer.evidenceDocument(a));
     }
 
     function _doc(GatedHookDeployer.Artifact memory a) internal view returns (bytes memory) {
@@ -81,7 +85,7 @@ contract GatedHookDeployerTest is HookJobRequesterFixture {
             '"source":[{"hash":"',
             AcceptedArtifact.hexHash(a.sourceHash),
             '","submissionHash":"',
-            AcceptedArtifact.hexHash(sha256("accepted source submission")),
+            AcceptedArtifact.hexHash(a.sourceSubmissionHash),
             '"}],',
             '"files":[{"name":"hooksStoreApproval","path":"artifacts/hooks-store-approval.json",',
             '"mediaType":"application/json","hash":"',
@@ -89,7 +93,14 @@ contract GatedHookDeployerTest is HookJobRequesterFixture {
             '","bytes":',
             bytes(vm.toString(approval.length)),
             ',"submissionHash":"',
-            AcceptedArtifact.hexHash(sha256("accepted independent review submission")),
+            AcceptedArtifact.hexHash(sha256("accepted publication submission")),
+            '"},{"name":"hooksStoreEvidence","path":"artifacts/hooks-store-evidence.json",',
+            '"mediaType":"application/json","hash":"',
+            AcceptedArtifact.hexHash(a.evidenceHash),
+            '","bytes":',
+            bytes(vm.toString(deployer.evidenceDocument(a).length)),
+            ',"submissionHash":"',
+            AcceptedArtifact.hexHash(sha256("accepted publication submission")),
             '"}]}'
         );
     }

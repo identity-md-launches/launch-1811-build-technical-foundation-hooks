@@ -8,20 +8,23 @@ mined, for example if the address becomes occupied, the manager is disabled or t
 Usage:
   python3 -m sdk.gated_deploy --rpc URL --deployer 0x.. --job 0x.. --result-document result.json \
       --creation-code code.hex --constructor-args args.hex --source-hash 0x.. --build-hash 0x.. \
+      --source-submission 0x.. --review-submission 0x.. \
       --runtime-hash 0x.. --pool-manager 0x.. --permissions 0x.. --binding-mode owner-confirmed
 """
 import argparse
+import hashlib
 import json
 import sys
 from pathlib import Path
 
 from sdk.hooks_store import Rpc, StoreError, _cast, _hex, keccak_hex
-from sdk.result_snapshot import verify_snapshot
+from sdk.result_snapshot import verify_snapshot, evidence_document
 
-ARTIFACT = "(bytes32,bytes32,bytes32,bytes32,bytes32,bytes32,uint256,address,address,bytes32,uint160)"
+ARTIFACT = "(bytes32,bytes32,bytes32,bytes32,bytes32,bytes32,bytes32,bytes32,bytes32,uint256,address,address,bytes32,uint160)"
 JOB_STATUS = ["None", "Open", "Delivered", "Failed", "Expired"]
 REVIEW_STATUS = ["None", "Pending", "Passed", "NotPassed", "Unanswered"]
 PAGE = 4096
+CHECK_GAS = 10_000_000  # bounded full pre-CREATE2 check; see ParserGas.t.sol and consolidated evidence
 
 
 def _word(ret, i):
@@ -34,13 +37,13 @@ def _addr(word):
 
 
 def artifact_tuple(a):
-    return "(" + ",".join([a["jobRequestId"], a["sourceHash"], a["buildHash"], a["creationCodeHash"],
+    return "(" + ",".join([a["jobRequestId"], a["sourceHash"], a["sourceSubmissionHash"], a["reviewSubmissionHash"], a["evidenceHash"], a["buildHash"], a["creationCodeHash"],
                            a["constructorArgsHash"], a["runtimeCodeHash"], str(a["chainId"]), a["deployer"],
                            a["poolManager"], a["poolManagerCodeHash"], str(a["permissions"])]) + ")"
 
 
 def prepare(rpc, *, deployer, job, result_document, creation_code, constructor_args, source_hash, build_hash,
-            runtime_hash, pool_manager, permissions, max_pages=64, binding_mode="automatic", approval_document=None):
+            runtime_hash, pool_manager, permissions, source_submission, review_submission, max_pages=64, binding_mode="automatic", approval_document=None):
     if binding_mode != "owner-confirmed":
         raise StoreError("automatic binding disabled: official protocol supplies no authenticated Intake/body -> "
                          "oracle UUID/canonical question proof; only explicit owner-confirmed local/manual use is supported")
@@ -60,11 +63,19 @@ def prepare(rpc, *, deployer, job, result_document, creation_code, constructor_a
         raise StoreError("deployer has no code at the read block")
     a = {
         "jobRequestId": job, "sourceHash": _hex(source_hash, 32, "source hash"),
+        "sourceSubmissionHash": _hex(source_submission, 32, "source submission"),
+        "reviewSubmissionHash": _hex(review_submission, 32, "review submission"),
+        "evidenceHash": "0x" + "00" * 32,  # excluded from its own preimage, not a deployment parameter
         "buildHash": _hex(build_hash, 32, "build hash"), "creationCodeHash": keccak_hex(creation_code),
         "constructorArgsHash": keccak_hex(constructor_args), "runtimeCodeHash": _hex(runtime_hash, 32, "runtime"),
         "chainId": chain_id, "deployer": deployer, "poolManager": pool_manager,
         "poolManagerCodeHash": keccak_hex(manager_code), "permissions": int(permissions, 0),
     }
+    if int(a["sourceSubmissionHash"], 16) == 0 or int(a["reviewSubmissionHash"], 16) == 0 or a["sourceSubmissionHash"] == a["reviewSubmissionHash"]:
+        raise StoreError("distinct nonzero accepted source and review submissions required")
+    core_digest = _word(rpc.call(deployer, f"artifactDigest({ARTIFACT})", artifact_tuple(a)), 0)
+    evidence_doc = evidence_document(core_digest, a["sourceSubmissionHash"], a["reviewSubmissionHash"])
+    a["evidenceHash"] = "0x" + hashlib.sha256(evidence_doc).hexdigest()
     tup = artifact_tuple(a)
 
     requester = _addr(rpc.call(deployer, "requester()(address)"))
@@ -85,7 +96,7 @@ def prepare(rpc, *, deployer, job, result_document, creation_code, constructor_a
     if failed:
         raise StoreError("refused before mining: " + "; ".join(failed))
 
-    proof = verify_snapshot(bytes(result_document), digest, a["sourceHash"], approval=approval_document)
+    proof = verify_snapshot(bytes(result_document), digest, a["sourceHash"], source_submission=a["sourceSubmissionHash"], evidence=evidence_doc, approval=approval_document)
     evidence.append({"check": "accepted source and canonical approved-artifact file", "value": proof, "ok": True})
     ask = review_request_id
     epoch = int(rpc.call(requester, "reviewReceiptSignerEpoch(bytes32)", ask), 16)
@@ -106,8 +117,9 @@ def prepare(rpc, *, deployer, job, result_document, creation_code, constructor_a
         raise StoreError(f"no salt found; resume mining at nonce {start}")
     doc_hex = "0x" + bytes(result_document).hex()
     # The contract's own complete pre-CREATE2 gate, as the job requester.
-    ret = rpc.call(deployer, f"check({ARTIFACT},bytes,bytes,bytes,bytes32,address)", tup, doc_hex, creation_code,
-                   constructor_args, salt, job_requester)
+    check_data = _cast("calldata", f"check({ARTIFACT},bytes,bytes,bytes,bytes32,address)", tup, doc_hex,
+                       creation_code, constructor_args, salt, job_requester)
+    ret = rpc.request("eth_call", [{"to": deployer, "data": check_data, "gas": hex(CHECK_GAS)}, rpc.block])
     if _addr(_word(ret, 0)) != hook.lower() or _word(ret, 1) != digest:
         raise StoreError("contract check disagrees with mined plan")
     evidence.append({"check": "GatedHookDeployer.check (eth_call)", "value": hook, "ok": True})
@@ -117,10 +129,11 @@ def prepare(rpc, *, deployer, job, result_document, creation_code, constructor_a
         "unsigned": True,
         "bindingMode": "owner-confirmed",
         "automaticBindingSupported": False,
-        "trust": "Owner authenticated the Intake-to-oracle binding; oracle signer authenticated the verdict.",
+        "trust": "Owner asserted the Intake-to-oracle binding (no protocol proof); oracle signer authenticated the answer. Worker publication alone is not approval.",
         "readBlock": rpc.block,
         "artifact": a,
         "artifactDigest": digest,
+        "evidenceDocument": evidence_doc.decode(),
         "salt": salt,
         "hook": hook,
         "evidence": evidence,
@@ -131,7 +144,7 @@ def prepare(rpc, *, deployer, job, result_document, creation_code, constructor_a
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     for name in ("rpc", "deployer", "job", "result-document", "creation-code", "constructor-args", "source-hash",
-                 "build-hash", "runtime-hash", "pool-manager", "permissions"):
+                 "build-hash", "runtime-hash", "pool-manager", "permissions", "source-submission", "review-submission"):
         p.add_argument("--" + name, required=True)
     p.add_argument("--binding-mode", choices=["automatic", "owner-confirmed"], default="automatic")
     p.add_argument("--approval-document", help="accepted approval file; must match the canonical bytes exactly")
@@ -143,6 +156,7 @@ def main(argv=None):
             creation_code=Path(args.creation_code).read_text().strip(),
             constructor_args=Path(args.constructor_args).read_text().strip(),
             source_hash=args.source_hash, build_hash=args.build_hash, runtime_hash=args.runtime_hash,
+            source_submission=args.source_submission, review_submission=args.review_submission,
             pool_manager=args.pool_manager, permissions=args.permissions, binding_mode=args.binding_mode,
             approval_document=Path(args.approval_document).read_bytes() if args.approval_document else None,
         )

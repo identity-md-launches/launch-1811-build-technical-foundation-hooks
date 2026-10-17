@@ -1,0 +1,73 @@
+{
+  "chainId": 1,
+  "block": "0x18ffb7e",
+  "intake": "0xa43e6f75ee006411f79ac1c84120606c2330de82",
+  "runtimeHash": "0xdf76139e1b7dfe05bdf55e48e65076e4763a40d470fcf5da58034a488e30bdaf",
+  "verifiedSourceBytecodeMatchesRPC": true,
+  "requestsGetter": {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "requestId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "requests",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "payer",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "callbackTarget",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes4",
+        "name": "callbackSelector",
+        "type": "bytes4"
+      },
+      {
+        "internalType": "bool",
+        "name": "completed",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  "automaticBindingSupported": false,
+  "reason": "No stored or oracle-signed Intake/body -> UUID/question commitment. Writer supplies success args.",
+  "callbackGas": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "result": "0x0000000000000000000000000000000000000000000000000000000000030d40"
+  },
+  "blockLimits": [
+    {
+      "chainId": 1,
+      "block": "0x18ffb7e",
+      "gasLimit": "0x3938700",
+      "gasUsed": "0xeb0116"
+    },
+    {
+      "chainId": 11155111,
+      "block": "0xb61d5b",
+      "gasLimit": "0xbebc200",
+      "gasUsed": "0x6ba64da"
+    },
+    {
+      "chainId": 4663,
+      "block": "0x56d2e52",
+      "gasLimit": "0x4000000000000",
+      "gasUsed": "0x1343bc"
+    }
+  ],
+  "publicRecord": {
+    "url": "https://api.imd.fun/intake/1/0xf85bae3821dd11be1146fd631df7ec601c5d47e02b00a7c8dc3bf28149455665",
+    "requestIdFromChain": "0x2a2a72a13996058695e187dfd43bcee41682f8a6592b04b23bae308fca2784e1",
+    "authentication": "HTTP mapping is observational, not a protocol-signed proof"
+  }
+}

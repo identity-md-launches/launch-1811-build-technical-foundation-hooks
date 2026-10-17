@@ -1,5 +1,7 @@
 # Threat model
 
+Current integration and launch limitations are in [INTEGRATION_RESOLUTION.md](INTEGRATION_RESOLUTION.md). This revision binds a worker publication to an exact source submission, independent-review submission and build, but only a correctly bound oracle answer can approve it. The current protocol lacks the authenticated mapping required to eliminate owner assertions; automatic binding remains disabled. Revoked finalized verdict recovery preserves consumed IDs and deployment replay guards. Approval freshness starts at authenticated receipt and cannot be reset by late binding. Positive confirmations after 23 hours require a fresh review; negatives stay terminal. This leaves at least one hour after a usable approval under the minimum one-day policy, subject to owner veto/revocation.
+
 The listing registry and ad escrow have their own
 [custody model, assumptions and complete admin-powers account](LISTINGS_AND_ADS.md).
 Listing text is untrusted, paid placement is never audit evidence, and ads retain their purchased

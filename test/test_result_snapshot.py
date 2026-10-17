@@ -5,11 +5,19 @@ import json
 import unittest
 
 from sdk.hooks_store import ROOT, StoreError, keccak_hex
-from sdk.result_snapshot import approval_document, parse_snapshot, verify_snapshot
+from sdk.result_snapshot import approval_document, parse_snapshot, verify_snapshot as verify_bound_snapshot
 
 DIGEST = keccak_hex('local artifact A')
 SOURCE = hashlib.sha256(b'local accepted source bundle').hexdigest()
 SUBMISSION = hashlib.sha256(b'local accepted submission').hexdigest()
+
+
+EVIDENCE = b'canonical test evidence'
+
+def verify_snapshot(*args, **kwargs):
+    kwargs.setdefault('source_submission', '0x' + SUBMISSION)
+    kwargs.setdefault('evidence', EVIDENCE)
+    return verify_bound_snapshot(*args, **kwargs)
 
 
 def snapshot():
@@ -19,7 +27,10 @@ def snapshot():
             'source': [{'hash': SOURCE, 'submissionHash': SUBMISSION}],
             'files': [{'name': 'hooksStoreApproval', 'path': 'artifacts/hooks-store-approval.json',
                        'mediaType': 'application/json', 'hash': hashlib.sha256(approval).hexdigest(),
-                       'bytes': len(approval), 'submissionHash': SUBMISSION}]}
+                       'bytes': len(approval), 'submissionHash': SUBMISSION},
+                      {'name': 'hooksStoreEvidence', 'path': 'artifacts/hooks-store-evidence.json',
+                       'mediaType': 'application/json', 'hash': hashlib.sha256(EVIDENCE).hexdigest(),
+                       'bytes': len(EVIDENCE), 'submissionHash': SUBMISSION}]}
 
 
 def encoded(v):
@@ -27,6 +38,13 @@ def encoded(v):
 
 
 class SnapshotTest(unittest.TestCase):
+    def test_irrelevant_escaped_controls_cannot_alias_hex_digits(self):
+        s = snapshot()
+        s['source'][0]['hash'] = '1' * 64
+        s['source'].append({'hash': '\x11' * 64})
+        proof = verify_snapshot(encoded(s), DIGEST, '0x' + '1' * 64)
+        self.assertEqual(proof['source'], s['source'][0])
+
     def test_accepted_file_reconstructs_canonical_evidence(self):
         raw = encoded(snapshot())
         proof = verify_snapshot(raw, DIGEST, '0x' + SOURCE, approval=approval_document(DIGEST))
@@ -56,8 +74,8 @@ class SnapshotTest(unittest.TestCase):
 
     def test_metadata_mismatch_duplicate_source_or_file_cannot_authorize(self):
         cases = []
-        for key, value in [('hash', '0' * 64), ('submissionHash', '0' * 64), ('bytes', 144.0),
-                           ('bytes', 143), ('mediaType', 'text/plain'), ('name', 'rejected'),
+        for key, value in [('hash', '0' * 64), ('submissionHash', '0' * 64), ('bytes', 158.0),
+                           ('bytes', 157), ('mediaType', 'text/plain'), ('name', 'rejected'),
                            ('path', 'artifacts/rejected.json')]:
             s = snapshot(); s['files'][0][key] = value; cases.append(s)
         for where in ['source', 'files']:
@@ -73,7 +91,7 @@ class SnapshotTest(unittest.TestCase):
         actual = parse_snapshot(raw)
         self.assertEqual(actual['jobId'], 'd8ec4ec9-b939-4ff8-8ce1-fad7a6a69bd9')
         self.assertEqual(actual['files'], [])
-        with self.assertRaisesRegex(StoreError, 'exactly one accepted approval'):
+        with self.assertRaisesRegex(StoreError, 'submission mismatch'):
             verify_snapshot(raw, DIGEST, '0x' + actual['source'][0]['hash'])
 
     def test_retained_offline_fixture_hash_chain(self):
@@ -83,14 +101,15 @@ class SnapshotTest(unittest.TestCase):
         self.assertEqual(keccak_hex('0x' + raw.hex()), meta['resultHash'])
         self.assertEqual(hashlib.sha256((root / 'source.bundle').read_bytes()).hexdigest(), meta['sourceSha256'])
         self.assertEqual(keccak_hex('0x' + (root / 'build-identity.json').read_bytes().hex()), meta['buildKeccak256'])
-        proof = verify_snapshot(raw, meta['artifactDigest'], '0x' + meta['sourceSha256'],
-                                approval=(root / 'approval.json').read_bytes())
-        self.assertEqual(proof['approvalSha256'], meta['approvalSha256'])
+        # Historical v1 publication remains readable, but cannot authorize the v2 gate.
+        with self.assertRaises(StoreError):
+            verify_snapshot(raw, meta['artifactDigest'], '0x' + meta['sourceSha256'],
+                            approval=(root / 'approval.json').read_bytes())
 
     def test_parser_bounds_escapes_and_non_json_fail_closed(self):
         deep = b'{"x":' + b'[' * 17 + b'0' + b']' * 17 + b'}'
         for raw in [b'{"x":NaN}', b'{"x":Infinity}', b'{"x":01}', b'{"x":1,}', b'{}{}',
-                    b'{"x":"\\u0061"}', b'{"x":"\xff"}', b'[]', deep,
-                    b'{"x":[' + b','.join([b'0'] * 129) + b']}', b' ' * 65537]:
+                    b'{"x":"\\uD800"}', b'{"x":"\xff"}', b'[]', deep,
+                    b'{"x":[' + b','.join([b'0'] * 129) + b']}', b' ' * 12289]:
             with self.subTest(raw=raw[:80]), self.assertRaises(StoreError):
                 parse_snapshot(raw)

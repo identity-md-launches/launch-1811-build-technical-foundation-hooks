@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Hooks Store worker artifact publication v2",
+  "description": "Exact bytes from approvalDocument(artifact), without newline. This is worker publication, not an oracle approval.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "hooksStoreArtifact",
+    "publication"
+  ],
+  "properties": {
+    "schema": {
+      "const": "hooks-store-approval-v2"
+    },
+    "hooksStoreArtifact": {
+      "type": "string",
+      "pattern": "^0x[0-9a-f]{64}$"
+    },
+    "publication": {
+      "const": "review-evidence"
+    }
+  }
+}

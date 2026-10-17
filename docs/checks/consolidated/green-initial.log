@@ -1,0 +1,28 @@
+Compiling 10 files with Solc 0.8.26
+Solc 0.8.26 finished in 8.32s
+Compiler run successful with warnings:
+Warning (2018): Function state mutability can be restricted to pure
+  --> test/AcceptedArtifact.t.sol:35:5:
+   |
+35 |     function _file(bytes32 digest) internal view returns (bytes memory) {
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to pure
+   --> test/AcceptedArtifact.t.sol:106:5:
+    |
+106 |     function testCanonicalApprovalHasNoAmbiguousFieldsOrTrailingBytes() public view {
+    |     ^ (Relevant source part starts here and spans across multiple lines).
+
+
+Ran 2 tests for test/ConsolidatedRegression.t.sol:ConsolidatedParserRegressionTest
+[PASS] testRegressionLegitimateEscapesAndUtf8() (gas: 711566)
+[PASS] testRegressionUnrelatedEntriesAreSkipped() (gas: 723891)
+Suite result: ok. 2 passed; 0 failed; 0 skipped; finished in 4.28ms (5.67ms CPU time)
+
+Ran 3 tests for test/ConsolidatedRegression.t.sol:ConsolidatedRegressionTest
+[PASS] testRegressionLateApprovalHasDeploymentWindow() (gas: 7027404)
+[PASS] testRegressionRecoverRevokedBindFirst() (gas: 9165860)
+[PASS] testRegressionRecoverRevokedReceiptFirst() (gas: 9277091)
+Suite result: ok. 3 passed; 0 failed; 0 skipped; finished in 18.94ms (41.84ms CPU time)
+
+Ran 2 test suites in 19.86ms (23.22ms CPU time): 5 tests passed, 0 failed, 0 skipped (5 total tests)

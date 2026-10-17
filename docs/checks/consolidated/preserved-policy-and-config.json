@@ -1,0 +1,9 @@
+{
+  "dependencies.lock.json": true,
+  "foundry.toml": true,
+  "remappings.txt": true,
+  "src/store/ExactStoreToken.sol": true,
+  "src/store/FeaturedPlacements.sol": true,
+  "src/store/HookListingRegistry.sol": true,
+  "src/store/StoreAdmin.sol": true
+}

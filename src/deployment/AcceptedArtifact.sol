@@ -11,16 +11,48 @@ library AcceptedArtifact {
 
     error InvalidArtifactEvidence();
 
+    struct Binding {
+        bytes32 sourceHash;
+        bytes32 sourceSubmissionHash;
+        bytes32 evidenceHash;
+        uint256 evidenceBytes;
+    }
+
+    struct FileExpectation {
+        bytes name;
+        bytes path;
+        bytes32 hash;
+        uint256 length;
+    }
+
     bytes internal constant NAME = "hooksStoreApproval";
     bytes internal constant PATH = "artifacts/hooks-store-approval.json";
 
     function approvalDocument(bytes32 digest) internal pure returns (bytes memory) {
         return bytes.concat(
-            '{"schema":"hooks-store-approval-v1","hooksStoreArtifact":"0x', hexHash(digest), '","review":"passed"}'
+            '{"schema":"hooks-store-approval-v2","hooksStoreArtifact":"0x',
+            hexHash(digest),
+            '","publication":"review-evidence"}'
         );
     }
 
-    function verify(bytes memory snapshot, bytes32 digest, bytes32 sourceHash) internal pure returns (bool) {
+    function evidenceDocument(bytes32 build, bytes32 sourceSubmission, bytes32 reviewSubmission)
+        internal
+        pure
+        returns (bytes memory)
+    {
+        return bytes.concat(
+            '{"schema":"hooks-store-evidence-v1","reviewedBuild":"0x',
+            hexHash(build),
+            '","sourceSubmission":"0x',
+            hexHash(sourceSubmission),
+            '","reviewSubmission":"0x',
+            hexHash(reviewSubmission),
+            '"}'
+        );
+    }
+
+    function verify(bytes memory snapshot, bytes32 digest, Binding memory binding) internal pure returns (bool) {
         ResultJson.Document memory d = ResultJson.parse(snapshot);
         uint256 job = d.member(0, "jobId");
         _uuid(d, job);
@@ -29,9 +61,17 @@ library AcceptedArtifact {
         {
             revert InvalidArtifactEvidence();
         }
-        bool sourceMatches = _source(d, sourceHash);
+        bool sourceMatches = _source(d, binding.sourceHash, binding.sourceSubmissionHash);
         bytes memory approval = approvalDocument(digest);
-        return _approval(d, sha256(approval), approval.length) && sourceMatches;
+        (bool approvalMatches, bytes32 publisher) =
+            _file(d, FileExpectation(NAME, PATH, sha256(approval), approval.length));
+        (bool evidenceMatches, bytes32 evidencePublisher) = _file(
+            d,
+            FileExpectation(
+                "hooksStoreEvidence", "artifacts/hooks-store-evidence.json", binding.evidenceHash, binding.evidenceBytes
+            )
+        );
+        return approvalMatches && evidenceMatches && sourceMatches && publisher == evidencePublisher;
     }
 
     function _uuid(ResultJson.Document memory d, uint256 token) private pure {
@@ -47,14 +87,22 @@ library AcceptedArtifact {
         }
     }
 
-    function _source(ResultJson.Document memory d, bytes32 sourceHash) private pure returns (bool) {
+    function _source(ResultJson.Document memory d, bytes32 sourceHash, bytes32 sourceSubmissionHash)
+        private
+        pure
+        returns (bool)
+    {
         uint256 array = d.member(0, "source");
         if (d.tokens[array].kind != "[") revert InvalidArtifactEvidence();
         uint256 cursor = array + 1;
         uint256 found;
+        bytes32 sourceTextHash = keccak256(hexHash(sourceHash));
         for (uint256 i; i < d.tokens[array].size; ++i) {
-            if (d.hashValue(d.member(cursor, "hash")) == sourceHash) {
-                if (d.hashValue(d.member(cursor, "submissionHash")) == bytes32(0)) revert InvalidArtifactEvidence();
+            if (d.hashEq(d.tryMember(cursor, "hash"), sourceTextHash)) {
+                if (
+                    d.hashValue(d.member(cursor, "hash")) != sourceHash || sourceSubmissionHash == bytes32(0)
+                        || d.hashValue(d.member(cursor, "submissionHash")) != sourceSubmissionHash
+                ) revert InvalidArtifactEvidence();
                 ++found;
             }
             cursor = d.tokens[cursor].next;
@@ -63,28 +111,29 @@ library AcceptedArtifact {
         return found == 1 && sourceHash != bytes32(0);
     }
 
-    function _approval(ResultJson.Document memory d, bytes32 expectedHash, uint256 expectedBytes)
+    function _file(ResultJson.Document memory d, FileExpectation memory expected)
         private
         pure
-        returns (bool matches)
+        returns (bool matches, bytes32 publisher)
     {
         uint256 array = d.member(0, "files");
         if (d.tokens[array].kind != "[") revert InvalidArtifactEvidence();
         uint256 cursor = array + 1;
         uint256 found;
         for (uint256 i; i < d.tokens[array].size; ++i) {
-            bool name = d.stringEq(d.member(cursor, "name"), NAME);
-            bool path = d.stringEq(d.member(cursor, "path"), PATH);
+            bool name = d.stringEq(d.tryMember(cursor, "name"), expected.name);
+            bool path = d.stringEq(d.tryMember(cursor, "path"), expected.path);
             if (name || path) {
                 if (!name || !path || ++found != 1) revert InvalidArtifactEvidence();
                 if (
                     !d.stringEq(d.member(cursor, "mediaType"), "application/json")
-                        || d.uintValue(d.member(cursor, "bytes")) != expectedBytes
+                        || d.uintValue(d.member(cursor, "bytes")) != expected.length
                         || d.hashValue(d.member(cursor, "submissionHash")) == bytes32(0)
                 ) {
                     revert InvalidArtifactEvidence();
                 }
-                matches = d.hashValue(d.member(cursor, "hash")) == expectedHash;
+                publisher = d.hashValue(d.member(cursor, "submissionHash"));
+                matches = d.hashValue(d.member(cursor, "hash")) == expected.hash;
             }
             cursor = d.tokens[cursor].next;
         }

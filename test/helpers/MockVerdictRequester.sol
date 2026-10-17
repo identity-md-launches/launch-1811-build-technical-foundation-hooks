@@ -23,6 +23,10 @@ contract MockVerdictRequester {
         return jobs[id];
     }
 
+    function reviewVerifiedAt(bytes32) external view returns (uint64) {
+        return uint64(block.timestamp);
+    }
+
     function reviewReceiptSignerEpoch(bytes32) external pure returns (uint32) {
         return 1;
     }

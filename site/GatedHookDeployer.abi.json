@@ -107,6 +107,21 @@
             "internalType": "bytes32"
           },
           {
+            "name": "sourceSubmissionHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "reviewSubmissionHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "evidenceHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
             "name": "buildHash",
             "type": "bytes32",
             "internalType": "bytes32"
@@ -183,6 +198,21 @@
             "internalType": "bytes32"
           },
           {
+            "name": "sourceSubmissionHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "reviewSubmissionHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "evidenceHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
             "name": "buildHash",
             "type": "bytes32",
             "internalType": "bytes32"
@@ -255,6 +285,21 @@
           },
           {
             "name": "sourceHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "sourceSubmissionHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "reviewSubmissionHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "evidenceHash",
             "type": "bytes32",
             "internalType": "bytes32"
           },
@@ -374,6 +419,21 @@
             "internalType": "bytes32"
           },
           {
+            "name": "sourceSubmissionHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "reviewSubmissionHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "evidenceHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
             "name": "buildHash",
             "type": "bytes32",
             "internalType": "bytes32"
@@ -480,6 +540,21 @@
             "internalType": "bytes32"
           },
           {
+            "name": "sourceSubmissionHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "reviewSubmissionHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "evidenceHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
             "name": "buildHash",
             "type": "bytes32",
             "internalType": "bytes32"
@@ -579,6 +654,97 @@
       }
     ],
     "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "evidenceDocument",
+    "inputs": [
+      {
+        "name": "a",
+        "type": "tuple",
+        "internalType": "struct GatedHookDeployer.Artifact",
+        "components": [
+          {
+            "name": "jobRequestId",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "sourceHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "sourceSubmissionHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "reviewSubmissionHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "evidenceHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "buildHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "creationCodeHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "constructorArgsHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "runtimeCodeHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "chainId",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "deployer",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "poolManager",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "poolManagerCodeHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "permissions",
+            "type": "uint160",
+            "internalType": "uint160"
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "stateMutability": "pure"
   },
   {
     "type": "function",
@@ -968,6 +1134,21 @@
             "internalType": "bytes32"
           },
           {
+            "name": "sourceSubmissionHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "reviewSubmissionHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "evidenceHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
             "name": "buildHash",
             "type": "bytes32",
             "internalType": "bytes32"
@@ -1175,7 +1356,7 @@
     "name": "ApprovalStale",
     "inputs": [
       {
-        "name": "openedAt",
+        "name": "verifiedAt",
         "type": "uint64",
         "internalType": "uint64"
       },
@@ -1399,6 +1580,16 @@
   },
   {
     "type": "error",
+    "name": "ResultContainerLimit",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "ResultDocumentLimit",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "ResultDocumentTooLong",
     "inputs": [
       {
@@ -1411,6 +1602,11 @@
   {
     "type": "error",
     "name": "ResultHashMismatch",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "ResultTokenLimit",
     "inputs": []
   },
   {

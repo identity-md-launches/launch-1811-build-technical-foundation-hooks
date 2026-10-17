@@ -1,0 +1,43 @@
+Compiling 111 files with Solc 0.8.26
+Solc 0.8.26 finished in 10.34s
+Compiler run successful with warnings:
+Warning (2018): Function state mutability can be restricted to pure
+  --> test/AcceptedArtifact.t.sol:35:5:
+   |
+35 |     function _file(bytes32 digest) internal view returns (bytes memory) {
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to pure
+   --> test/AcceptedArtifact.t.sol:106:5:
+    |
+106 |     function testCanonicalApprovalHasNoAmbiguousFieldsOrTrailingBytes() public view {
+    |     ^ (Relevant source part starts here and spans across multiple lines).
+
+
+Ran 2 tests for test/ConsolidatedRegression.t.sol:ConsolidatedParserRegressionTest
+[FAIL: InvalidResultJSON()] testRegressionLegitimateEscapesAndUtf8() (gas: 480454)
+[FAIL: InvalidResultJSON()] testRegressionUnrelatedEntriesAreSkipped() (gas: 596336)
+Suite result: FAILED. 0 passed; 2 failed; 0 skipped; finished in 7.67ms (9.15ms CPU time)
+
+Ran 3 tests for test/ConsolidatedRegression.t.sol:ConsolidatedRegressionTest
+[FAIL: ApprovalStale(1800000000 [1.8e9], 2592000 [2.592e6])] testRegressionLateApprovalHasDeploymentWindow() (gas: 6319781)
+[FAIL: finalized revoked verdict must have guarded recovery] testRegressionRecoverRevokedBindFirst() (gas: 6350193)
+[FAIL: finalized revoked verdict must have guarded recovery] testRegressionRecoverRevokedReceiptFirst() (gas: 6461392)
+Suite result: FAILED. 0 passed; 3 failed; 0 skipped; finished in 33.53ms (47.70ms CPU time)
+
+Ran 2 test suites in 34.44ms (41.20ms CPU time): 0 tests passed, 5 failed, 0 skipped (5 total tests)
+
+Failing tests:
+Encountered 2 failing tests in test/ConsolidatedRegression.t.sol:ConsolidatedParserRegressionTest
+[FAIL: InvalidResultJSON()] testRegressionLegitimateEscapesAndUtf8() (gas: 480454)
+[FAIL: InvalidResultJSON()] testRegressionUnrelatedEntriesAreSkipped() (gas: 596336)
+
+Encountered 3 failing tests in test/ConsolidatedRegression.t.sol:ConsolidatedRegressionTest
+[FAIL: ApprovalStale(1800000000 [1.8e9], 2592000 [2.592e6])] testRegressionLateApprovalHasDeploymentWindow() (gas: 6319781)
+[FAIL: finalized revoked verdict must have guarded recovery] testRegressionRecoverRevokedBindFirst() (gas: 6350193)
+[FAIL: finalized revoked verdict must have guarded recovery] testRegressionRecoverRevokedReceiptFirst() (gas: 6461392)
+
+Encountered a total of 5 failing tests, 0 tests succeeded
+
+Tip: Run `forge test --rerun` to retry only the 5 failed tests
+Tip: Run `forge test --debug --match-test <TEST_NAME>` to inspect one failing test in the debugger

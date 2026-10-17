@@ -412,6 +412,8 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
     /// keccak256(body) == questionHash is assumed. A relay/caller cannot choose these expectations.
     /// An unbound receipt is never itself authority for this mapping. No deadline cutoff: the
     /// requester may request expiry after its deadline, but closure needs owner confirmation.
+    /// Positive receipts older than 23h settle as historical answers plus Unanswered, so a fresh
+    /// review can restore a usable deployment window. Negative receipts remain terminal.
     /// The contract checks consistency with owner-supplied context, not its offchain authenticity.
     function bindReview(
         bytes32 intakeRequestId,
@@ -515,6 +517,20 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
         if (_reviewReceipts[intakeRequestId].oracleRequestId == bytes32(0)) {
             revert ReviewNotReceived(intakeRequestId);
         }
+        _closeRevokedReview(jobRequestId, intakeRequestId);
+    }
+
+    /// @notice Incident-only recovery of a finalized verdict, in either callback order.
+    /// History, consumed UUIDs and deployment replay guards are never cleared.
+    function closeRevokedVerdict(bytes32 jobRequestId) external onlyOwner {
+        Job storage job = jobs[jobRequestId];
+        if (job.review != ReviewStatus.Passed && job.review != ReviewStatus.NotPassed) {
+            revert NotReviewable(jobRequestId);
+        }
+        _closeRevokedReview(jobRequestId, job.reviewRequestId);
+    }
+
+    function _closeRevokedReview(bytes32 jobRequestId, bytes32 intakeRequestId) private {
         uint32 epoch = reviewReceiptSignerEpoch(intakeRequestId);
         bytes32 incidentHash = revokedSignerEpochs[epoch];
         if (incidentHash == bytes32(0)) revert SignerEpochNotRevoked(epoch);
@@ -744,7 +760,8 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
         }
         // Keep verification authority even when pre-binding settles immediately. This writes
         // the already allocated metadata word, without materializing four cold context slots.
-        _reviewReceipts[requestId].details = RECEIPT_ALLOCATED | (uint256(oracleSignerEpoch) << 225);
+        _reviewReceipts[requestId].details =
+            RECEIPT_ALLOCATED | (uint256(oracleSignerEpoch) << 225) | (uint256(uint64(block.timestamp)) << 128);
         _consume(a.requestId);
         _answerReview(jobRequestId, requestId, passed, a.questionHash, a.panelJobId, a.panelSize, a.agreed);
     }
@@ -765,6 +782,13 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
         job.reviewAgreed = agreed;
         job.reviewPanelJobId = panelJobId;
         emit ReviewAnswered(jobRequestId, requestId, passed, questionHash, panelJobId, panelSize, agreed);
+        // A fresh finalized approval must leave at least one hour under the deployer's minimum
+        // one-day age policy. Old positive receipts remain historical and consumed, but need a
+        // fresh paid review. Negative answers are NEVER made retryable by elapsed time.
+        if (passed && block.timestamp > uint256(reviewVerifiedAt(requestId)) + 23 hours) {
+            job.review = ReviewStatus.Unanswered;
+            emit ReviewUnanswered(jobRequestId, requestId, 0, "positive receipt aged");
+        }
     }
 
     /// @notice The review ask was refused or the panel did not agree: no verdict. Unsigned; only clears.
@@ -853,6 +877,12 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
             agreed: uint16(details >> 208),
             passed: (details & (uint256(1) << 224)) != 0
         });
+    }
+
+    /// @notice Time the signed verdict was verified, in either callback order.
+    /// Late owner binding does not make an old answer fresh again.
+    function reviewVerifiedAt(bytes32 intakeRequestId) public view returns (uint64) {
+        return uint64(_reviewReceipts[intakeRequestId].details >> 128);
     }
 
     /// @notice Acknowledgment value for `discardMismatchedReviewReceipt`: the hash of the exact
@@ -1073,9 +1103,12 @@ contract HookJobRequester is OracleAttestationConsumer, StoreAdmin {
         out = new bytes(66);
         out[0] = "0";
         out[1] = "x";
-        for (uint256 i; i < 32; ++i) {
-            out[2 + 2 * i] = digits[uint8(value[i]) >> 4];
-            out[3 + 2 * i] = digits[uint8(value[i]) & 0x0f];
+        // i < 32 bounds both offset expressions below 66; neither can overflow.
+        unchecked {
+            for (uint256 i; i < 32; ++i) {
+                out[2 + 2 * i] = digits[uint8(value[i]) >> 4];
+                out[3 + 2 * i] = digits[uint8(value[i]) & 0x0f];
+            }
         }
     }
 }

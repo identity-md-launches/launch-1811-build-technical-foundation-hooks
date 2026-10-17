@@ -18,10 +18,10 @@
       "runtimeCodeBytes": 13970
     },
     "HookJobRequester": {
-      "creationCodeHash": "0x3a6d25d71d086daa7636df5684b9a69e7c07fd265fba14683eaf2158e233e17f",
-      "runtimeCodeHash": "0x06b8ea40c5eadc70bebd1603ddc8292e4d5127ba148a08d85d8c2c875b878bfc",
-      "creationCodeBytes": 25910,
-      "runtimeCodeBytes": 24166,
+      "creationCodeHash": "0x3c6e78edc1b7bee8a713177a894a8136870b2f35365f1f189753c67834f5bb21",
+      "runtimeCodeHash": "0x78b845fc8fd2c14abc3466ac21f8bfc92996b640743252c8e21e31d4c8162e1c",
+      "creationCodeBytes": 26303,
+      "runtimeCodeBytes": 24559,
       "note": "Compiler runtime template; constructor fills immutables, so live code hashes differ."
     },
     "HookListingRegistry": {
@@ -38,10 +38,10 @@
       "note": "Compiler runtime template; constructor fills immutables, so live code hashes differ."
     },
     "GatedHookDeployer": {
-      "creationCodeBytes": 17286,
-      "creationCodeHash": "0x9768c3331a4a66acb5559b406ff1006f0e34649243d794044a99697517479efd",
-      "runtimeCodeBytes": 16890,
-      "runtimeCodeHash": "0x3fc4a7b421330f39fcf5501c5b1101ea1ed64089fe1492e680f68476a40ad7b3",
+      "creationCodeBytes": 20830,
+      "creationCodeHash": "0x796663170c42da88977d61e600ba225e45d2608e010f43ef5f81b59b4f4607dd",
+      "runtimeCodeBytes": 20427,
+      "runtimeCodeHash": "0x595725b5214e68593c5f5fed8de7741ad2f7d11b9123f93b6777c17915c92ccf",
       "note": "Compiler runtime template; constructor fills immutables, so live code hashes differ."
     }
   }

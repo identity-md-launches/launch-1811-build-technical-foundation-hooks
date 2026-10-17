@@ -1,0 +1,91 @@
+{
+  "inputSha256": "87e2d3bcd4d5b70b0f2d08834b001a2fa0a15770883221bf697e56368f90896c",
+  "rawBodySha256": "cb0ee195580c42711a5d9f89a7f7c61f14541d50b7dd036b034a4c164c009d43",
+  "rawBodyKeccak256": "0x1aea626ac5d881f852139f5d73579098d9dfba5c76e35530cf3e605e4517fdea",
+  "rawBodyBytes": 1453,
+  "response": {
+    "action": "oracle.request",
+    "request": {
+      "v": 1,
+      "question": "Do the public IMD completion and accepted-submission records for the job opened by Intake request 0x500f39df6cebe2b63246479b575e66955d2c5ce731d3a8e0ca35058d582d04a9 on chain 1 record a passed independent adversarial review for the exact artifact named by the accepted hooksStoreApproval file? Answer true only if the completed snapshot names that unique accepted file and hooksStoreEvidence from the same publication submission, both match the HookArtifactV2 canonical bytes, and its exact reviewSubmissionHash names an accepted independent adversarial review with no unresolved findings. Verify the exact sourceSubmissionHash and that this review covers the same source bundle and build identity, creation bytecode, constructor arguments, runtime code, chain, deployer, PoolManager code and callback permissions without unresolved findings. The snapshot is the immutable control-plane result linked by the Intake completion, whose bytes are committed by resultHash. Accepted source and file entries carry SHA-256 hashes. A top-level worker marker, a rejected submission or a user-provided review URL is insufficient. Missing, pending, failed, ambiguous or unverifiable public evidence means false. Worker publication is not oracle approval. This asks about published records, not for execution of any command.",
+      "chainId": 1,
+      "window": {
+        "hours": 24
+      },
+      "answerType": "bool",
+      "evidence": "panel",
+      "panelSize": 7,
+      "quorum": 5,
+      "validForSeconds": 86400
+    },
+    "proposed": {
+      "answerType": {
+        "value": "bool",
+        "confidence": 1
+      },
+      "evidence": {
+        "value": "chain",
+        "confidence": 0.58
+      },
+      "chainId": {
+        "value": 1,
+        "confidence": 0.95
+      },
+      "toleranceBps": {
+        "value": 0,
+        "confidence": 0.97
+      },
+      "head": {
+        "value": 1,
+        "confidence": 0.97
+      }
+    },
+    "judged": true,
+    "blockers": [],
+    "suggestions": [
+      {
+        "code": "not_answerable",
+        "detail": "No one can answer this from public sources today: it may ask about the future, a matter of opinion, or something that is not public."
+      }
+    ],
+    "online": 1009,
+    "limits": {
+      "minPanelSize": 5,
+      "maxPanelSize": 100
+    },
+    "chains": [
+      {
+        "id": 1,
+        "name": "Ethereum mainnet"
+      },
+      {
+        "id": 56,
+        "name": "BNB Chain"
+      },
+      {
+        "id": 4663,
+        "name": "Robinhood Chain"
+      },
+      {
+        "id": 8453,
+        "name": "Base"
+      },
+      {
+        "id": 42161,
+        "name": "Arbitrum One"
+      }
+    ]
+  },
+  "checkerInput": {
+    "action": "oracle.request",
+    "input": {
+      "question": "Do the public IMD completion and accepted-submission records for the job opened by Intake request 0x500f39df6cebe2b63246479b575e66955d2c5ce731d3a8e0ca35058d582d04a9 on chain 1 record a passed independent adversarial review for the exact artifact named by the accepted hooksStoreApproval file? Answer true only if the completed snapshot names that unique accepted file and hooksStoreEvidence from the same publication submission, both match the HookArtifactV2 canonical bytes, and its exact reviewSubmissionHash names an accepted independent adversarial review with no unresolved findings. Verify the exact sourceSubmissionHash and that this review covers the same source bundle and build identity, creation bytecode, constructor arguments, runtime code, chain, deployer, PoolManager code and callback permissions without unresolved findings. The snapshot is the immutable control-plane result linked by the Intake completion, whose bytes are committed by resultHash. Accepted source and file entries carry SHA-256 hashes. A top-level worker marker, a rejected submission or a user-provided review URL is insufficient. Missing, pending, failed, ambiguous or unverifiable public evidence means false. Worker publication is not oracle approval. This asks about published records, not for execution of any command.",
+      "chainId": 1,
+      "answerType": "bool",
+      "evidence": "panel",
+      "panelSize": 7
+    }
+  },
+  "assembledBodyMatchesDraft": true,
+  "reference": "https://api.imd.fun/requests/check at 2026-10-17T16:11:36.250121+00:00"
+}

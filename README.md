@@ -1,8 +1,11 @@
 # Hooks Store foundation
 
+Current revision: consolidated fixes for audit ca404dfe on cc847d8. The [integration decision](docs/INTEGRATION_RESOLUTION.md) identifies a missing protocol-authenticated Intake/question mapping, so automatic binding remains disabled. Local recovery, approval freshness, UTF-8/JSON parsing, gas bounds and exact reviewed-build evidence are implemented; see [current gated deployment](docs/GATED_DEPLOYMENT.md) and [reproducible results](docs/checks/consolidated/README.md). Nothing was deployed or paid for.
+
 Deployment preparation from `b157921` is in the [executable runbook](docs/DEPLOYMENT_PREPARATION.md) and
 [manifest](deployment/manifest.json). Owner and ad-recipient approvals remain open; no public deployment
-or paid request is authorized. The audited Solidity and compiler settings are unchanged.
+or paid request is authorized. That runbook is historical; this revision changes requester and
+gated-deployer Solidity while preserving compiler settings and dependencies.
 
 A versioned HookSpec, one standalone Uniswap v4 hook, and a shared CREATE2 deployment path for chat and visual creators. The implementation is locally tested. No public-chain transaction was submitted, and no hosted Store, chat creation service, visual builder or production deployment is claimed.
 
@@ -41,7 +44,11 @@ node --test test/listings-reader.test.cjs test/requester-abi.test.cjs
 
 The repository fuzz seed is pinned in `foundry.toml`:
 `0x936d89b088020ddf36122a88c4c9aed7130c7a410f5c44680a7d121950c99345`.
-The deployment-preparation follow-up also runs `forge test --fuzz-seed 0x987078825760321852440813e64598edbfcd99df874323a1a45a55bcb5c3e545` with its assignment seed; [actual logs](docs/checks/deployment-preparation/README.md) distinguish current checks from historical results below. Tests do not read or mutate environment variables. Python integration tests start and stop their own disposable Anvil instance on loopback; they never use a remote RPC or a private key. The earlier IMD requester hardening follow-up recorded all 10 passing. The listing/ads follow-up did not modify or rerun those SDK tests.
+The consolidated revision also runs the assignment seed
+`0x40bbcf769875f858aac6849e21037c680c23d3811f18267f1b80562a06409c89`.
+[Current results](docs/checks/consolidated/README.md) include the complete Foundry, Python SDK and
+Node site suites. Tests do not read or mutate environment variables. Python integration tests start
+and stop disposable Anvil instances on loopback; they never use a public RPC or a funded wallet.
 
 The listings/ads follow-up also checks the supplied seed directly using
 `forge test --fuzz-seed 0x897ccfb85f71eb00ada949c5387d8bc41b650fda2a7d704b3960c7edf39b4654`.
@@ -114,18 +121,22 @@ cover the regression, malicious/malformed inputs, late completion, callback gas 
 
 Local job expiry still accepts the first late Intake result/failure. Delivered, failed and expired
 jobs are equally reviewable; unsigned callback ordering cannot dictate a signed verdict. A review
-requires an exact owner-authenticated Intake-to-oracle UUID and canonical question/window binding.
+requires an exact owner-asserted Intake-to-oracle UUID and canonical question/window binding.
+The current protocol does not authenticate that association for the contract.
 Valid answers arriving before binding **or against a wrong pre-binding** are retained without a
 verdict or UUID consumption. The owner can explicitly reset a pending binding and confirm the
-retained answer without another callback or fee. Swapped answers cannot settle under correct bindings.
+retained answer without another callback. A positive answer confirmed after 23 hours instead requires
+a fresh review and fee; negative answers stay terminal. Swapped answers cannot settle under correct bindings.
 
 Requester review expiry only requests closure; delivery stays open and retries stay blocked.
 After the deadline the owner can close an ask without a receipt, including an abandoned ask whose
 requester never requested expiry, after authenticating that no valid delivery remains in flight.
 For signer compromise, rotate to safe authority, explicitly revoke the old signer epoch, and close
 affected retained receipts as `Unanswered`. Ordinary rotation preserves verification; explicit epoch
-revocation blocks confirmation. Receipt history and consumed UUIDs remain intact; finalized verdicts
-cannot be reset. These are logged owner powers requiring independent offchain evidence.
+revocation blocks confirmation and deployment. Receipt history and consumed UUIDs remain intact;
+`closeRevokedVerdict(jobId)` permits a fresh review after the current finalized verdict's actual epoch
+is revoked. Ordinary negative verdicts cannot be reset. These are logged owner powers requiring
+independent offchain evidence.
 
 A retained answer carrying the ask's own UUID but another signed question, chain or window can now
 be set aside by the owner alone, explicitly and logged, naming the exact receipt and its verdict; a
@@ -135,8 +146,8 @@ panel size and actual agreement with the configured minimums and the oracle's ow
 body quorum below the configured minimum no longer burns an agreed answer. Job templates must carry
 each step marker whole inside one fragment, which is exactly what every assembled body contains.
 
-Cold one-shot callback tests fit 200k gas, including wrong-prebinding retention: **175,123 gas** with
-a realistic 5-of-7 ERC-1271 signer and **192,286** with the 22-cold-read stress signer. Arbitrary live
+Cold one-shot callback tests fit 200k gas, including wrong-prebinding retention: **175,101 gas** with
+a realistic 5-of-7 ERC-1271 signer and **192,264** with the 22-cold-read stress signer. Arbitrary live
 registries still require qualification. The static status page shows receipt revocation and recovery
 history; `Passed` is a signed panel opinion about the review step, never an audited-hook badge.
 
@@ -158,7 +169,8 @@ A full 131,072-candidate page costs about 46M gas, more than common RPC `eth_cal
 `src/deployment/GatedHookDeployer.sol` deploys a job-generated hook only after the oracle signs a
 `Passed` review verdict through `HookJobRequester`. The exact control-plane completion snapshot
 must commit a unique accepted approval file and the accepted source bundle; a marker inside arbitrary
-worker JSON is insufficient. Its artifact digest binds source/build, bytecode, constructor, runtime,
+worker JSON is insufficient. Its ArtifactV2 digest binds exact source/review submissions, evidence,
+build, bytecode, constructor, runtime,
 chain, deployer, PoolManager and callback permissions. Both callback orders retain signer-epoch
 provenance; revoked or missing provenance blocks deployment without rewriting historical verdicts.
 `python3 -m sdk.gated_deploy --binding-mode owner-confirmed ...` prepares unsigned calldata.

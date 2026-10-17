@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Hooks Store exact reviewed-build evidence v1",
+  "description": "Exact evidenceDocument bytes. reviewedBuild is the ArtifactV2 digest with evidenceHash zeroed to avoid self-reference; all other fields, including source/review submissions, remain included. Acceptance and review correctness require the bound signed oracle answer.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "reviewedBuild",
+    "sourceSubmission",
+    "reviewSubmission"
+  ],
+  "properties": {
+    "schema": {
+      "const": "hooks-store-evidence-v1"
+    },
+    "reviewedBuild": {
+      "type": "string",
+      "pattern": "^0x[0-9a-f]{64}$"
+    },
+    "sourceSubmission": {
+      "type": "string",
+      "pattern": "^0x[0-9a-f]{64}$"
+    },
+    "reviewSubmission": {
+      "type": "string",
+      "pattern": "^0x[0-9a-f]{64}$"
+    }
+  }
+}

@@ -1,0 +1,42 @@
+No files changed, compilation skipped
+
+Ran 5 tests for test/ParserGas.t.sol:ParserWorstCaseTest
+[PASS] testLimitsRejectBeforeUnboundedWork() (gas: 2715866)
+[PASS] testMaximumEscapedDocument() (gas: 85106173)
+Logs:
+  max surrogate escapes parser gas: 6905962
+  tokens: 3
+
+[PASS] testMaximumNumberAndWhitespace() (gas: 13935765)
+Logs:
+  max number parser gas: 6611262
+  tokens: 3
+  max whitespace parser gas: 4099623
+  tokens: 1
+
+[PASS] testMaximumTokensAndBytes() (gas: 8964677)
+Logs:
+  max tokens+bytes parser gas: 7404560
+  tokens: 512
+
+[PASS] testWorstWidthPlusMaximumBytes() (gas: 9346230)
+Logs:
+  max width+bytes parser gas: 7531419
+  tokens: 397
+
+Suite result: ok. 5 passed; 0 failed; 0 skipped; finished in 220.81ms (505.27ms CPU time)
+
+Ran 2 tests for test/ParserGas.t.sol:ParserDeploymentGasTest
+[PASS] testMaximumDocumentAndRuntimeFitTransactionBudget() (gas: 53809882)
+Logs:
+  max document check gas: 8999236
+  max document + 24576 runtime deploy execution gas: 14298632
+
+[PASS] testMaximumSourceEntriesAndRuntimeFitTransactionBudget() (gas: 30325741)
+Logs:
+  max document check gas: 7670768
+  max document + 24576 runtime deploy execution gas: 12961145
+
+Suite result: ok. 2 passed; 0 failed; 0 skipped; finished in 392.29ms (547.28ms CPU time)
+
+Ran 2 test suites in 394.90ms (613.11ms CPU time): 7 tests passed, 0 failed, 0 skipped (7 total tests)

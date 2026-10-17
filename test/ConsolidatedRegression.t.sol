@@ -1,0 +1,65 @@
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.26;
+
+import {GatedHookDeployerTest} from "./GatedHookDeployer.t.sol";
+import {AcceptedArtifactTest} from "./AcceptedArtifact.t.sol";
+import {HookJobRequester} from "../src/imd/HookJobRequester.sol";
+import {GatedHookDeployer} from "../src/deployment/GatedHookDeployer.sol";
+import {GeneratedHook} from "./helpers/GeneratedHooks.sol";
+
+contract ConsolidatedRegressionTest is GatedHookDeployerTest {
+    function _recover(bool receiptFirst) internal {
+        Case memory c = _generic(FLAGS);
+        bytes32 ask = receiptFirst ? _passReceiptFirst(c.jobId) : _pass(c.jobId, true);
+        bytes32 uuid = requester.getReviewAsk(ask).oracleRequestId;
+        vm.startPrank(owner);
+        requester.setOracleSigner(signer);
+        requester.revokeSignerEpoch(1, keccak256("incident"));
+        (bool ok,) = address(requester).call(abi.encodeWithSignature("closeRevokedVerdict(bytes32)", c.jobId));
+        vm.stopPrank();
+        assertTrue(ok, "finalized revoked verdict must have guarded recovery");
+        assertEq(uint8(_review(c.jobId)), uint8(HookJobRequester.ReviewStatus.Unanswered));
+        assertTrue(requester.consumed(uuid));
+        assertEq(requester.getReviewAsk(ask).oracleRequestId, uuid);
+        bytes32 fresh = _pass(c.jobId, true);
+        assertTrue(fresh != ask);
+        assertEq(requester.reviewReceiptSignerEpoch(fresh), 2);
+        assertEq(_deploy(c), c.hook);
+    }
+
+    function testRegressionRecoverRevokedBindFirst() public {
+        _recover(false);
+    }
+
+    function testRegressionRecoverRevokedReceiptFirst() public {
+        _recover(true);
+    }
+
+    function testRegressionLateApprovalHasDeploymentWindow() public {
+        Case memory c = _generic(FLAGS);
+        vm.warp(block.timestamp + 30 days - 1 hours);
+        _pass(c.jobId, true);
+        vm.warp(block.timestamp + 2 hours);
+        assertEq(_deploy(c), c.hook);
+    }
+}
+
+contract ConsolidatedParserRegressionTest is AcceptedArtifactTest {
+    function testRegressionUnrelatedEntriesAreSkipped() public view {
+        bytes memory snapshot = _snapshot(
+            bytes.concat(_source(), ',{"node":"adversarial_review","hash":null}'),
+            bytes.concat(_file(DIGEST), ',{"path":"report.md"}'),
+            ""
+        );
+        assertTrue(harness.verify(snapshot, DIGEST, SOURCE));
+    }
+
+    function testRegressionLegitimateEscapesAndUtf8() public view {
+        bytes memory snapshot = _snapshot(
+            _source(),
+            _file(DIGEST),
+            bytes(unicode',"delivery":{"failure":"push: \\"main\\"; café \\uD83D\\uDE80 \\/ \\n"}')
+        );
+        assertTrue(harness.verify(snapshot, DIGEST, SOURCE));
+    }
+}

@@ -1,7 +1,7 @@
 {
   "sourceCommit": null,
-  "baseCommit": "2aef6408eabb45b8f149e16a96c7734d4b4b5b07",
-  "description": "Local build of the targeted fixes; not audited. Historical audited-build.json is unchanged.",
+  "baseCommit": "cc847d8f35bc0b814d390eb76092eed6051c5ae3",
+  "description": "Local build of the consolidated integration/fixes; not independently audited. Historical audited-build.json is unchanged.",
   "algorithm": "sha256",
   "files": {
     "dependencies.lock.json": "7e020eb009266adbc78c97455aacab9de9f36b071e1be718eb7af1ba994c0c00",
@@ -14,13 +14,13 @@
     "src/DisabledCallbacks.sol": "df889eafc206b38ed9dd4045d6d4b1558814e1116d14c6cf067d44bedd52cdc0",
     "src/HookSpec.sol": "f8922c87424591405f4f0a8b70b505b79b7d3858d0289d9d23157be3f0520b9b",
     "src/HooksStoreFactory.sol": "73ff62b154d53c3fcfa35019757dfe51d2c6346fd203e03d9df61965330d5dd9",
-    "src/deployment/AcceptedArtifact.sol": "7092cd62561e9f82302d49d3510af9507aa87143f1ab7b84dff77bed6b9273eb",
+    "src/deployment/AcceptedArtifact.sol": "3a484113bc77db4964229e060e349a26600958b5b52f6376126c5a85a3d4a8da",
     "src/deployment/DeploymentPolicy.sol": "8fd240a38f3cc915112d9e9e1bea682342d6ad788140774a9ab7623b9038031d",
-    "src/deployment/GatedHookDeployer.sol": "5f806da916fca283d1858b6bb9ebe32155f5e40a5cf39d650a48fe9f0f613889",
+    "src/deployment/GatedHookDeployer.sol": "ceebab8f77e187fa556d0a9c0f72d022be760484d746e42232e48bd2999aabb5",
     "src/deployment/HookDeployment.sol": "1770c5fec1cc6212d705da31cb9395047b7d3021879edfa911f5dace40afba57",
     "src/deployment/HookMiner.sol": "df61b7d11409985bb4bad8e313b3486b05155a964b94d236add1151d78e3553e",
-    "src/deployment/ResultJson.sol": "bfd44f9ce35bf325efadedce64172582a0d288d0c05e4573f7765b32db7a7ccb",
-    "src/imd/HookJobRequester.sol": "59db3113e0dbf401d67ceaf3e9a56a24bf03e8dc68530133cd8bfb467b63165e",
+    "src/deployment/ResultJson.sol": "ee5628f1a8485c6c2cc6bb4fe036046256a04c11044aca9b90c5a2e61225e21d",
+    "src/imd/HookJobRequester.sol": "ee866d553bbe4dfd4b1a1efed7803d6054f5f5cc545d06f6334764c4da85fc61",
     "src/imd/IIntake.sol": "1fbab751d469c12a3488a8f690e647aa315c6369478b3f34be46ba842f64cda2",
     "src/imd/OracleAttestation.sol": "36c589a16ab829e31d0549d7e81e5961d3172580ff8f4ef980c1e9617e087a20",
     "src/interfaces/IHooksStore.sol": "9eedb6a4ef45f7ca3bd5c1b5b9ea628c7a8edd2ebf0359e2db618c6214f65a24",
@@ -69,53 +69,53 @@
     },
     "HookJobRequester": {
       "bytecode": {
-        "sha256": "c326f9a6bd189c1a67061213a85854ba0c21fd5207738b6105cbad0b7618f6f5",
-        "bytes": 25910
+        "sha256": "314f2ecc710fae9cf61e8a542804da3ceb799f171003314ff87e75068c87bcdc",
+        "bytes": 26303
       },
       "deployedBytecode": {
-        "sha256": "4122cee1df9e77a7faf098df9937b78d75bbef0b59a22597b2164baf7d94bbca",
-        "bytes": 24166
+        "sha256": "83495c3fbd8b1a5771ede1c34b259b4f725a1a16403a397f91ca6d250774cb7a",
+        "bytes": 24559
       },
       "immutableReferences": {
-        "65543": [
+        "62625": [
           {
-            "start": 18689,
+            "start": 19109,
             "length": 32
           }
         ],
-        "65545": [
+        "62627": [
           {
-            "start": 18647,
+            "start": 19067,
             "length": 32
           }
         ],
-        "65547": [
+        "62629": [
           {
-            "start": 18605,
+            "start": 19025,
             "length": 32
           }
         ],
-        "65549": [
+        "62631": [
           {
-            "start": 18770,
+            "start": 19190,
             "length": 32
           }
         ],
-        "65551": [
+        "62633": [
           {
-            "start": 18810,
+            "start": 19230,
             "length": 32
           }
         ],
-        "65554": [
+        "62636": [
           {
-            "start": 18077,
+            "start": 18497,
             "length": 32
           }
         ],
-        "65557": [
+        "62639": [
           {
-            "start": 18126,
+            "start": 18546,
             "length": 32
           }
         ]
@@ -142,7 +142,7 @@
         "bytes": 8232
       },
       "immutableReferences": {
-        "60179": [
+        "58995": [
           {
             "start": 800,
             "length": 32
@@ -160,33 +160,37 @@
     },
     "GatedHookDeployer": {
       "bytecode": {
-        "sha256": "791fe50994ae15d9b4a3036531bea0a67aba79cac990a5fee6ba8559abc7e328",
-        "bytes": 17286
+        "sha256": "48804e2de2d5c75900017e9f07f713260ece9c1f51dddb8c3d4b750221c3b232",
+        "bytes": 20830
       },
       "deployedBytecode": {
-        "sha256": "bed16dfc11fd9d95b3b782f12435226bb9ee60cea3c6b0f6f83f0da5b95ad6d1",
-        "bytes": 16890
+        "sha256": "a9229630b959fe750ed01232d8ffcdb9c14ab216f9b550f57f314878ad26cb9a",
+        "bytes": 20427
       },
       "immutableReferences": {
-        "52025": [
+        "50388": [
           {
-            "start": 1099,
+            "start": 1090,
             "length": 32
           },
           {
-            "start": 6307,
+            "start": 6474,
             "length": 32
           },
           {
-            "start": 6619,
+            "start": 6786,
             "length": 32
           },
           {
-            "start": 6802,
+            "start": 6969,
             "length": 32
           },
           {
-            "start": 6965,
+            "start": 7132,
+            "length": 32
+          },
+          {
+            "start": 7318,
             "length": 32
           }
         ]

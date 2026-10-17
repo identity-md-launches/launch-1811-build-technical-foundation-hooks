@@ -2,6 +2,25 @@
 
 `src/imd/HookJobRequester.sol` lets a creator's wallet buy an IdentityMD `job.open` for standalone-hook code and lets any static website show that job's status, read straight from the chain. Nothing here was deployed, and no paid request was submitted. Everything was exercised locally against `test/helpers/MockIntake.sol`, which stands in for the Intake.
 
+## Current integration status
+
+The [deployed-interface investigation](INTEGRATION_RESOLUTION.md) found no contract-verifiable
+Intake/body-to-oracle/question proof. The existing owner binding described below is an assertion by
+that owner, not authentication supplied by the protocol. It remains for local/manual use, not a
+routine-founder production workaround. Automatic binding is disabled; keep paid activation disabled
+until the documented launch blockers are resolved.
+
+`closeRevokedVerdict(jobId)` now recovers the current finalized Passed or NotPassed verdict only after
+its verification epoch is explicitly revoked. It retains all history/consumption and enables a fresh
+review of the same job. Ordinary rotation, expiry or a NotPassed value alone cannot enable it.
+`reviewVerifiedAt(askId)` records signature verification time in both callback orders, without a new
+cold storage word. The deployer measures approval age from this timestamp; delayed binding does not
+refresh it. Positive receipts confirmed after 23 hours preserve their signed history and consumed
+UUID but leave the current review Unanswered, requiring a fresh review. Negative receipts remain
+terminal even after that delay. Confirmation within 23 hours guarantees at least one hour of use
+under the deployer's minimum one-day policy. [GATED_DEPLOYMENT.md](GATED_DEPLOYMENT.md) defines the new artifact tuple, canonical
+source/review/build evidence and synchronized 12 KiB/512-token parser limits.
+
 ## Flow
 
 1. **Wallet-approved request.** The creator approves the quoted IMD amount to `HookJobRequester`, then calls `openJob(specHash, brief, userMaxPrice)`. Both paid functions require a caller-selected maximum in the configured asset's base units. The current quote must be nonzero and at most **both** this maximum and the owner's `maxPrice`; otherwise payment reverts before pulling funds. Raising the owner's ceiling cannot raise an already submitted caller limit. The contract checks the caller's exact debit and its own exact credit, approves only that amount, calls Intake v2 `requestWithFailure` (or v1 `request` when `failureHook` is off), clears the allowance, and checks its balance fell by exactly the quoted amount. A partial/no spend, fee-on-transfer token, or other discrepancy reverts the **whole transaction**, including the Intake request. No quoted-but-unspent balance remains available to `sweep`. Existing donations remain separate. A successful request spends the fee; a later refusal, expiry or callback failure gives no refund. Wallets should approve only the intended asset and amount, and verify the configured asset, Intake and template before signing.
@@ -65,7 +84,7 @@ review, including a finalized `NotPassed`, cannot be cleared by delivery.
 
 The automatic path remains disabled. `GatedHookDeployer.automaticBindingSupported()` is false,
 and the SDK requires explicit manual `owner-confirmed` mode. The missing protocol-signed or
-onchain Intake/body-to-oracle/question proof is detailed in [GATED_DEPLOYMENT.md](GATED_DEPLOYMENT.md#authenticated-binding-automatic-route-disabled).
+onchain Intake/body-to-oracle/question proof is detailed in [INTEGRATION_RESOLUTION.md](INTEGRATION_RESOLUTION.md#missing-protocol-primitive).
 A retained answer or unsigned HTTP lookup cannot authenticate its own pairing.
 
 
@@ -91,7 +110,7 @@ bindReview(
 )
 ```
 
-This is a **per-ask operational responsibility**, not a one-time deployment setting. The recommended
+This is a **legacy per-ask operational responsibility**, not a one-time deployment setting. The recommended
 relative-window workflow is receive first, independently authenticate the mapping, then bind:
 
 1. Read the confirmed `ReviewRequested` event and `getReviewAsk`. Verify the exact body against the
@@ -290,9 +309,11 @@ For compromise, the owner must:
    Closure never clears consumption or automatically releases a UUID. Replaying the closed Intake
    ID or using a consumed UUID stays forbidden. The new signer must refuse old compromised signatures.
 
-Revocation covers pending **retained** answers. Already finalized `Passed`/`NotPassed` history and
-consumed UUIDs are immutable; incident disclosure for those verdicts belongs to operators and the UI.
-A malicious owner can revoke genuine pending negative answers and permit a paid retry. This is an
+For a current finalized `Passed` or `NotPassed`, call `closeRevokedVerdict(jobId)` after the same epoch
+revocation. Its historical binding, verification metadata and consumed UUID remain immutable; only
+the current review status becomes `Unanswered`, allowing a fresh paid review. Deployment replay
+guards remain set even if the job already deployed. Repeated closure and ordinary expiry fail.
+A malicious owner can revoke genuine negative answers and permit a paid retry. This is an
 explicit, logged owner trust power, like choosing the signer itself; it is not available to creators.
 Normal rotation preserves historical verification until the owner explicitly revokes an epoch.
 
@@ -407,7 +428,7 @@ Until the owner calls these setters, `openJob` reverts `NotConfigured("jobTempla
 | `releaseReservation(oracleId)` | Recovery only: release an unconsumed UUID whose holder ask is terminal with no receipt or with an explicitly revoked-and-closed receipt, before or after an unbound retry's callback but before retry binding | Authenticate protocol retry/UUID-reuse records, inspect `reviewOf`, `getReviewReceipt` and `consumed`; retain the original binding history |
 | `confirmReviewExpiry(intakeId)` | Close that exact overdue ask only if it still has no receipt, with or without requester cooperation; permits a paid retry | Owner must establish Intake will not deliver a valid answer, not just observe a deadline. If uncertain, keep pending; absence is not proven onchain |
 | `resetReviewBinding(intakeId, bodyHash)` | Clear a pending incorrect binding and release only its own unused reservation; preserve any receipt | Authenticate the corrected mapping independently, then bind again |
-| `revokeSignerEpoch(epoch, incidentHash)` / `closeRevokedReviewReceipt(intakeId)` | Freeze confirmation of a compromised old epoch, then close affected pending receipts as Unanswered without erasing history | Owner incident investigation; rotate to a safe verifier first and retain the evidence committed by the hash |
+| `revokeSignerEpoch(epoch, incidentHash)` / `closeRevokedReviewReceipt(intakeId)` / `closeRevokedVerdict(jobId)` | Freeze confirmation/deployment for a compromised old epoch, then close its pending receipt or current finalized verdict as Unanswered without erasing history or replay guards | Owner incident investigation; rotate to a safe verifier first and retain the evidence committed by the hash |
 | `transferOwnership(proposedOwner)` / `acceptOwnership()` | Two-step owner rotation; zero and self addresses are rejected. The current owner retains authority until the nominee accepts and may replace/cancel (`cancelOwnershipTransfer`) a mistaken nomination | The requester-approved operational wallet/multisig |
 | `setTimeouts(job, review)` | Optional; 1 hour to 30 days, defaults 7 days / 1 day. Review timeout enables a requester expiry request or owner closure; closure requires owner confirmation without a receipt; it does not reject a fresh late answer or confirmation | Owner's operational choice; communicate expiry consequences to requesters |
 | `setPayment(asset, maxPrice)` | The IMD token and the most one ask may cost, together. Raise `maxPrice` when the published price moves up; the contract still pulls only the current price subject to each caller's submitted `userMaxPrice` | `Intake.priceOf(action, imd)` on the chain |
@@ -455,7 +476,7 @@ None of this live pilot was run: no paid request was submitted and nothing was d
 
 ## Targeted approval-binding update
 
-Current runtime is 24,166 bytes, 410 below EIP-170. Callback ABI and the 200k cap are unchanged.
+Current runtime sizes and isolated callback measurements are recorded in [the consolidated results](checks/consolidated/README.md). The callback ABI and 200k cap remain unchanged.
 `reviewReceiptSignerEpoch` now retains verification provenance for bind-first as well as receipt-first
 answers; `getReviewReceipt` still returns empty context for the bind-first path. The site displays
 missing/revoked provenance for Passed history as deployment-disabled. See

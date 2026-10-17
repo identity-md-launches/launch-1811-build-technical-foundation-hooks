@@ -1,0 +1,30 @@
+✔ browser selectors match compiler artifacts (6.640163ms)
+✔ decode static listing and dynamic metadata including label offsets (76.375394ms)
+✔ decode ordered featured and organic pages with continuation cursors (103.769277ms)
+✔ every paid card visibly carries #ad and renders hostile text as text (109.972864ms)
+✔ reject malformed ABI, absent ad labels and unexpected placement status (96.054645ms)
+✔ listing references visibly escape bidi and invisible characters without link creation (83.802016ms)
+✔ label encoding matches independent ABI encoder and rejects noncanonical search text (51.99858ms)
+✔ published requester ABI is exactly the compiler ABI and has only capped paid calls (12.177813ms)
+✔ status page selectors and job event topics match the compiled contract (481.42932ms)
+✔ pending receipt shows explicit signer revocation before individual closure (4.334286ms)
+✔ receipt reads distinguish pending arrival, retained answer and terminal job (15.790613ms)
+✔ malformed revocation reads fail rather than display a verified receipt (5.076153ms)
+✔ job callback and URI event use the protocol tuple without changing the static Job or oracle ABI (0.403628ms)
+✔ URI event decoder agrees with cast for IPFS, HTTPS, Unicode and empty strings (142.016888ms)
+✔ URI decoder rejects malformed offsets, lengths, padding, oversized data and invalid UTF-8 (4.355702ms)
+✔ history visibly escapes every bidi, zero-width and control code point including leading BOM (6.4352ms)
+✔ history exposes URI only as unverified text, with no HTML, links or content fetching (5.262579ms)
+✔ history filters other contracts, requests, unknown topics and removed logs (4.556157ms)
+✔ malformed URI logs show unavailable without hiding later history or granting review approval (2.00648ms)
+✔ build fingerprints match compiler artifacts and requester runtime stays below EIP-170 (397.747382ms)
+✔ Passed history remains visible while missing or revoked signer provenance blocks deployment (5.750665ms)
+✔ gated deployer ABI is current and both deployed runtimes fit EIP-170 (8.179452ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 22
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1359.18534

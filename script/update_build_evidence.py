@@ -10,7 +10,7 @@ from pathlib import Path
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
-BASE = '2aef6408eabb45b8f149e16a96c7734d4b4b5b07'
+BASE = 'cc847d8f35bc0b814d390eb76092eed6051c5ae3'
 
 
 def write(path, value):
@@ -21,7 +21,7 @@ def main():
     historical = json.loads((ROOT / 'deployment/audited-build.json').read_text())
     paths = set(historical['files']) | {str(p.relative_to(ROOT)) for p in (ROOT / 'src/deployment').glob('*.sol')}
     current = {'sourceCommit': None, 'baseCommit': BASE,
-               'description': 'Local build of the targeted fixes; not audited. Historical audited-build.json is unchanged.',
+               'description': 'Local build of the consolidated integration/fixes; not independently audited. Historical audited-build.json is unchanged.',
                'algorithm': 'sha256', 'files': {}, 'contracts': {}}
     for path in sorted(paths):
         current['files'][path] = hashlib.sha256((ROOT / path).read_bytes()).hexdigest()

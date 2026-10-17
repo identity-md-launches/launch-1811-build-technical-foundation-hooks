@@ -36,6 +36,9 @@ contract GatedHookDeployer is StoreAdmin {
     struct Artifact {
         bytes32 jobRequestId;
         bytes32 sourceHash;
+        bytes32 sourceSubmissionHash;
+        bytes32 reviewSubmissionHash;
+        bytes32 evidenceHash;
         bytes32 buildHash;
         bytes32 creationCodeHash;
         bytes32 constructorArgsHash;
@@ -53,10 +56,10 @@ contract GatedHookDeployer is StoreAdmin {
     }
 
     bytes32 public constant ARTIFACT_TYPEHASH = keccak256(
-        "HookArtifact(bytes32 jobRequestId,bytes32 sourceHash,bytes32 buildHash,bytes32 creationCodeHash,bytes32 constructorArgsHash,bytes32 runtimeCodeHash,uint256 chainId,address deployer,address poolManager,bytes32 poolManagerCodeHash,uint160 permissions)"
+        "HookArtifactV2(bytes32 jobRequestId,bytes32 sourceHash,bytes32 sourceSubmissionHash,bytes32 reviewSubmissionHash,bytes32 evidenceHash,bytes32 buildHash,bytes32 creationCodeHash,bytes32 constructorArgsHash,bytes32 runtimeCodeHash,uint256 chainId,address deployer,address poolManager,bytes32 poolManagerCodeHash,uint160 permissions)"
     );
     bytes public constant ARTIFACT_MARKER = '"hooksStoreArtifact":"0x';
-    uint256 public constant MAX_RESULT_DOCUMENT_BYTES = 65536;
+    uint256 public constant MAX_RESULT_DOCUMENT_BYTES = 12288;
     uint64 public constant MIN_JOB_AGE = 1 days;
     uint64 public constant MAX_JOB_AGE = 180 days;
     uint256 internal constant READBACK_GAS = 100_000;
@@ -91,7 +94,7 @@ contract GatedHookDeployer is StoreAdmin {
     error JobNotDelivered(bytes32 jobRequestId);
     error ReviewNotPassed(bytes32 jobRequestId);
     error ReviewRevoked(bytes32 intakeRequestId);
-    error ApprovalStale(uint64 openedAt, uint64 maxJobAge);
+    error ApprovalStale(uint64 verifiedAt, uint64 maxJobAge);
     error ResultHashMismatch();
     error ResultDocumentTooLong(uint256 length);
     error ArtifactNotInResult(bytes32 digest);
@@ -181,6 +184,17 @@ contract GatedHookDeployer is StoreAdmin {
     /// No trailing newline. The snapshot must commit its SHA-256 under files, plus the source bundle.
     function approvalDocument(Artifact memory a) public pure returns (bytes memory) {
         return AcceptedArtifact.approvalDocument(artifactDigest(a));
+    }
+
+    /// @notice Canonical worker publication describing the exact reviewed build and review.
+    /// evidenceHash is omitted from its own preimage to avoid circular hashing. Publication is
+    /// not oracle approval; the signed, bound review must independently validate these claims.
+    function evidenceDocument(Artifact memory a) public pure returns (bytes memory) {
+        bytes32 saved = a.evidenceHash;
+        a.evidenceHash = bytes32(0);
+        bytes32 build = artifactDigest(a);
+        a.evidenceHash = saved;
+        return AcceptedArtifact.evidenceDocument(build, a.sourceSubmissionHash, a.reviewSubmissionHash);
     }
 
     /// @notice Automatic Intake-to-oracle binding is unavailable in the documented protocol.
@@ -276,13 +290,27 @@ contract GatedHookDeployer is StoreAdmin {
         if (epoch == 0 || requester.revokedSignerEpochs(epoch) != bytes32(0)) {
             revert ReviewRevoked(job.reviewRequestId);
         }
-        // forge-lint: disable-next-line(block-timestamp)
-        if (block.timestamp > uint256(job.openedAt) + maxJobAge) revert ApprovalStale(job.openedAt, maxJobAge);
+        uint64 verifiedAt = requester.reviewVerifiedAt(job.reviewRequestId);
+        // Freshness is anchored at authenticated receipt, never job opening or delayed owner binding.
+        if (verifiedAt == 0 || block.timestamp > uint256(verifiedAt) + maxJobAge) {
+            revert ApprovalStale(verifiedAt, maxJobAge);
+        }
         if (keccak256(resultDocument) != job.resultHash) revert ResultHashMismatch();
         if (resultDocument.length > MAX_RESULT_DOCUMENT_BYTES) revert ResultDocumentTooLong(resultDocument.length);
 
         digest = artifactDigest(a);
-        if (!AcceptedArtifact.verify(resultDocument, digest, a.sourceHash)) revert ArtifactNotInResult(digest);
+        bytes memory evidence = evidenceDocument(a);
+        if (
+            a.buildHash == bytes32(0) || a.reviewSubmissionHash == bytes32(0) || a.sourceSubmissionHash == bytes32(0)
+                || a.reviewSubmissionHash == a.sourceSubmissionHash || a.evidenceHash != sha256(evidence)
+                || !AcceptedArtifact.verify(
+                    resultDocument,
+                    digest,
+                    AcceptedArtifact.Binding(a.sourceHash, a.sourceSubmissionHash, a.evidenceHash, evidence.length)
+                )
+        ) {
+            revert ArtifactNotInResult(digest);
+        }
         if (deployedHookOf[a.jobRequestId] != address(0)) {
             revert AlreadyDeployed(a.jobRequestId, deployedHookOf[a.jobRequestId]);
         }

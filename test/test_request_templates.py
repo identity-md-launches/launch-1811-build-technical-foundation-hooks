@@ -15,11 +15,13 @@ class RequestTemplatesTest(unittest.TestCase):
         t = json.loads((ROOT / 'deployment/hook-templates.json').read_text())
         bodies = assemble(t, t['sampleSpecHash'], t['sampleBrief'], t['sampleJobId'])
         for action, body in zip(['job.open', 'oracle.request'], bodies):
-            saved = (ROOT / f'docs/checks/approval-binding/{action}.body.json').read_text()
+            saved = (ROOT / f'docs/checks/consolidated/{action}.body.json').read_text()
             self.assertEqual(body, saved)
-            check = json.loads((ROOT / f'docs/checks/approval-binding/{action}.check.json').read_text())
+            check = json.loads((ROOT / f'docs/checks/consolidated/{action}.check.json').read_text())
             self.assertEqual(check['inputSha256'], sha256(canonical(json.loads(body))))
             self.assertEqual(check['response']['blockers'], [])
+            self.assertEqual(check['rawBodySha256'], sha256(body.encode()))
+            self.assertEqual(check['rawBodyBytes'], len(body.encode()))
             if action == 'oracle.request':
                 self.assertTrue(check['assembledBodyMatchesDraft'])
                 self.assertEqual(check['response']['request'], json.loads(body))
@@ -56,7 +58,7 @@ class RequestTemplatesTest(unittest.TestCase):
             def body(request_id):
                 abi = Rpc(chain.url).call(intake, 'bodyOf(bytes32)', request_id)
                 return bytes.fromhex(_cast('abi-decode', 'f()(bytes)', abi)[2:]).decode()
-            self.assertEqual(body(job), (ROOT / 'docs/checks/approval-binding/job.open.body.json').read_text())
+            self.assertEqual(body(job), (ROOT / 'docs/checks/consolidated/job.open.body.json').read_text())
             snapshot = (ROOT / 'docs/checks/approval-binding/sources/previous-job-result.json').read_bytes()
             payload = _cast('abi-encode', 'f(bytes32,bytes32,string)', job, keccak_hex('0x' + snapshot.hex()), 'ipfs://local-fixture')
             chain.call_transaction(intake, 'complete(bytes32,bytes)', job, payload)
@@ -65,6 +67,6 @@ class RequestTemplatesTest(unittest.TestCase):
             actual = body(ask)
             self.assertEqual(actual, assemble(t, t['sampleSpecHash'], t['sampleBrief'], job)[1])
             self.assertEqual(actual.replace(job, t['sampleJobId']),
-                             (ROOT / 'docs/checks/approval-binding/oracle.request.body.json').read_text())
+                             (ROOT / 'docs/checks/consolidated/oracle.request.body.json').read_text())
             self.assertNotIn('0x0x', actual)
             self.assertEqual(json.loads(actual)['chainId'], 1)  # fixture asks ABOUT chain 1 on local Anvil

@@ -29,6 +29,8 @@ class RequestBodyCheckTest(unittest.TestCase):
                 recorded = json.loads(out.read_text())
                 self.assertEqual(recorded['response'], response)
                 self.assertEqual(recorded['inputSha256'], sha256(canonical(body)))
+                self.assertEqual(recorded['rawBodySha256'], sha256(inp.read_bytes()))
+                self.assertEqual(recorded['rawBodyBytes'], len(inp.read_bytes()))
 
 
     def test_oracle_projection_requires_exact_full_draft_not_only_no_blockers(self):
@@ -52,4 +54,6 @@ class RequestBodyCheckTest(unittest.TestCase):
                 recorded = json.loads(out.read_text())
                 self.assertEqual(recorded['assembledBodyMatchesDraft'], exact)
                 self.assertEqual(recorded['inputSha256'], sha256(canonical(body)))
+                self.assertEqual(recorded['rawBodySha256'], sha256(inp.read_bytes()))
+                self.assertEqual(recorded['rawBodyBytes'], len(inp.read_bytes()))
                 self.assertEqual(recorded['response'], response)

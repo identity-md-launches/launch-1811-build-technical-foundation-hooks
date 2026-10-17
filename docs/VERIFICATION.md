@@ -1,6 +1,8 @@
 # Local verification
 
-Historical results below describe successive revisions. See [audit 6b607200 checks](#follow-up-audit-6b607200) for this revision.
+For the current consolidated revision use [checks/consolidated/README.md](checks/consolidated/README.md) and `bash script/check_consolidated.sh`. Earlier logs below are historical. Current tests include captured live signature verification (no signing), parser limits and maximal runtime, incident recovery, both callback orders, SDK parity, and isolated 200k callback checks.
+
+Historical results below describe successive revisions and do not describe the current build.
 
 The following checks completed locally with the pinned Solidity 0.8.26 compiler and the fuzz seed in `foundry.toml`:
 

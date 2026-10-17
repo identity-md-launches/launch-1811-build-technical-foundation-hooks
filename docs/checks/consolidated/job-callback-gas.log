@@ -1,0 +1,11 @@
+No files changed, compilation skipped
+
+Ran 1 test for test/JobProtocolTuple.t.sol:JobProtocolGasTest
+[PASS] testColdTupleWithLongURIFits200kAndRuntimeLimit() (gas: 961386)
+Logs:
+  Cold job tuple with 4096-byte URI minimum forwarded gas: 67030
+  Requester deployed runtime bytes: 24559
+
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 5.32ms (1.05ms CPU time)
+
+Ran 1 test suite in 12.02ms (5.32ms CPU time): 1 tests passed, 0 failed, 0 skipped (1 total tests)

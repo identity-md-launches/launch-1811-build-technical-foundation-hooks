@@ -134,6 +134,10 @@ contract ReviewDeliveryTest is HookJobRequesterFixture {
     }
 
     function testReceiptCanBeConfirmedAfterSignatureExpiryTimeoutAndAuthorityRotation() public {
+        // Still proves confirmation after signature/ask expiry and signer rotation. Positive
+        // deployment approvals now require confirmation within 23h of authenticated receipt.
+        vm.prank(owner);
+        requester.setTimeouts(7 days, 1 hours);
         (bytes32 jobId, bytes32 askId) = _unboundReview();
         OracleAttestation.Attestation memory a = _attestation(askId, true);
         assertTrue(_deliver(askId, a));
@@ -293,6 +297,10 @@ contract ReviewDeliveryTest is HookJobRequesterFixture {
     }
 
     function testFuzzRequesterCannotDiscardRetainedAnswerOrBuyAnotherReview(bool passed) public {
+        // Exercise every expiry/fee-loss protection while a positive answer still has a usable
+        // deployment window. A separate regression covers year-old negative receipts.
+        vm.prank(owner);
+        requester.setTimeouts(7 days, 1 hours);
         (bytes32 jobId, bytes32 askId) = _unboundReview();
         OracleAttestation.Attestation memory answer = _attestation(askId, passed);
         assertTrue(_deliver(askId, answer));

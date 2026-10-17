@@ -1,0 +1,376 @@
+{
+  "actions": [
+    {
+      "action": "job.open",
+      "version": "job-1",
+      "payment": {
+        "network": "eip155:1",
+        "asset": "0xd34a99bc0f67ae1bbd63c660e6d0b0dd03e263b7",
+        "amount": "500000000000000000",
+        "payTo": "0x4e0fa57bde726079356537e2f34d671e9f41adbc",
+        "decimals": 18
+      },
+      "quoteTtlSeconds": 600
+    },
+    {
+      "action": "job.continue",
+      "version": "job-1",
+      "payment": {
+        "network": "eip155:1",
+        "asset": "0xd34a99bc0f67ae1bbd63c660e6d0b0dd03e263b7",
+        "amount": "500000000000000000",
+        "payTo": "0x4e0fa57bde726079356537e2f34d671e9f41adbc",
+        "decimals": 18
+      },
+      "quoteTtlSeconds": 600
+    },
+    {
+      "action": "launch.open",
+      "version": "launch-1",
+      "payment": {
+        "network": "eip155:1",
+        "asset": "0xd34a99bc0f67ae1bbd63c660e6d0b0dd03e263b7",
+        "amount": "500000000000000000",
+        "payTo": "0x4e0fa57bde726079356537e2f34d671e9f41adbc",
+        "decimals": 18
+      },
+      "quoteTtlSeconds": 600
+    },
+    {
+      "action": "oracle.request",
+      "version": "oracle-1",
+      "payment": {
+        "network": "eip155:1",
+        "asset": "0xd34a99bc0f67ae1bbd63c660e6d0b0dd03e263b7",
+        "amount": "500000000000000000",
+        "payTo": "0x4e0fa57bde726079356537e2f34d671e9f41adbc",
+        "decimals": 18
+      },
+      "quoteTtlSeconds": 600
+    },
+    {
+      "action": "workflow.open",
+      "version": "workflow-1",
+      "payment": {
+        "network": "eip155:1",
+        "asset": "0xd34a99bc0f67ae1bbd63c660e6d0b0dd03e263b7",
+        "amount": "500000000000000000",
+        "payTo": "0x4e0fa57bde726079356537e2f34d671e9f41adbc",
+        "decimals": 18
+      },
+      "quoteTtlSeconds": 600
+    },
+    {
+      "action": "schedule.create",
+      "version": "schedule-1",
+      "payment": {
+        "network": "eip155:1",
+        "asset": "0xd34a99bc0f67ae1bbd63c660e6d0b0dd03e263b7",
+        "amount": "500000000000000000",
+        "payTo": "0x4e0fa57bde726079356537e2f34d671e9f41adbc",
+        "decimals": 18
+      },
+      "quoteTtlSeconds": 600
+    },
+    {
+      "action": "schedule.topup",
+      "version": "topup-1",
+      "payment": {
+        "network": "eip155:1",
+        "asset": "0xd34a99bc0f67ae1bbd63c660e6d0b0dd03e263b7",
+        "amount": "500000000000000000",
+        "payTo": "0x4e0fa57bde726079356537e2f34d671e9f41adbc",
+        "decimals": 18
+      },
+      "quoteTtlSeconds": 600
+    }
+  ],
+  "limits": {
+    "oracle.request": {
+      "minPanelSize": 5,
+      "maxPanelSize": 100
+    },
+    "schedule.create": {
+      "minRuns": 1,
+      "maxRuns": 1000000,
+      "minOracleIntervalMinutes": 10,
+      "minJobIntervalMinutes": 30
+    },
+    "schedule.topup": {
+      "minRuns": 1,
+      "maxRuns": 1000000,
+      "minOracleIntervalMinutes": 10,
+      "minJobIntervalMinutes": 30
+    }
+  },
+  "launches": {
+    "defaultChainId": 11155111,
+    "chains": [
+      {
+        "chainId": 11155111,
+        "name": "Sepolia",
+        "testnet": true,
+        "kinds": [
+          "univ4_hook",
+          "evm_project",
+          "custom_token",
+          "evm_contracts"
+        ],
+        "pairings": [
+          {
+            "pairWith": "eth",
+            "currency": "0x0000000000000000000000000000000000000000",
+            "symbol": "ETH",
+            "name": "Sepolia Ether",
+            "decimals": 18,
+            "kinds": [
+              "univ4_hook",
+              "evm_project",
+              "custom_token"
+            ],
+            "customCap": {
+              "min": "1000000000000000000",
+              "max": "1000000000000000000000"
+            }
+          }
+        ]
+      },
+      {
+        "chainId": 1,
+        "name": "Ethereum mainnet",
+        "testnet": false,
+        "kinds": [
+          "univ4_hook",
+          "evm_project",
+          "custom_token",
+          "evm_contracts"
+        ],
+        "pairings": [
+          {
+            "pairWith": "eth",
+            "currency": "0x0000000000000000000000000000000000000000",
+            "symbol": "ETH",
+            "name": "Ether",
+            "decimals": 18,
+            "kinds": [
+              "univ4_hook",
+              "evm_project",
+              "custom_token"
+            ],
+            "customCap": {
+              "min": "1000000000000000000",
+              "max": "1000000000000000000000"
+            }
+          },
+          {
+            "pairWith": "imd",
+            "currency": "0xd34a99bc0f67ae1bbd63c660e6d0b0dd03e263b7",
+            "symbol": "IMD",
+            "name": "Identity.md",
+            "decimals": 18,
+            "kinds": [
+              "univ4_hook",
+              "evm_project",
+              "custom_token"
+            ],
+            "customCap": {
+              "min": "250000000000000000000",
+              "max": "250000000000000000000000"
+            }
+          },
+          {
+            "pairWith": "fwa",
+            "currency": "0xa0df17b5ac76ababa36e1450e2cbcd18a620c845",
+            "symbol": "FWA",
+            "name": "Fake World Assets",
+            "decimals": 18,
+            "kinds": [
+              "univ4_hook",
+              "evm_project",
+              "custom_token"
+            ],
+            "customCap": {
+              "min": "200000000000000000000000",
+              "max": "200000000000000000000000000"
+            }
+          }
+        ]
+      },
+      {
+        "chainId": 4663,
+        "name": "Robinhood Chain",
+        "testnet": false,
+        "kinds": [
+          "univ4_hook",
+          "evm_project",
+          "custom_token",
+          "evm_contracts"
+        ],
+        "pairings": [
+          {
+            "pairWith": "eth",
+            "currency": "0x0000000000000000000000000000000000000000",
+            "symbol": "ETH",
+            "name": "Ether",
+            "decimals": 18,
+            "kinds": [
+              "univ4_hook",
+              "evm_project",
+              "custom_token"
+            ],
+            "customCap": {
+              "min": "1000000000000000000",
+              "max": "1000000000000000000000"
+            }
+          },
+          {
+            "pairWith": "imd",
+            "currency": "0x5f7bb59365ce557c26dbcaa4ee9d39a4b95b7127",
+            "symbol": "IMD",
+            "name": "Identity.md",
+            "decimals": 18,
+            "kinds": [
+              "univ4_hook",
+              "evm_project",
+              "custom_token"
+            ],
+            "customCap": {
+              "min": "250000000000000000000",
+              "max": "250000000000000000000000"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "pricedPer": {
+    "schedule.create": "run",
+    "schedule.topup": "run"
+  },
+  "authentication": {
+    "scheme": "Bearer",
+    "tokenBytes": 32,
+    "encoding": "hex",
+    "creator": "client"
+  },
+  "payment": {
+    "x402Version": 2,
+    "scheme": "exact",
+    "assetTransferMethod": "permit2",
+    "quoteApproval": "EIP-712"
+  },
+  "onchain": {
+    "quoteSigner": "0x169b08ea234d7819eeabb246e34d8cd81e32279f",
+    "readUrl": "/intake/{chainId}/{transactionHash}",
+    "chains": [
+      {
+        "chainId": 4663,
+        "network": "eip155:4663",
+        "intake": "0xa43e6f75ee006411f79ac1c84120606c2330de82",
+        "legacyIntakes": [
+          "0x1397434cd35e8a9c8ac312a61d3a285eb31dea56"
+        ],
+        "asset": "0x5f7bb59365ce557c26dbcaa4ee9d39a4b95b7127",
+        "symbol": "IMD",
+        "decimals": 18,
+        "payTo": "0x4e0fa57bde726079356537e2f34d671e9f41adbc",
+        "confirmations": 2,
+        "actions": [
+          {
+            "action": "job.open",
+            "version": "job-1",
+            "actionId": "0x6a6f622e6f70656e406a6f622d31000000000000000000000000000000000000",
+            "amount": "500000000000000000"
+          },
+          {
+            "action": "job.continue",
+            "version": "job-1",
+            "actionId": "0x6a6f622e636f6e74696e7565406a6f622d310000000000000000000000000000",
+            "amount": "500000000000000000"
+          },
+          {
+            "action": "launch.open",
+            "version": "launch-1",
+            "actionId": "0x6c61756e63682e6f70656e406c61756e63682d31000000000000000000000000",
+            "amount": "500000000000000000"
+          },
+          {
+            "action": "oracle.request",
+            "version": "oracle-1",
+            "actionId": "0x6f7261636c652e72657175657374406f7261636c652d31000000000000000000",
+            "amount": "500000000000000000"
+          },
+          {
+            "action": "workflow.open",
+            "version": "workflow-1",
+            "actionId": "0x776f726b666c6f772e6f70656e40776f726b666c6f772d310000000000000000",
+            "amount": "500000000000000000"
+          }
+        ],
+        "screenWaivers": []
+      },
+      {
+        "chainId": 1,
+        "network": "eip155:1",
+        "intake": "0xa43e6f75ee006411f79ac1c84120606c2330de82",
+        "legacyIntakes": [
+          "0x1397434cd35e8a9c8ac312a61d3a285eb31dea56"
+        ],
+        "asset": "0xd34a99bc0f67ae1bbd63c660e6d0b0dd03e263b7",
+        "symbol": "IMD",
+        "decimals": 18,
+        "payTo": "0x4e0fa57bde726079356537e2f34d671e9f41adbc",
+        "confirmations": 3,
+        "actions": [
+          {
+            "action": "job.open",
+            "version": "job-1",
+            "actionId": "0x6a6f622e6f70656e406a6f622d31000000000000000000000000000000000000",
+            "amount": "500000000000000000"
+          },
+          {
+            "action": "job.continue",
+            "version": "job-1",
+            "actionId": "0x6a6f622e636f6e74696e7565406a6f622d310000000000000000000000000000",
+            "amount": "500000000000000000"
+          },
+          {
+            "action": "launch.open",
+            "version": "launch-1",
+            "actionId": "0x6c61756e63682e6f70656e406c61756e63682d31000000000000000000000000",
+            "amount": "500000000000000000"
+          },
+          {
+            "action": "oracle.request",
+            "version": "oracle-1",
+            "actionId": "0x6f7261636c652e72657175657374406f7261636c652d31000000000000000000",
+            "amount": "500000000000000000"
+          },
+          {
+            "action": "workflow.open",
+            "version": "workflow-1",
+            "actionId": "0x776f726b666c6f772e6f70656e40776f726b666c6f772d310000000000000000",
+            "amount": "500000000000000000"
+          }
+        ],
+        "screenWaivers": [
+          "0xa9e1891d76553195b4cbcd0f8db290c8c0fa28b9"
+        ]
+      }
+    ],
+    "deliveries": [
+      {
+        "chainId": 1,
+        "delivery": "0xce0e6a670aa75e161d02aca3c7f00b94ca428ccb"
+      },
+      {
+        "chainId": 4663,
+        "delivery": "0xce0e6a670aa75e161d02aca3c7f00b94ca428ccb"
+      },
+      {
+        "chainId": 11155111,
+        "delivery": "0xce0e6a670aa75e161d02aca3c7f00b94ca428ccb"
+      }
+    ]
+  }
+}

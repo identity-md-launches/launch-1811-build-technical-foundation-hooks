@@ -328,7 +328,7 @@ ads or requester deployment. No credentials are requested or stored by these too
 The current source intentionally changes HookJobRequester and GatedHookDeployer. Tools now compare
 `deployment/current-build.json`, refreshed by `python3 script/update_build_evidence.py` after a build.
 These fingerprints assert build identity, **not an audit**; the tool reports `auditStatus: not-audited`.
-Requester runtime is 24,166 bytes and the gated deployer is 16,890 bytes with the unchanged compiler.
+Those historical runtime measurements are superseded by [the consolidated results](checks/consolidated/README.md), with the compiler configuration still unchanged.
 The existing manager/owner configuration responsibilities remain. See
 [GATED_DEPLOYMENT.md](GATED_DEPLOYMENT.md) for accepted-snapshot evidence, revocation in both callback
 orders, actual-schema templates, free-checker evidence and the disabled automatic binding route.

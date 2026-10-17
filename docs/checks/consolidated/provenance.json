@@ -1,0 +1,88 @@
+{
+  "observedDate": "2026-10-17",
+  "kind": "public read-only observations; not proof of authenticated HTTP associations",
+  "hashMeaning": "SHA-256 of the retained local file; JSON responses may be pretty-printed. Original raw HTTP fingerprints, where retained, are in live/official-observations.json.",
+  "files": {
+    "sources/Intake.deployed.sol.txt": {
+      "sha256": "e182cadac8c65d9f8dc0d637654e41bb05d6c124eaad49a180380c0c457d4ee9",
+      "bytes": 16493,
+      "derivation": "Verified source_code field from intake-verified.json."
+    },
+    "sources/audit-result.json": {
+      "sha256": "52275328ae0b4f5ef6cb49313ad85f373b2ec932563d90431854419f312d396e",
+      "bytes": 520,
+      "source": "https://api.imd.fun/jobs/ca404dfe-00d1-4682-83cb-fa1b28f9826c/result"
+    },
+    "sources/audit.md": {
+      "sha256": "85506b6d3fa35b75acd535fa824871475f4c990679a4a7a6781d9f66e3c7b7f5",
+      "bytes": 27794,
+      "source": "https://api.imd.fun/jobs/ca404dfe-00d1-4682-83cb-fa1b28f9826c/report.md"
+    },
+    "sources/continued-job-result.json": {
+      "sha256": "39d4525e963048d5f0c9dcbe18946f05afb6a5c87d5f050cfdb619747a6a8474",
+      "bytes": 827,
+      "source": "https://api.imd.fun/jobs/d0b06613-a5d7-45bb-af2d-dff73bb429da/result"
+    },
+    "sources/imd-docs.html": {
+      "sha256": "e590de7c93b14e146bf2430aeb60abd891b74f9f226dbb3cd8bbc63c6be05281",
+      "bytes": 671515,
+      "source": "https://imd.fun/docs/"
+    },
+    "sources/imd-docs.txt": {
+      "sha256": "93c14db68da58660cbb63a31ec701e9c58c99ce9fef771cfa48abe885a3c9501",
+      "bytes": 124719,
+      "derivation": "Text extracted from imd-docs.html, not the original HTTP bytes."
+    },
+    "sources/intake-abi.json": {
+      "sha256": "b94baa092cdfe96ea7a87c1d182f52c53d59ca8e29088f08aff016214f693124",
+      "bytes": 20114,
+      "derivation": "ABI field extracted from intake-verified.json."
+    },
+    "sources/intake-record.json": {
+      "sha256": "cc2c6ee285c6417aa4c3d9f547004da45a79d8d2df0db6e516488fe4436ea348",
+      "bytes": 4329,
+      "source": "https://api.imd.fun/intake/1/0xf85bae3821dd11be1146fd631df7ec601c5d47e02b00a7c8dc3bf28149455665"
+    },
+    "sources/intake-requested-logs.json": {
+      "sha256": "3f7d9af15f7824598265f71481eb1a481f9f6201950359ca1816e16b7c5665e0",
+      "bytes": 23190,
+      "derivation": "eth_getLogs on https://ethereum-rpc.publicnode.com; request bounds reconstructed by script/capture_binding_evidence.py and binding-evidence.json."
+    },
+    "sources/intake-verified.json": {
+      "sha256": "76997da4f7aef2b5f4770ef2e1644879cfac90383ceb41fc3653125fcdbc0ed8",
+      "bytes": 256319,
+      "source": "https://eth.blockscout.com/api/v2/smart-contracts/0xa43e6f75ee006411f79ac1c84120606c2330de82"
+    },
+    "sources/openapi.json": {
+      "sha256": "be142840c010710cb2a5b9e5c73e71d8e79ec4054c15661699d60bfa627be96a",
+      "bytes": 23132,
+      "source": "https://api.imd.fun/openapi.json"
+    },
+    "sources/oracle-attestation.json": {
+      "sha256": "d2ce1f64ea0e9c143246f38cee94b2b04458e89e722c358e1dd334a3fab1368c",
+      "bytes": 1641,
+      "source": "https://api.imd.fun/oracle/requests/76587543-d7e6-471e-a01f-63e9e0dfc6e7/attestation"
+    },
+    "sources/oracle-consumer.json": {
+      "sha256": "466c4be52d26138537e984d51e91864f6b511d2b123154daf5e2f9472582db84",
+      "bytes": 49316,
+      "source": "https://api.imd.fun/reads/skill/oracle-consumer"
+    },
+    "sources/oracle-list.json": {
+      "sha256": "cac4e30253f954e7769a32dd17c691d6527332bf073b9a062bbafbbd311d2482",
+      "bytes": 964,
+      "source": "https://api.imd.fun/oracle/requests",
+      "note": "List endpoint; original query parameters are not retained. The exact selected request has its own record."
+    },
+    "sources/oracle-reference.txt": {
+      "sha256": "4982d2052dce6b48d9472e284d6de41a3fe73e71fb8d339a992b1b94fc9bd09b",
+      "bytes": 33501,
+      "derivation": "Reference text extracted from oracle-consumer.json files[].content."
+    },
+    "sources/oracle-request.json": {
+      "sha256": "bf427d9fcbc2e0f127e5c978fac09368b12e31372a83df7cb844305b11693591",
+      "bytes": 9233,
+      "source": "https://api.imd.fun/oracle/requests/76587543-d7e6-471e-a01f-63e9e0dfc6e7"
+    }
+  }
+}

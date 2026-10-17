@@ -8,13 +8,15 @@ import hashlib
 from unittest.mock import Mock
 import unittest
 
-from sdk.gated_deploy import prepare
-from sdk.result_snapshot import approval_document
+from sdk.gated_deploy import prepare, ARTIFACT, artifact_tuple, CHECK_GAS
+from sdk.result_snapshot import approval_document, evidence_document
 from sdk.hooks_store import ROOT, Rpc, StoreError, _cast, keccak_hex
 from test.helpers.local_rpc import LocalChain
 
 FLAGS = (1 << 11) | (1 << 4)  # beforeAddLiquidity | afterDonate
 JOB = "0x" + "11" * 32
+SOURCE_SUB = "0x" + hashlib.sha256(b"local source submission").hexdigest()
+REVIEW_SUB = "0x" + hashlib.sha256(b"local review submission").hexdigest()
 
 
 def _built(path, name):
@@ -47,16 +49,22 @@ class GatedDeployToolTest(unittest.TestCase):
     def _params(self, doc):
         return dict(deployer=self.deployer, job=JOB, result_document=doc, creation_code=self.code,
                     constructor_args=self.args, source_hash="0x" + "22" * 32, build_hash="0x" + "33" * 32,
-                    runtime_hash=self.runtime, pool_manager=self.manager, permissions=hex(FLAGS), binding_mode="owner-confirmed")
+                    source_submission=SOURCE_SUB, review_submission=REVIEW_SUB, runtime_hash=self.runtime, pool_manager=self.manager, permissions=hex(FLAGS), binding_mode="owner-confirmed")
+
+    def _artifact(self):
+        a = dict(jobRequestId=JOB, sourceHash="0x" + "22" * 32, buildHash="0x" + "33" * 32,
+                 sourceSubmissionHash=SOURCE_SUB, reviewSubmissionHash=REVIEW_SUB, evidenceHash="0x" + "00" * 32,
+                 creationCodeHash=keccak_hex(self.code), constructorArgsHash=keccak_hex(self.args),
+                 runtimeCodeHash=self.runtime, chainId=31337, deployer=self.deployer, poolManager=self.manager,
+                 poolManagerCodeHash=keccak_hex(Rpc(self.local.url).code(self.manager)), permissions=FLAGS)
+        core = Rpc(self.local.url).call(self.deployer, f"artifactDigest({ARTIFACT})", artifact_tuple(a))
+        evidence = evidence_document(core, SOURCE_SUB, REVIEW_SUB)
+        a['evidenceHash'] = '0x' + hashlib.sha256(evidence).hexdigest()
+        return a, evidence
 
     def _digest(self):
-        # Ask the contract for the canonical digest of the artifact this tool will build.
-        chain = 31337
-        tup = "(" + ",".join([JOB, "0x" + "22" * 32, "0x" + "33" * 32, keccak_hex(self.code), keccak_hex(self.args),
-                              self.runtime, str(chain), self.deployer, self.manager,
-                              keccak_hex(Rpc(self.local.url).code(self.manager)), str(FLAGS)]) + ")"
-        return Rpc(self.local.url).call(self.deployer, "artifactDigest((bytes32,bytes32,bytes32,bytes32,bytes32,"
-                                        "bytes32,uint256,address,address,bytes32,uint160))", tup)
+        a, _ = self._artifact()
+        return Rpc(self.local.url).call(self.deployer, f"artifactDigest({ARTIFACT})", artifact_tuple(a))
 
     def _job(self, doc, status=2, review=2):
         self.local.call_transaction(self.requester, "setJob(bytes32,address,uint8,uint8,bytes32)", JOB, self.creator,
@@ -64,19 +72,30 @@ class GatedDeployToolTest(unittest.TestCase):
 
     def _doc(self):
         approval = approval_document(self._digest())
+        _, evidence = self._artifact()
         snapshot = {"jobId": "d8ec4ec9-b939-4ff8-8ce1-fad7a6a69bd9", "complete": True, "state": "completed",
                     "launch": {"requested": False}, "delivery": {"requested": False},
                     "source": [{"hash": "22" * 32, "submissionHash": hashlib.sha256(b"local source submission").hexdigest()}],
                     "files": [{"name": "hooksStoreApproval", "path": "artifacts/hooks-store-approval.json",
                                "mediaType": "application/json", "bytes": len(approval),
                                "hash": hashlib.sha256(approval).hexdigest(),
-                               "submissionHash": hashlib.sha256(b"local review submission").hexdigest()}]}
+                               "submissionHash": hashlib.sha256(b"local publication submission").hexdigest()},
+                              {"name":"hooksStoreEvidence", "path":"artifacts/hooks-store-evidence.json",
+                               "mediaType":"application/json", "bytes": len(evidence),
+                               "hash": hashlib.sha256(evidence).hexdigest(),
+                               "submissionHash": hashlib.sha256(b"local publication submission").hexdigest()}]}
         return json.dumps(snapshot, separators=(",", ":")).encode()
 
     def test_success_produces_unsigned_calldata_the_contract_accepts(self):
         doc = self._doc()
         self._job(doc)
-        out = prepare(Rpc(self.local.url), **self._params(doc))
+        rpc = Rpc(self.local.url)
+        rpc.request = Mock(wraps=rpc.request)
+        out = prepare(rpc, **self._params(doc))
+        budgeted = [call.args[1][0] for call in rpc.request.mock_calls
+                    if call.args[0] == "eth_call" and "gas" in call.args[1][0]]
+        self.assertEqual(len(budgeted), 1)
+        self.assertEqual(int(budgeted[0]["gas"], 16), CHECK_GAS)
         self.assertTrue(out["unsigned"])
         self.assertEqual(out["transaction"]["from"].lower(), self.creator.lower())
         self.assertEqual(int(out["hook"], 16) & 0x3FFF, FLAGS)
@@ -91,6 +110,12 @@ class GatedDeployToolTest(unittest.TestCase):
         self._job(doc, review=3)
         with self.assertRaisesRegex(StoreError, "oracle-signed review verdict"):
             prepare(Rpc(self.local.url), **self._params(doc))
+
+    def test_review_cannot_alias_source_submission_with_different_hex_case(self):
+        params = self._params(b"{}")
+        params["review_submission"] = "0x" + SOURCE_SUB[2:].upper()
+        with self.assertRaisesRegex(StoreError, "distinct nonzero"):
+            prepare(Rpc(self.local.url), **params)
 
     def test_undelivered_job_refused(self):
         doc = self._doc()

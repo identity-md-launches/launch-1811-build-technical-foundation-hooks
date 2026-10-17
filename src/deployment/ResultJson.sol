@@ -1,12 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-/// @dev Bounded, strict JSON reader for authenticated IMD snapshots. Only printable ASCII strings are supported. No key/string escapes are
-/// accepted: alternate spellings fail closed instead of requiring JSON Unicode normalization.
-/// Object keys must be unique at EVERY depth. Arrays/objects have at most 128 items, depth 16,
-/// and the document at most 2048 tokens. No caller-supplied offsets or substring proofs.
+/// @dev Strict UTF-8 JSON. Escapes are decoded in a private memory copy, AFTER the caller checks
+/// the original resultHash. Keys are unique by decoded bytes at every depth, including aliases.
+/// Bounds: 12 KiB, 512 tokens, 32 object members, 128 array items, depth 16.
+/// No caller-supplied offsets or substring proofs. Limits are mirrored in sdk/result_snapshot.py.
 library ResultJson {
     error InvalidResultJSON();
+    error ResultDocumentLimit();
+    error ResultTokenLimit();
+    error ResultContainerLimit();
+    uint256 internal constant MAX_BYTES = 12288;
+    uint256 internal constant MAX_TOKENS = 512;
 
     struct Token {
         uint256 start;
@@ -24,30 +29,36 @@ library ResultJson {
     }
 
     function parse(bytes memory data) internal pure returns (Document memory d) {
-        d.data = data;
-        d.tokens = new Token[](data.length / 2 + 1 < 2048 ? data.length / 2 + 1 : 2048);
+        if (data.length == 0 || data.length > MAX_BYTES) revert ResultDocumentLimit();
+        // Do not mutate the caller's byte string: its exact encoding is authenticated evidence.
+        d.data = bytes.concat(data);
+        d.tokens = new Token[](data.length / 2 + 1 < MAX_TOKENS ? data.length / 2 + 1 : MAX_TOKENS);
         _value(d, 0);
         _space(d);
         if (d.pos != data.length || d.tokens[0].kind != "{") revert InvalidResultJSON();
     }
 
     function member(Document memory d, uint256 object, bytes memory key) internal pure returns (uint256) {
-        if (d.tokens[object].kind != "{") revert InvalidResultJSON();
+        uint256 token = tryMember(d, object, key);
+        if (token == 0) revert InvalidResultJSON();
+        return token;
+    }
+
+    /// @dev Zero is an unambiguous missing token: the root is never a member value.
+    function tryMember(Document memory d, uint256 object, bytes memory key) internal pure returns (uint256) {
+        if (d.tokens[object].kind != "{") return 0;
         uint256 cursor = object + 1;
         for (uint256 i; i < d.tokens[object].size; ++i) {
             if (eq(d, cursor, key)) return cursor + 1;
             cursor = d.tokens[cursor + 1].next;
         }
-        revert InvalidResultJSON();
+        return 0;
     }
 
     function eq(Document memory d, uint256 token, bytes memory expected) internal pure returns (bool) {
-        Token memory t = d.tokens[token];
-        if (t.end - t.start != expected.length) return false;
-        for (uint256 i; i < expected.length; ++i) {
-            if (d.data[t.start + i] != expected[i]) return false;
-        }
-        return true;
+        return
+            d.tokens[token].end - d.tokens[token].start == expected.length
+                && _tokenHash(d, token) == keccak256(expected);
     }
 
     function stringEq(Document memory d, uint256 token, bytes memory expected) internal pure returns (bool) {
@@ -68,6 +79,34 @@ library ResultJson {
         return bytes32(value);
     }
 
+    /// @dev Select a 64-character hash without decoding every irrelevant entry. OR 0x20 folds
+    /// ASCII hex A-F to a-f and leaves digits unchanged. Reject control bytes before folding:
+    /// decoded U+0010..U+0019 would otherwise alias digits. Matched entries still pass strict
+    /// lowercase hashValue; case aliases cannot hide a duplicate.
+    function hashEq(Document memory d, uint256 token, bytes32 expectedTextHash) internal pure returns (bool) {
+        Token memory t = d.tokens[token];
+        if (t.kind != '"' || t.end - t.start != 64) return false;
+        bytes memory data = d.data;
+        uint256 start = t.start;
+        bytes32 h;
+        assembly ("memory-safe") {
+            let mask := 0x2020202020202020202020202020202020202020202020202020202020202020
+            let p := add(add(data, 32), start)
+            let a := mload(p)
+            let b := mload(add(p, 32))
+            // Standard word-parallel byte < 32 predicate; any cross-byte borrow still
+            // requires an earlier byte < 32, so the aggregate test has no false positive.
+            let high := 0x8080808080808080808080808080808080808080808080808080808080808080
+            let low := or(and(and(sub(a, mask), not(a)), high), and(and(sub(b, mask), not(b)), high))
+            if iszero(low) {
+                mstore(0, or(a, mask))
+                mstore(32, or(b, mask))
+                h := keccak256(0, 64)
+            }
+        }
+        return h == expectedTextHash;
+    }
+
     function uintValue(Document memory d, uint256 token) internal pure returns (uint256 value) {
         Token memory t = d.tokens[token];
         if (t.kind != "0" || t.end - t.start > 20) revert InvalidResultJSON();
@@ -80,7 +119,8 @@ library ResultJson {
 
     function _value(Document memory d, uint256 depth) private pure returns (uint256 index) {
         _space(d);
-        if (depth > 16 || d.pos == d.data.length || d.count == d.tokens.length) revert InvalidResultJSON();
+        if (depth > 16 || d.pos == d.data.length) revert InvalidResultJSON();
+        if (d.count == d.tokens.length) revert ResultTokenLimit();
         index = d.count++;
         bytes1 c = d.data[d.pos];
         d.tokens[index].kind = c;
@@ -111,12 +151,18 @@ library ResultJson {
             ++d.pos;
             return;
         }
+        bytes32[32] memory keys;
         while (true) {
-            if (++d.tokens[index].size > 128) revert InvalidResultJSON();
+            uint256 size = ++d.tokens[index].size;
+            if (size > (object ? 32 : 128)) revert ResultContainerLimit();
             if (object) {
                 if (_peek(d) != '"') revert InvalidResultJSON();
                 uint256 key = _value(d, depth + 1);
-                _uniqueKey(d, index, key);
+                bytes32 h = _tokenHash(d, key);
+                for (uint256 i; i + 1 < size; ++i) {
+                    if (keys[i] == h) revert InvalidResultJSON();
+                }
+                keys[size - 1] = h;
                 _space(d);
                 if (_peek(d) != ":") revert InvalidResultJSON();
                 ++d.pos;
@@ -131,15 +177,6 @@ library ResultJson {
         }
     }
 
-    function _uniqueKey(Document memory d, uint256 object, uint256 key) private pure {
-        uint256 previous = object + 1;
-        bytes32 h = _tokenHash(d, key);
-        while (previous < key) {
-            if (_tokenHash(d, previous) == h) revert InvalidResultJSON();
-            previous = d.tokens[previous + 1].next;
-        }
-    }
-
     function _tokenHash(Document memory d, uint256 token) private pure returns (bytes32 h) {
         bytes memory data = d.data;
         uint256 start = d.tokens[token].start;
@@ -148,16 +185,94 @@ library ResultJson {
     }
 
     function _string(Document memory d, uint256 index) private pure {
-        d.tokens[index].start = ++d.pos;
-        while (d.pos < d.data.length) {
-            bytes1 c = d.data[d.pos++];
-            if (c == '"') {
-                d.tokens[index].end = d.pos - 1;
+        bytes memory data = d.data;
+        uint256 p = d.pos + 1;
+        uint256 w = p;
+        d.tokens[index].start = p;
+        while (p < data.length) {
+            uint8 c = uint8(data[p++]);
+            if (c == 34) {
+                d.tokens[index].end = w;
+                d.pos = p;
                 return;
             }
-            if (uint8(c) < 32 || uint8(c) > 126 || c == "\\") revert InvalidResultJSON();
+            if (c < 32) revert InvalidResultJSON();
+            if (c == 92) {
+                if (p == data.length) revert InvalidResultJSON();
+                c = uint8(data[p++]);
+                if (c == 117) {
+                    uint256 cp = _hex4(data, p);
+                    p += 4;
+                    if (cp >= 0xd800 && cp <= 0xdbff) {
+                        if (p + 6 > data.length || data[p] != "\\" || data[p + 1] != "u") {
+                            revert InvalidResultJSON();
+                        }
+                        uint256 low = _hex4(data, p + 2);
+                        if (low < 0xdc00 || low > 0xdfff) revert InvalidResultJSON();
+                        cp = 0x10000 + ((cp - 0xd800) << 10) + low - 0xdc00;
+                        p += 6;
+                    } else if (cp >= 0xdc00 && cp <= 0xdfff) {
+                        revert InvalidResultJSON();
+                    }
+                    w = _utf8Write(data, w, cp);
+                    continue;
+                }
+                if (c == 98) c = 8;
+                else if (c == 102) c = 12;
+                else if (c == 110) c = 10;
+                else if (c == 114) c = 13;
+                else if (c == 116) c = 9;
+                else if (c != 34 && c != 92 && c != 47) revert InvalidResultJSON();
+                data[w++] = bytes1(c);
+            } else if (c < 128) {
+                data[w++] = bytes1(c);
+            } else {
+                uint256 n = c >= 0xc2 && c <= 0xdf ? 1 : c >= 0xe0 && c <= 0xef ? 2 : c >= 0xf0 && c <= 0xf4 ? 3 : 0;
+                if (n == 0 || p + n > data.length) revert InvalidResultJSON();
+                uint8 first = uint8(data[p]);
+                if (
+                    (c == 0xe0 && first < 0xa0) || (c == 0xed && first >= 0xa0) || (c == 0xf0 && first < 0x90)
+                        || (c == 0xf4 && first >= 0x90)
+                ) revert InvalidResultJSON();
+                data[w++] = bytes1(c);
+                for (uint256 i; i < n; ++i) {
+                    c = uint8(data[p++]);
+                    if (c < 0x80 || c > 0xbf) revert InvalidResultJSON();
+                    data[w++] = bytes1(c);
+                }
+            }
         }
         revert InvalidResultJSON();
+    }
+
+    function _hex4(bytes memory data, uint256 p) private pure returns (uint256 value) {
+        if (p + 4 > data.length) revert InvalidResultJSON();
+        for (uint256 i; i < 4; ++i) {
+            uint8 c = uint8(data[p + i]);
+            if (c >= 48 && c <= 57) c -= 48;
+            else if (c >= 97 && c <= 102) c -= 87;
+            else if (c >= 65 && c <= 70) c -= 55;
+            else revert InvalidResultJSON();
+            value = (value << 4) | c;
+        }
+    }
+
+    function _utf8Write(bytes memory data, uint256 w, uint256 cp) private pure returns (uint256) {
+        if (cp < 0x80) {
+            data[w++] = bytes1(uint8(cp));
+        } else {
+            if (cp >= 0x10000) {
+                data[w++] = bytes1(uint8(0xf0 | (cp >> 18)));
+                data[w++] = bytes1(uint8(0x80 | ((cp >> 12) & 63)));
+            } else if (cp >= 0x800) {
+                data[w++] = bytes1(uint8(0xe0 | (cp >> 12)));
+            } else {
+                data[w++] = bytes1(uint8(0xc0 | (cp >> 6)));
+            }
+            if (cp >= 0x800) data[w++] = bytes1(uint8(0x80 | ((cp >> 6) & 63)));
+            data[w++] = bytes1(uint8(0x80 | (cp & 63)));
+        }
+        return w;
     }
 
     function _number(Document memory d) private pure {
