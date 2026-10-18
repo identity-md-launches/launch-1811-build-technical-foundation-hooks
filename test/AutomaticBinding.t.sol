@@ -90,7 +90,7 @@ abstract contract AutomaticFixture is Fixture {
         );
     }
 
-    function _ready(bool deliveryFirst) internal {
+    function _ready(bool deliveryFirst) internal virtual {
         (jobId, askId) = _open();
         artifact = _artifact(jobId);
         if (deliveryFirst) {
@@ -207,7 +207,7 @@ contract AutomaticBindingTest is AutomaticFixture {
         _deliver(jobId);
         vm.expectRevert(AutoHookJobRequester.NotReady.selector);
         automatic.requestVerdict(askId);
-        vm.roll(1001);
+        vm.roll(1008);
         verdictId = automatic.requestVerdict(askId);
         vm.expectRevert(AutoHookJobRequester.NotReady.selector);
         automatic.requestVerdict(askId);
@@ -262,7 +262,7 @@ contract AutomaticBindingTest is AutomaticFixture {
         (jobId, askId) = _open();
         _commit(jobId, _artifact(jobId));
         _deliver(jobId);
-        vm.roll(1005);
+        vm.roll(1008);
         intake.setPrice(automatic.reviewAction(), address(imd), FEE + 1);
         vm.expectRevert(abi.encodeWithSelector(AutoHookJobRequester.PriceExceeded.selector, FEE + 1, FEE));
         automatic.requestVerdict(askId);
@@ -286,7 +286,7 @@ contract AutomaticBindingTest is AutomaticFixture {
         vm.prank(creator);
         bytes32 retry = automatic.retryVerdict(jobId, FEE);
         assertNotEq(retry, askId);
-        vm.roll(vm.getBlockNumber() + 2);
+        vm.roll(vm.getBlockNumber() + 8);
         bytes32 id2 = automatic.requestVerdict(retry);
         OracleAttestation.Attestation memory a = _att(askId, false);
         assertFalse(intake.complete(id2, abi.encode(id2, a, _sign(a))));
@@ -452,7 +452,7 @@ contract AutomaticBindingTest is AutomaticFixture {
         _commit(jobId, _artifact(jobId));
         vm.expectRevert(AutoHookJobRequester.NotReady.selector);
         automatic.requestVerdict(askId);
-        vm.roll(1021);
+        vm.roll(1028);
         verdictId = automatic.requestVerdict(askId);
         assertEq(automatic.getAsk(askId).fromBlock, 1020);
         assertEq(automatic.getAsk(askId).toBlock, 1020);
@@ -463,7 +463,7 @@ contract AutomaticBindingTest is AutomaticFixture {
         _deliver(secondJob);
         vm.expectRevert(AutoHookJobRequester.NotReady.selector);
         automatic.requestVerdict(secondAsk);
-        vm.roll(1041);
+        vm.roll(1048);
         automatic.requestVerdict(secondAsk);
         assertEq(automatic.getAsk(secondAsk).fromBlock, 1040);
     }
@@ -582,7 +582,7 @@ contract AutomaticBindingTest is AutomaticFixture {
         (jobId, askId) = _open();
         _commit(jobId, _artifact(jobId));
         _deliver(jobId);
-        vm.roll(1002);
+        vm.roll(1008);
         intake.setReuseIds(true);
         vm.expectRevert(AutoHookJobRequester.DuplicateId.selector);
         automatic.requestVerdict(askId);
@@ -633,6 +633,7 @@ contract AutomaticGasTest is AutomaticFixture {
             uint256 snap = vm.snapshotState();
             vm.cool(address(automatic));
             vm.cool(address(codec));
+            vm.cool(address(100)); // Robinhood system clock must also be cold.
             vm.cool(signer);
             vm.cool(automatic.getAsk(askId).pin);
             // getAsk warms automatic again; cool it after retrieving the pin.

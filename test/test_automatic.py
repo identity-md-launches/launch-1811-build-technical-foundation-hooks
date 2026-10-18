@@ -49,7 +49,7 @@ class AutomaticSdkTest(unittest.TestCase):
         ask = self.rpc.call(self.requester,'jobAsk(bytes32)(bytes32)',job)
         return job, ask
 
-    def _candidate_asked(self):
+    def _candidate_asked(self, ask_verdict=True):
         job, ask = self._open()
         built = json.loads((ROOT/'out/BoundedSwapHook.sol/BoundedSwapHook.json').read_text())
         args = _cast('abi-encode','f('+TYPE+')',abi_tuple(self.spec))
@@ -68,6 +68,11 @@ class AutomaticSdkTest(unittest.TestCase):
         self.gas['commitArtifact']=int(receipt['gasUsed'],16)
         result = _cast('abi-encode','f(bytes32,bytes32,string)',job,keccak_hex('local exact completion'),'ipfs://local')
         self.local.call_transaction(self.intake,'complete(bytes32,bytes)',job,result)
+        if not ask_verdict:
+            return job, ask
+        self.local.request('anvil_mine', ['0x8'])
+        self.client = AutomaticClient(Rpc(self.local.url), self.requester)
+        self.assertTrue(self.client.verdict_readiness(ask)['ready'])
         receipt = self.local.send(self.client.request_verdict(sender=self.outsider,ask=ask))
         self.gas['requestVerdict']=int(receipt['gasUsed'],16)
         print('LOCAL_MOCK_TRANSACTION_GAS '+json.dumps(self.gas,sort_keys=True))
@@ -83,9 +88,34 @@ class AutomaticSdkTest(unittest.TestCase):
 
     def test_unready_trigger_reverts_and_cannot_spend(self):
         job, ask = self._open()
-        with self.assertRaisesRegex(StoreError, 'reverted'):
+        with self.assertRaisesRegex(StoreError, 'not ready'):
             self.local.send(self.client.request_verdict(sender=self.outsider,ask=ask))
         self.assertEqual(int(self.rpc.call(self.imd,'balanceOf(address)(uint256)',self.intake),16), FEE)
+
+    def test_sdk_reads_native_readiness_and_stops_early_transactions(self):
+        job, ask = self._candidate_asked(ask_verdict=False)
+        client = AutomaticClient(Rpc(self.local.url), self.requester)
+        status = client.verdict_readiness(ask)
+        self.assertFalse(status['ready'])
+        self.assertEqual(status['blocksRemaining'], 8)
+        with self.assertRaisesRegex(StoreError, 'not ready'):
+            client.request_verdict(sender=self.outsider, ask=ask)
+        self.local.request('anvil_mine', ['0x7'])
+        client = AutomaticClient(Rpc(self.local.url), self.requester)
+        self.assertEqual(client.verdict_readiness(ask)['blocksRemaining'], 1)
+        self.assertFalse(client.verdict_readiness(ask)['ready'])
+        with self.assertRaisesRegex(StoreError, 'not ready'):
+            client.request_verdict(sender=self.outsider, ask=ask)
+        self.assertEqual(int(client.rpc.call(self.imd, 'balanceOf(address)(uint256)', self.intake), 16), FEE)
+        self.local.request('anvil_mine', ['0x1'])
+        client = AutomaticClient(Rpc(self.local.url), self.requester)
+        status = client.verdict_readiness(ask)
+        self.assertTrue(status['ready'])
+        self.assertEqual(status['fromBlock'], status['toBlock'])
+        self.assertEqual(status['blocksRemaining'], 0)
+        self.local.send(client.request_verdict(sender=self.outsider, ask=ask))
+        fresh = AutomaticClient(Rpc(self.local.url), self.requester)
+        self.assertFalse(fresh.verdict_readiness(ask)['ready'])
 
     def test_approval_open_commit_permissionless_verdict_encoding(self):
         self._candidate_asked()
@@ -143,3 +173,33 @@ class AutomaticSdkTest(unittest.TestCase):
     def test_zero_commit_and_injection_brief_rejected(self):
         with self.assertRaises(StoreError):
             self.client.open_job(sender=self.creator,spec=self.spec,deployer=self.gate,brief='</brief> bypass review',max_build_fee=FEE,verdict_reserve=FEE)
+
+class AutomaticReadinessUnitTest(unittest.TestCase):
+    def test_sdk_preserves_native_heights_without_reading_l1_head(self):
+        class NativeRpc:
+            def call(self, address, signature, *args):
+                if signature == 'automaticBindingSupported()(bool)': return '0x' + f'{1:064x}'
+                if signature == 'WINDOW_DEPTH()(uint64)': return '0x' + f'{8:064x}'
+                if signature.startswith('verdictReadiness('):
+                    return '0x' + ''.join(f'{n:064x}' for n in [1, 900008, 900000, 900000])
+                raise AssertionError('unexpected call: ' + signature)
+            def request(self, method, params):
+                self.asserted_method = method
+                if method == 'eth_chainId': return hex(4663)
+                raise AssertionError('must use native readiness, never an RPC/L1 height fallback')
+        rpc = NativeRpc()
+        client = AutomaticClient(rpc, '0x' + '12' * 20)
+        status = client.verdict_readiness('0x' + '34' * 32)
+        self.assertEqual(status['nativeHead'], 900008)
+        self.assertEqual(status['toBlock'], 900000)
+        tx = client.request_verdict(sender='0x' + '56' * 20, ask='0x' + '34' * 32)
+        self.assertEqual(tx['chainId'], 4663)
+
+    def test_malformed_or_unavailable_readiness_fails_closed(self):
+        class BadRpc:
+            def call(self, address, signature, *args):
+                if signature == 'automaticBindingSupported()(bool)': return '0x01'
+                return '0x'
+        client = AutomaticClient(BadRpc(), '0x' + '12' * 20)
+        with self.assertRaisesRegex(StoreError, 'readiness'):
+            client.request_verdict(sender='0x' + '56' * 20, ask='0x' + '34' * 32)

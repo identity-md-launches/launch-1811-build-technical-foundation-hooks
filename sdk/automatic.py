@@ -31,6 +31,8 @@ class AutomaticClient:
         spec = normalize_spec(spec)
         if int(self.rpc.request('eth_chainId', []), 16) != int(spec['chainId']):
             raise StoreError('RPC chain differs from HookSpec')
+        # The consumer validates clock semantics before taking any build payment.
+        self.rpc.call(self.requester, 'head()(uint64)')
         if not isinstance(brief, str) or not 1 <= len(brief.encode('utf-8')) <= 2000 or any(c in brief for c in '\\"<>') or any(ord(c) < 32 or ord(c) == 127 for c in brief):
             raise StoreError('brief must be bounded UTF-8 without JSON/control/delimiter characters')
         deployer = _hex(deployer, 20, 'deployer')
@@ -67,11 +69,28 @@ class AutomaticClient:
         return self.transaction(sender, 'commitArtifact(bytes32,' + ARTIFACT + ',bytes20)',
                                 job, artifact_tuple(artifact), reviewed_commit)
 
+    def verdict_readiness(self, ask):
+        ask = _hex(ask, 32, 'ask')
+        raw = self.rpc.call(self.requester, 'verdictReadiness(bytes32)(bool,uint64,uint64,uint64)', ask)
+        words = _hex(raw, 128, 'verdict readiness')
+        ready, head, start, end = [int(words[2+i*64:2+(i+1)*64], 16) for i in range(4)]
+        if ready not in (0, 1) or max(head, start, end) >= 1 << 64:
+            raise StoreError('malformed verdict readiness')
+        depth = int(self.rpc.call(self.requester, 'WINDOW_DEPTH()(uint64)'), 16)
+        return {'ready': bool(ready), 'nativeHead': head, 'fromBlock': start, 'toBlock': end,
+                'windowDepth': depth, 'blocksRemaining': max(0, start + depth - head),
+                'note': 'Snapshot only; refresh after transactions. A fee change can still prevent a ready ask.'}
+
     def request_verdict(self, *, sender, ask):
         # Deliberately no artifact, question, prefix, fee or recipient argument.
+        readiness = self.verdict_readiness(ask)
+        if not readiness['ready']:
+            raise StoreError('verdict not ready; native blocks remaining: ' + str(readiness['blocksRemaining']) +
+                             '; delivery, candidate, active reserve and deadline are also required')
         return self.transaction(sender, 'requestVerdict(bytes32)', _hex(ask, 32, 'ask'))
 
     def retry_verdict(self, *, sender, job, reserve):
+        self.rpc.call(self.requester, 'head()(uint64)')
         return self.transaction(sender, 'retryVerdict(bytes32,uint256)', _hex(job, 32, 'job'), str(positive(reserve, 'reserve')))
 
     def withdraw_refund(self, *, sender, token):
@@ -86,6 +105,7 @@ def main():
     o.add_argument('--max-build-fee', type=int, required=True); o.add_argument('--verdict-reserve', type=int, required=True)
     c = sub.add_parser('commit'); c.add_argument('artifact'); c.add_argument('--reviewed-commit', required=True)
     v = sub.add_parser('verdict'); v.add_argument('ask')
+    s = sub.add_parser('status'); s.add_argument('ask')
     r = sub.add_parser('retry'); r.add_argument('job'); r.add_argument('--reserve', type=int, required=True)
     w = sub.add_parser('withdraw'); w.add_argument('token')
     args = p.parse_args()
@@ -96,6 +116,7 @@ def main():
             artifact = load_json(args.artifact)
             out = client.commit_artifact(sender=args.sender, job=artifact['jobRequestId'], artifact=artifact, reviewed_commit=args.reviewed_commit)
         elif args.command == 'verdict': out = client.request_verdict(sender=args.sender, ask=args.ask)
+        elif args.command == 'status': out = client.verdict_readiness(args.ask)
         elif args.command == 'retry': out = client.retry_verdict(sender=args.sender, job=args.job, reserve=args.reserve)
         else: out = client.withdraw_refund(sender=args.sender, token=args.token)
         print(json.dumps(out, indent=2))

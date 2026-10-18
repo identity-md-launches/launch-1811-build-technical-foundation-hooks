@@ -39,6 +39,7 @@
     await connected();
     const spec = JSON.parse(value('spec'));
     if (BigInt(spec.chainId) !== BigInt(await rpc('eth_chainId', []))) throw Error('Wallet network differs from HookSpec');
+    await call(requester(), '0x' + A.selectors.head);
     A.hex(value('deployer'), 20);
     const uses = await call(value('deployer'), '0xb61e96a5'); // requester()
     if (uses.slice(-40).toLowerCase() !== requester().slice(2).toLowerCase()) throw Error('Deployer uses another requester');
@@ -74,14 +75,26 @@
     const approved = await call(requester(), A.idCalldata('approved', job));
     const epoch = await call(requester(), '0x' + A.selectors.epoch + words[13]);
     const incident = BigInt(epoch) === 0n ? null : await call(requester(), '0x' + A.selectors.revoked + A.uint(BigInt(epoch)));
+    const readiness = await readReadiness(ask);
     show({job, ask, jobStatus: ['None','Open','Delivered','Failed','Expired'][Number(BigInt('0x' + words[3]))],
       verdict: ['None','Pending','Passed','NotPassed','Unanswered'][Number(BigInt('0x' + words[4]))],
       exactAuthorizedArtifact: approved, signerEpoch: BigInt(epoch).toString(), revokedEpochIncident: incident,
+      verdictReadiness: readiness,
       note: 'A Passed label alone cannot deploy: exact artifact, signer revocation, freshness, manager, bytecode and replay checks still apply.'});
+  }
+  async function readReadiness(ask) {
+    const raw = await call(requester(), A.idCalldata('readiness', ask));
+    const depth = await call(requester(), '0x' + A.selectors.depth);
+    return A.decodeReadiness(raw, depth);
   }
   bind('status', readStatus);
   bind('commitArtifact', async () => { await send(requester(), A.commitCalldata(value('job'), JSON.parse(value('artifact')), value('commit'))); await readStatus(); });
-  bind('verdict', async () => { await send(requester(), A.idCalldata('verdict', value('ask'))); await readStatus(); });
+  bind('verdict', async () => {
+    const readiness = await readReadiness(value('ask'));
+    if (!readiness.ready) throw Error('Verdict not ready: ' + readiness.blocksRemaining +
+      ' native blocks remaining. Delivery, candidate, active reserve and deadline are also required. Refresh status.');
+    await send(requester(), A.idCalldata('verdict', value('ask'))); await readStatus();
+  });
   bind('cancel', async () => { await send(requester(), A.idCalldata('cancel', value('job'))); await readStatus(); });
   bind('withdraw', async () => { await send(requester(), '0x' + A.selectors.withdraw + A.address(value('token'))); });
 })();

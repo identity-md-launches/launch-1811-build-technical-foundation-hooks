@@ -1,6 +1,6 @@
 {
   "format": "hooks-store-automatic-infrastructure-draft/v1",
-  "baseCommit": "9dd97150d292fee26912f9605e0686e4ddbb1645",
+  "baseCommit": "378cd9b20db99e2190ed5a73fc73849250996e72",
   "status": "Source and local tests only; no transactions authorized or executed. This is not launch.json.",
   "runbook": "docs/AUTOMATIC_BINDING.md",
   "contracts": [
@@ -14,21 +14,82 @@
     {
       "contract": "AutoHookJobRequester",
       "source": "src/imd/automatic/AutoHookJobRequester.sol",
-      "constructorTypes": ["address", "address", "address", "address", "uint256", "address"],
-      "constructorArgs": ["$owner", "$intake", "$asset", "$oracleSigner", "500000000000000000", "$contract:HookRequestCodec"],
-      "defaultActions": ["job.open@job-1", "oracle.request@oracle-1"],
-      "defaultPanel": {"panelSize": 7, "quorum": 5, "maxWindowAgeBlocks": 7200},
+      "constructorTypes": [
+        "address",
+        "address",
+        "address",
+        "address",
+        "uint256",
+        "address"
+      ],
+      "constructorArgs": [
+        "$owner",
+        "$intake",
+        "$asset",
+        "$oracleSigner",
+        "500000000000000000",
+        "$contract:HookRequestCodec"
+      ],
+      "defaultActions": [
+        "job.open@job-1",
+        "oracle.request@oracle-1"
+      ],
+      "defaultPanel": {
+        "panelSize": 7,
+        "quorum": 5,
+        "maxWindowAgeBlocks": 7200
+      },
       "ownerCalls": [],
-      "readback": ["owner()", "intake()", "asset()", "oracleSigner()", "codec()", "maxPrice()", "automaticBindingSupported()"],
-      "configurationChanges": ["setProtocol(address,address,uint256,bytes32,bytes32)", "setPanel(uint16,uint16,uint64)", "setOracleSigner(address)"]
+      "readback": [
+        "owner()",
+        "intake()",
+        "asset()",
+        "oracleSigner()",
+        "codec()",
+        "maxPrice()",
+        "automaticBindingSupported()",
+        "head()",
+        "WINDOW_DEPTH()"
+      ],
+      "configurationChanges": [
+        "setProtocol(address,address,uint256,bytes32,bytes32)",
+        "setPanel(uint16,uint16,uint64)",
+        "setOracleSigner(address)"
+      ],
+      "windowPolicy": {
+        "depth": 8,
+        "start": "latest candidate commitment/job delivery, or retry creation, using the native question-chain clock",
+        "ready": "nativeHead >= start + 8; active delivered job, candidate and reserve; within deadline",
+        "clockChains": {
+          "1": "block.number",
+          "11155111": "block.number; job.open unavailable",
+          "4663": "ArbSys(address(100)).arbBlockNumber()",
+          "31337": "local block.number only"
+        },
+        "otherChains": "revert before payment"
+      }
     },
     {
       "contract": "GatedHookDeployer",
       "source": "src/deployment/GatedHookDeployer.sol",
-      "constructorTypes": ["address", "address"],
-      "constructorArgs": ["$owner", "$contract:AutoHookJobRequester"],
-      "ownerCalls": ["setManager($poolManager,$verifiedManagerCodeHash,true)"],
-      "readback": ["owner()", "requester()", "automaticBindingSupported()", "pinnedManager(uint256)", "managers(address)"]
+      "constructorTypes": [
+        "address",
+        "address"
+      ],
+      "constructorArgs": [
+        "$owner",
+        "$contract:AutoHookJobRequester"
+      ],
+      "ownerCalls": [
+        "setManager($poolManager,$verifiedManagerCodeHash,true)"
+      ],
+      "readback": [
+        "owner()",
+        "requester()",
+        "automaticBindingSupported()",
+        "pinnedManager(uint256)",
+        "managers(address)"
+      ]
     }
   ],
   "inputs": {
@@ -42,6 +103,7 @@
   "responsibilities": [
     "Infrastructure setup only; no per-hook owner binding call.",
     "Check runtime sizes, codec code hash, protocol quotes, owner handoff and enabled manager before admitting user fees.",
+    "Compare requester head() with the same-block native question-chain RPC height. On Robinhood, never use Solidity block.number for oracle windows. Monitor eight-block depth separately from finality and choose maxWindowAgeBlocks for native cadence and callback latency (minimum eight, default 7200).",
     "Ethereum and Robinhood sell both actions in the captured capabilities. Sepolia is oracle-only; Base has no supported Intake. Never guess support.",
     "The existing listing/ad fee and recipient configuration remain as in the historical Store runbook.",
     "Obtain independent adversarial review and separate authorization for any later live pilot or deployment."

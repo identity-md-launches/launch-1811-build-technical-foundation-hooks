@@ -1,0 +1,132 @@
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.26;
+
+import {AutomaticFixture} from "./AutomaticBinding.t.sol";
+import {AutoHookJobRequester} from "../src/imd/automatic/AutoHookJobRequester.sol";
+import {HookJobRequester} from "../src/imd/HookJobRequester.sol";
+import {OracleAttestation} from "../src/imd/OracleAttestation.sol";
+
+/// @dev Distinct clocks are deliberate: vm.roll models the EVM's L1 height on Robinhood,
+/// while this system-contract mock supplies the question chain's native L2 height.
+contract WindowArbSysMock {
+    uint256 public arbBlockNumber;
+    function setHead(uint256 value) external { arbBlockNumber = value; }
+}
+
+contract OracleWindowRegressionTest is AutomaticFixture {
+    function _prepared() internal {
+        (jobId, askId) = _open();
+        _commit(jobId, _artifact(jobId));
+        _deliver(jobId);
+    }
+
+    function _reserveIntact() internal view {
+        assertEq(imd.balanceOf(address(intake)), FEE, "only the build fee may be spent");
+        assertEq(imd.balanceOf(address(automatic)), FEE);
+        assertEq(automatic.reserved(address(imd)), FEE);
+        (, uint256 amount,) = automatic.reserveOf(jobId);
+        assertEq(amount, FEE);
+        assertEq(automatic.getAsk(askId).intakeId, bytes32(0));
+        assertEq(automatic.getAsk(askId).pin, address(0));
+        assertEq(uint8(_review(jobId)), uint8(HookJobRequester.ReviewStatus.None));
+        assertEq(imd.allowance(address(automatic), address(intake)), 0);
+    }
+
+    function testEarlyPermissionlessCallsCannotSpendReserve() public {
+        _prepared();
+        for (uint256 elapsed; elapsed < 8; ++elapsed) {
+            vm.roll(1000 + elapsed);
+            vm.prank(outsider);
+            vm.expectRevert(AutoHookJobRequester.NotReady.selector);
+            automatic.requestVerdict(askId);
+            _reserveIntact();
+        }
+        vm.roll(1008);
+        vm.prank(outsider);
+        verdictId = automatic.requestVerdict(askId);
+        assertEq(automatic.getAsk(askId).fromBlock, 1000);
+        assertEq(automatic.getAsk(askId).toBlock, 1000);
+        _answer(true);
+    }
+
+    function testEarliestIntakeAdmissionAlreadyHasFiveBlocksDepth() public {
+        _prepared();
+        vm.roll(1020);
+        verdictId = automatic.requestVerdict(askId);
+        AutoHookJobRequester.Ask memory a = automatic.getAsk(askId);
+        // Even if read immediately it is deep enough. Ethereum Intake waits only three
+        // confirmations (inclusion counts as one), so its earliest read can be head + 2.
+        assertGe(1020 - a.toBlock, 5, "too shallow at trigger");
+        assertGe(1022 - a.toBlock, 5, "too shallow at earliest Intake admission");
+        assertEq(a.toBlock, 1012);
+        // Fixed window intentionally ends before the oracle trigger; issuance does not.
+        _answer(true);
+    }
+
+    function testRobinhoodUsesNativeClockForWindowAndCallback() public {
+        vm.chainId(4663);
+        spec.chainId = 4663;
+        vm.etch(address(100), type(WindowArbSysMock).runtimeCode);
+        WindowArbSysMock arb = WindowArbSysMock(address(100));
+        arb.setHead(900_000);
+        (jobId, askId) = _open();
+        arb.setHead(900_010);
+        _commit(jobId, _artifact(jobId));
+        arb.setHead(900_020);
+        _deliver(jobId);
+        arb.setHead(900_028);
+        vm.roll(1001);
+        verdictId = automatic.requestVerdict(askId);
+        assertEq(automatic.getAsk(askId).fromBlock, 900_020, "mixed L1/L2 start");
+        assertEq(automatic.getAsk(askId).toBlock, 900_020, "mixed L1/L2 close");
+        _answer(true);
+    }
+
+    function testUnsupportedClockFailsBeforeBuildPayment() public {
+        vm.chainId(999_001);
+        spec.chainId = block.chainid;
+        vm.prank(creator);
+        vm.expectRevert();
+        automatic.openJob(spec, address(gated), "A bounded swap hook", FEE, FEE);
+        assertEq(imd.balanceOf(creator), 100 ether);
+        assertEq(imd.balanceOf(address(intake)), 0);
+        assertEq(automatic.reserved(address(imd)), 0);
+    }
+
+    function testMissingRobinhoodSystemClockFailsBeforeBuildPayment() public {
+        vm.chainId(4663);
+        spec.chainId = 4663;
+        vm.prank(creator);
+        vm.expectRevert();
+        automatic.openJob(spec, address(gated), "A bounded swap hook", FEE, FEE);
+        assertEq(imd.balanceOf(creator), 100 ether);
+        assertEq(imd.balanceOf(address(intake)), 0);
+    }
+
+    function testRetryMustMatureItsOwnWindowBeforeSpending() public {
+        _ready(true);
+        assertTrue(intake.fail(verdictId, 2, "disagreed", 2, 7));
+        vm.prank(creator);
+        bytes32 retry = automatic.retryVerdict(jobId, FEE);
+        for (uint256 elapsed; elapsed < 8; ++elapsed) {
+            vm.roll(1020 + elapsed);
+            vm.prank(outsider);
+            vm.expectRevert(AutoHookJobRequester.NotReady.selector);
+            automatic.requestVerdict(retry);
+            assertEq(imd.balanceOf(address(intake)), 2 * FEE);
+            assertEq(automatic.reserved(address(imd)), FEE);
+        }
+        vm.roll(1028);
+        bytes32 retriedId = automatic.requestVerdict(retry);
+        assertEq(automatic.getAsk(retry).fromBlock, 1020);
+        assertEq(automatic.getAsk(retry).toBlock, 1020);
+        OracleAttestation.Attestation memory wrong = _att(askId, true);
+        bytes memory signature = _sign(wrong);
+        vm.prank(address(intake));
+        vm.expectRevert(AutoHookJobRequester.WrongQuestion.selector);
+        automatic.onReviewResult(retriedId, wrong, signature);
+        OracleAttestation.Attestation memory right = _att(retry, true);
+        assertTrue(intake.complete(retriedId, abi.encode(retriedId, right, _sign(right))));
+        assertEq(automatic.approvedArtifact(jobId), automatic.candidateDigest(jobId));
+    }
+}

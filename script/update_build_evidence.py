@@ -10,7 +10,7 @@ from pathlib import Path
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
-BASE = '9dd97150d292fee26912f9605e0686e4ddbb1645'
+BASE = '378cd9b20db99e2190ed5a73fc73849250996e72'
 
 
 def write(path, value):
@@ -22,7 +22,7 @@ def main():
     paths = set(historical['files']) | {str(p.relative_to(ROOT)) for p in (ROOT / 'src/deployment').glob('*.sol')}
     paths |= {str(p.relative_to(ROOT)) for p in (ROOT / 'src/imd/automatic').glob('*.sol')}
     current = {'sourceCommit': None, 'baseCommit': BASE,
-               'description': 'Local build of automatic canonical oracle binding and exact-artifact authorization; not independently audited. Historical audited-build.json is unchanged.',
+               'description': 'Local build of confirmed native-chain oracle windows preserving automatic binding and exact-artifact authorization; not independently audited. Historical audited-build.json is unchanged.',
                'algorithm': 'sha256', 'files': {}, 'contracts': {}}
     for path in sorted(paths):
         current['files'][path] = hashlib.sha256((ROOT / path).read_bytes()).hexdigest()

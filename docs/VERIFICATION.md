@@ -1,6 +1,6 @@
 # Local verification
 
-For the current consolidated revision use [checks/consolidated/README.md](checks/consolidated/README.md) and `bash script/check_consolidated.sh`. Earlier logs below are historical. Current tests include captured live signature verification (no signing), parser limits and maximal runtime, incident recovery, both callback orders, SDK parity, and isolated 200k callback checks.
+For the current oracle-window revision use [checks/oracle-window/README.md](checks/oracle-window/README.md) and `bash script/check_automatic.sh`. Earlier logs below are historical. Current tests include captured live signature verification (no signing), parser limits and maximal runtime, incident recovery, both callback orders, SDK parity, and isolated 200k callback checks.
 
 Historical results below describe successive revisions and do not describe the current build.
 

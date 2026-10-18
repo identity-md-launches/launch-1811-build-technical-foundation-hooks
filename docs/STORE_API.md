@@ -99,3 +99,19 @@ and `revokedSignerEpochs` for pending receipts; `revokedReviewReceipts` records 
 closure. `ReviewBindingReset` and `ReviewReceiptRevoked` are job-indexed history events.
 `OracleSignerEpochStarted` and `OracleSignerEpochRevoked` are global authority events and must be
 monitored separately. See [operator recovery and incident response](IMD_INTEGRATION.md).
+
+## Automatic verdict readiness
+
+The successor uses [AutoHookJobRequester.abi.json](../site/AutoHookJobRequester.abi.json).
+`head()` returns the question chain's native `uint64` block counter; `WINDOW_DEPTH()` is eight.
+`verdictReadiness(bytes32 askId)` returns `(bool ready, uint64 currentBlock, uint64 fromBlock,
+uint64 toBlock)`. It uses exactly the gate checked by `requestVerdict`: a delivered job, committed
+candidate, outstanding unused ask, active reserve/deadline, and `fromBlock <= nativeHead - 8`.
+Before native head eight, it returns false and closing block zero. Unknown/settled asks return
+false; unsupported/malformed clocks revert. Readiness does not guarantee the current quote fits.
+
+Use `AutomaticClient.verdict_readiness(ask)` or the `sdk.automatic status <askId>` command.
+The SDK and wallet UI report native head, window bounds and remaining blocks, and refuse to
+prepare/send an early verdict. Instantiate a fresh SDK client after each transaction or block
+advance because its RPC state is pinned. On Robinhood, use the contract's native counter, never
+substitute the EVM's L1 `block.number`. A retry has its own new ask/start and must mature again.

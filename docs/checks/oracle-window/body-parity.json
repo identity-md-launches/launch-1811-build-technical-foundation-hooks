@@ -1,0 +1,18 @@
+[
+  {
+    "body": "ethereum.oracle.request.body.json",
+    "finalTestEmissionMatchesCheckedBytes": true
+  },
+  {
+    "body": "ethereum.job.open.body.json",
+    "finalTestEmissionMatchesCheckedBytes": true
+  },
+  {
+    "body": "robinhood.oracle.request.body.json",
+    "finalTestEmissionMatchesCheckedBytes": true
+  },
+  {
+    "body": "robinhood.job.open.body.json",
+    "finalTestEmissionMatchesCheckedBytes": true
+  }
+]

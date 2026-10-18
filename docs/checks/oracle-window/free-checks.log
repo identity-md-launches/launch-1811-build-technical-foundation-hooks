@@ -1,0 +1,6 @@
+ethereum.job.open exact 200
+ethereum.oracle.request exact 400
+ethereum.oracle.request draft 200
+robinhood.job.open exact 200
+robinhood.oracle.request exact 400
+robinhood.oracle.request draft 200

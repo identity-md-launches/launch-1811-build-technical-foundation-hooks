@@ -7,7 +7,8 @@
     open: '48061a3c', commit: '9e163130', verdict: 'cadb35dc', retry: '3290babc',
     withdraw: 'a16c86f7', cancel: 'b2ca4edc', job: 'f729cf0d', ask: '326f999f',
     approved: '1648eac4', automatic: '0ff82b3a', asset: '38d52e0f', intake: '86d1508f',
-    jobAction: '1079a365', candidate: '7868e9ab', epoch: '585ae49a', revoked: 'bc31fa7d'
+    jobAction: '1079a365', candidate: '7868e9ab', epoch: '585ae49a', revoked: 'bc31fa7d',
+    readiness: '123667dd', head: '8f7dcfa3', depth: '08d87b1f'
   };
   const fields = ['jobRequestId', 'sourceHash', 'sourceSubmissionHash', 'reviewSubmissionHash', 'evidenceHash',
     'buildHash', 'creationCodeHash', 'constructorArgsHash', 'runtimeCodeHash', 'chainId', 'deployer',
@@ -49,8 +50,18 @@
     return '0x' + selectors.commit + hex(job, 32) + artifactWords(artifact).join('') + hex(reviewedCommit, 20).padEnd(64, '0');
   }
   function idCalldata(kind, id) {
-    if (!['verdict', 'cancel', 'job', 'ask', 'approved', 'candidate'].includes(kind)) throw Error('Unsupported ID call');
+    if (!['verdict', 'cancel', 'job', 'ask', 'approved', 'candidate', 'readiness'].includes(kind)) throw Error('Unsupported ID call');
     return '0x' + selectors[kind] + hex(id, 32);
   }
-  return {selectors, fields, hex, uint, address, openCalldata, commitCalldata, idCalldata};
+  function decodeReadiness(raw, depth) {
+    const words = hex(raw, 128).match(/.{64}/g).map(w => BigInt('0x' + w));
+    const [ready, head, start, end] = words;
+    if (ready > 1n || words.slice(1).some(w => w >= 1n << 64n)) throw Error('Malformed readiness response');
+    depth = BigInt(depth);
+    if (depth <= 0n || depth >= 1n << 64n) throw Error('Malformed window depth');
+    const remaining = start + depth > head ? start + depth - head : 0n;
+    return {ready: ready === 1n, nativeHead: head.toString(), fromBlock: start.toString(), toBlock: end.toString(),
+      windowDepth: depth.toString(), blocksRemaining: remaining.toString()};
+  }
+  return {selectors, fields, hex, uint, address, openCalldata, commitCalldata, idCalldata, decodeReadiness};
 });

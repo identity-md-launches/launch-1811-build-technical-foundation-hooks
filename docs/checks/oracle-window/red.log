@@ -1,0 +1,28 @@
+Compiling 112 files with Solc 0.8.26
+Solc 0.8.26 finished in 5.94s
+Compiler run successful!
+
+Ran 6 tests for test/OracleWindowRegression.t.sol:OracleWindowRegressionTest
+[FAIL: too shallow at trigger: 1 < 5] testEarliestIntakeAdmissionAlreadyHasFiveBlocksDepth() (gas: 7375581)
+[FAIL: next call did not revert as expected] testEarlyPermissionlessCallsCannotSpendReserve() (gas: 7538540)
+[FAIL: next call did not revert as expected] testMissingRobinhoodSystemClockFailsBeforeBuildPayment() (gas: 3407985)
+[FAIL: next call did not revert as expected] testRetryMustMatureItsOwnWindowBeforeSpending() (gas: 11183647)
+[FAIL: mixed L1/L2 start: 1000 != 900020] testRobinhoodUsesNativeClockForWindowAndCallback() (gas: 7505375)
+[FAIL: next call did not revert as expected] testUnsupportedClockFailsBeforeBuildPayment() (gas: 3408858)
+Suite result: FAILED. 0 passed; 6 failed; 0 skipped; finished in 18.68ms (34.08ms CPU time)
+
+Ran 1 test suite in 21.98ms (18.68ms CPU time): 0 tests passed, 6 failed, 0 skipped (6 total tests)
+
+Failing tests:
+Encountered 6 failing tests in test/OracleWindowRegression.t.sol:OracleWindowRegressionTest
+[FAIL: too shallow at trigger: 1 < 5] testEarliestIntakeAdmissionAlreadyHasFiveBlocksDepth() (gas: 7375581)
+[FAIL: next call did not revert as expected] testEarlyPermissionlessCallsCannotSpendReserve() (gas: 7538540)
+[FAIL: next call did not revert as expected] testMissingRobinhoodSystemClockFailsBeforeBuildPayment() (gas: 3407985)
+[FAIL: next call did not revert as expected] testRetryMustMatureItsOwnWindowBeforeSpending() (gas: 11183647)
+[FAIL: mixed L1/L2 start: 1000 != 900020] testRobinhoodUsesNativeClockForWindowAndCallback() (gas: 7505375)
+[FAIL: next call did not revert as expected] testUnsupportedClockFailsBeforeBuildPayment() (gas: 3408858)
+
+Encountered a total of 6 failing tests, 0 tests succeeded
+
+Tip: Run `forge test --rerun` to retry only the 6 failed tests
+Tip: Run `forge test --debug --match-test <TEST_NAME>` to inspect one failing test in the debugger

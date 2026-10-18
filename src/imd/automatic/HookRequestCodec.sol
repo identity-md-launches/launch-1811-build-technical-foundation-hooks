@@ -11,6 +11,28 @@ import {Strings} from "../../vendor/openzeppelin/utils/Strings.sol";
 contract HookRequestCodec {
     using Strings for uint256;
 
+    error UnsupportedClock(uint256 chainId);
+    error InvalidClock();
+    error InvalidConfig();
+
+    /// @notice Native block height of the question chain, never the L1 height on Robinhood.
+    /// 31337 is local testing only. Clock support does not imply that Intake sells both actions.
+    function head() external view returns (uint64) {
+        uint256 height;
+        if (block.chainid == 4663) {
+            (bool ok, bytes memory data) = address(100).staticcall(abi.encodeWithSignature("arbBlockNumber()"));
+            if (!ok || data.length != 32) revert InvalidClock();
+            height = abi.decode(data, (uint256));
+        } else if (block.chainid == 1 || block.chainid == 11155111 || block.chainid == 31337) {
+            height = block.number;
+        } else {
+            revert UnsupportedClock(block.chainid);
+        }
+        // OracleQuestion's JSON integer limit also prevents narrowing/truncation of the clock.
+        if (height > 9007199254740991) revert InvalidClock();
+        return uint64(height);
+    }
+
     bytes internal constant DEFINITIONS = '{"acceptance":"Resolve the originating job from the exact chain, Intake address and Intake request ID using its Requested log and public IMD records. Require an accepted completed job and the exact completion snapshot committed by resultHash. The candidate sourceSubmissionHash and sourceHash must match the source bundle accepted for that job. Verify its full HookSpec hash against the onchain job; missing or unverifiable evidence means false.",'
         '"build":"Read getCandidate(jobRequestId) on the consumer. Recompute the full HookArtifactV2 digest, and reproduce the exact reviewed commit and accepted source with solc 0.8.26, Cancun, optimizer 200, no metadata hash/CBOR and its pinned dependencies. Verify build identity, creation code, constructor ABI bytes, final runtime including immutables, chain, deployer, PoolManager address and code hash, and all permission bits. Missing or mismatched evidence means false.",'
         '"review":"Require the exact reviewSubmissionHash to identify an independent adversarial-review step accepted for the originating job, covering this same accepted sourceSubmissionHash, sourceHash, reviewed commit and reproducible build, with no unresolved findings. The panel must inspect the accepted review and source records. A worker claim, URL, rejected or unrelated submission, self review, or ambiguous, missing, failed or pending evidence means false."}';
@@ -87,6 +109,14 @@ contract HookRequestCodec {
 
     function validateSpec(HookSpec calldata spec) external view {
         HookSpecLib.validateChain(spec);
+    }
+
+    /// @dev Existing open-time validation composed here to keep the requester below EIP-170.
+    function validateOpen(HookSpec calldata spec, address deployer, address consumer) external view {
+        HookSpecLib.validateChain(spec);
+        if (deployer.code.length == 0 || address(GatedHookDeployer(deployer).requester()) != consumer) {
+            revert InvalidConfig();
+        }
     }
 
     function hexValue(bytes32 value) public pure returns (bytes memory) {

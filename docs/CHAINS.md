@@ -33,3 +33,18 @@ or establish production hook integration.
 Base 8453, Robinhood Chain 4663 and Sepolia 11155111 (see `docs/checks/gated-deployment/managers.json`).
 The owner can enable only that pair on those chains. 31337/84532/46630 accept an owner-reviewed
 manager, and every other chain is refused. No deployment, fork or gas benchmark was done on any public chain.
+
+## Automatic oracle clock update (2026-10-18)
+
+The automatic requester has a narrower clock policy than the deployment gate: Ethereum 1,
+Sepolia 11155111 and local 31337 use Solidity `block.number`; Robinhood 4663 uses the native
+L2 counter from `ArbSys(address(100)).arbBlockNumber()`. All other chain IDs are refused before
+payment. Robinhood clock failure never falls back to its EVM/L1 height. The same clock records
+open/commit/delivery/retry heights, closes each oracle window at head minus eight, and checks
+callback freshness. Timestamp checks remain timestamp checks.
+
+Clock support does not establish availability of both paid actions, a PoolManager, or a live
+workflow. Sepolia remains oracle-only in the captured capabilities; Base has no Intake here.
+Distinct L1/L2 height tests and gas measurements use a local ArbSys mock, not a live Robinhood
+precompile or fork. See [the automatic runbook](AUTOMATIC_BINDING.md) and
+[current evidence](checks/oracle-window/README.md) for policy, limitations and operator readback.

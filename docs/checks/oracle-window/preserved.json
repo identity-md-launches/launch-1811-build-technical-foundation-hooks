@@ -1,0 +1,14 @@
+{
+  "baseCommit": "378cd9b20db99e2190ed5a73fc73849250996e72",
+  "sha256UnchangedFiles": {
+    "foundry.toml": "1bfc82a5c62b148d66ded9fa34096ae14ddc95d0bb3e5d067cf14126960cef36",
+    "remappings.txt": "b8941d09c2ce72d8cd25d6f4564fcba85b87b277fab9ad3eb643d085d91655f0",
+    "dependencies.lock.json": "7e020eb009266adbc78c97455aacab9de9f36b071e1be718eb7af1ba994c0c00",
+    "src/HookSpec.sol": "f8922c87424591405f4f0a8b70b505b79b7d3858d0289d9d23157be3f0520b9b",
+    "src/imd/OracleAttestation.sol": "36c589a16ab829e31d0549d7e81e5961d3172580ff8f4ef980c1e9617e087a20",
+    "src/imd/HookJobRequester.sol": "ee866d553bbe4dfd4b1a1efed7803d6054f5f5cc545d06f6334764c4da85fc61",
+    "src/deployment/GatedHookDeployer.sol": "7a591bffbc1f8245616ca11ddd0db145eac5c2f4ab8e88e2b5c52bb34d467b85",
+    "src/store/FeaturedPlacements.sol": "38c8dfdda297d9107f69da9908c0d257f62b2a0af70508de39f69e634a517f7d"
+  },
+  "note": "No build settings, dependencies, legacy requester, ArtifactV2/deployer, attestation protocol, listing/ad fees or recipients changed."
+}

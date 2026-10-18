@@ -1,0 +1,21 @@
+{
+  "reference": "https://imd.fun/docs/#intake-binding-an-answer-to-its-request",
+  "fetchedAt": "2026-10-18T23:17:13.889103+00:00",
+  "fullPageSha256": "585384a34c81eec0161f9b3fa5b4cfc60285a4bd2c9dc90d3c5a6697ddffa474",
+  "retained": "Exact text nodes of the binding section; full page omitted to keep the evidence focused.",
+  "skill": "https://api.imd.fun/reads/skill/oracle-consumer",
+  "skillSha256": "7c20ce8bfb98fd26496ca2176859256690b214b93079863308550f373fce0e70",
+  "referenceMatchesPinnedInput": true,
+  "capabilityConfirmations": {
+    "1": 3,
+    "4663": 2,
+    "11155111": 2
+  },
+  "baseCommit": "378cd9b20db99e2190ed5a73fc73849250996e72",
+  "oracleQuestionTestCopy": {
+    "path": "test/helpers/OracleQuestion.sol",
+    "source": "oracle-reference.md, OracleQuestion.sol code block",
+    "changes": "Import paths and forge formatting only; used for conformance tests, not production encoding.",
+    "sha256": "cf246b04bb74d908f402798311d58559138388264d0f3d0ce51c984d53b94667"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "url": "https://api.imd.fun/requests/check",
+  "checkedAt": "2026-10-18T23:16:51.163989+00:00",
+  "mode": "exact",
+  "httpStatus": 400,
+  "localFixtureOnly": true,
+  "requestSha256": "d2a91854e912b55437ceb27a20ed81e70fc54a974baa5acd5df900ae9dde3bfe",
+  "responseSha256": "793cdad28a51adf7187be1d3f8d02932abce2661e529bbeda0905c86b56474dc"
+}

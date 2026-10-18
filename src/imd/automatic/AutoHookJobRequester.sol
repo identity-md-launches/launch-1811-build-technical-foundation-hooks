@@ -57,6 +57,7 @@ contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
     uint64 private constant JOB_TIMEOUT = 7 days;
     uint64 private constant REVIEW_TIMEOUT = 1 days;
     uint64 private constant MAX_ANSWER_AGE = 1 hours;
+    uint64 public constant WINDOW_DEPTH = 8;
     // Block bound is deliberately independent of chain block-time estimates.
     uint64 public maxWindowAgeBlocks = 7200;
     uint32 public oracleSignerEpoch = 1;
@@ -142,6 +143,11 @@ contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
         return true;
     }
 
+    /// @notice The same native chain clock used by every lifecycle transition.
+    function head() public view returns (uint64) {
+        return codec.head();
+    }
+
     /// @notice Prepay build and a caller-capped verdict reserve. No later token approval is needed
     /// for the permissionless trigger. Build cost is spent; unused reserve is pull-refunded.
     function openJob(
@@ -151,15 +157,13 @@ contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
         uint256 maxBuildFee,
         uint256 verdictReserve
     ) external nonReentrant returns (bytes32 jobId, bytes32 askId) {
-        if (address(codec).codehash != 0x748b72d59b384058ea147227ddb6dfc89109fcab644acf404f78a9a7bfe7334f) revert NotConfigured();
-        codec.validateSpec(spec);
-        if (deployer.code.length == 0 || GatedHookDeployer(deployer).requester() != HookJobRequester(address(this))) {
-            revert InvalidConfig();
-        }
+        if (address(codec).codehash != 0x8a908370b3cc7912662a39a14926bbe3ad917c70a2476aaceee0f0dc4916bd3e) revert NotConfigured();
+        uint64 currentBlock = head();
+        codec.validateOpen(spec, deployer, address(this));
         codec.validateBrief(brief);
-        uint256 price = _quote(address(intake), jobAction, asset, maxBuildFee);
-        _quote(address(intake), reviewAction, asset, verdictReserve);
         if (verdictReserve > maxPrice) revert PriceExceeded(verdictReserve, maxPrice);
+        uint256 price = _quote(address(intake), jobAction, asset, maxBuildFee < maxPrice ? maxBuildFee : maxPrice);
+        _quote(address(intake), reviewAction, asset, verdictReserve);
         askId = keccak256(abi.encode(block.chainid, address(this), ++nonce));
         bytes memory body = _jobBody(spec, askId, deployer, brief);
         ExactStoreToken.pull(asset, msg.sender, price + verdictReserve);
@@ -182,7 +186,7 @@ contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
             asset,
             reviewAction,
             verdictReserve,
-            uint64(block.number),
+            currentBlock,
             uint64(block.timestamp) + JOB_TIMEOUT,
             minPanelSize,
             minAgreed,
@@ -210,7 +214,7 @@ contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
         if (candidateDigest[jobId] != bytes32(0)) revert AlreadyCommitted();
         if (payments[jobId].cancelled) revert NotReady();
         bytes32 digest = codec.validateCandidate(a, specs[jobId], jobId, deployerOf[jobId], reviewedCommit);
-        payments[jobId].windowStartBlock = uint64(block.number);
+        payments[jobId].windowStartBlock = head();
         candidates[jobId] = Candidate(a, reviewedCommit);
         candidateDigest[jobId] = digest;
         emit CandidateCommitted(jobId, jobAsk[jobId], digest, reviewedCommit);
@@ -222,7 +226,7 @@ contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
         HookJobRequester.Job storage j = jobs[jobId];
         j.status = HookJobRequester.JobStatus.Delivered;
         j.resultHash = resultHash;
-        payments[jobId].windowStartBlock = uint64(block.number);
+        payments[jobId].windowStartBlock = head();
         emit JobDelivered(jobId, resultHash);
         if (bytes(uri).length <= 1024) emit JobResultURI(jobId, uri);
         else emit JobResultURIOmitted(jobId, bytes(uri).length);
@@ -248,23 +252,17 @@ contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
     /// @notice Anyone may trigger this transaction once ready, paying only transaction gas.
     /// No caller-selected question, prefix, artifact, recipient or fee is accepted here.
     function requestVerdict(bytes32 askId) external nonReentrant returns (bytes32 intakeId) {
+        (bool ready,, uint64 fromBlock, uint64 toBlock) = verdictReadiness(askId);
+        if (!ready) revert NotReady();
         Ask storage a = asks[askId];
         bytes32 jobId = a.jobId;
         HookJobRequester.Job storage j = jobs[jobId];
         Payment storage p = payments[jobId];
-        if (
-            jobId == bytes32(0) || a.intakeId != bytes32(0) || p.cancelled || p.reserve == 0
-                || block.timestamp > p.reserveDeadline || j.status != HookJobRequester.JobStatus.Delivered
-                || j.review != HookJobRequester.ReviewStatus.None || candidateDigest[jobId] == bytes32(0)
-                || block.number <= p.windowStartBlock
-        ) revert NotReady();
-        uint256 price = IIntake(p.intake).priceOf(p.verdictAction, p.asset);
-        if (price == 0) revert NotConfigured();
-        if (price > p.reserve) revert PriceExceeded(price, p.reserve);
+        uint256 price = _quote(p.intake, p.verdictAction, p.asset, p.reserve);
         a.askedAt = uint64(block.timestamp);
         a.deadline = uint64(block.timestamp) + REVIEW_TIMEOUT;
-        a.fromBlock = p.windowStartBlock;
-        a.toBlock = uint64(block.number - 1);
+        a.fromBlock = fromBlock;
+        a.toBlock = toBlock;
         bytes memory q = _question(jobId, askId);
         bytes memory prefix_ = codec.prefix(block.chainid, q);
         a.pin = address(new HookQuestionPin(prefix_));
@@ -287,6 +285,33 @@ contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
         historicalAsk[intakeId] = askId;
         _refund(jobId);
         emit VerdictRequested(askId, intakeId, a.pin, price, body);
+    }
+
+    /// @notice Snapshot readiness for SDK/UI. The same checks gate reserve spending.
+    /// toBlock is zero before head reaches WINDOW_DEPTH; ready is always false then.
+    /// Fee changes may still prevent a ready ask. Unsupported clocks revert without a fallback.
+    function verdictReadiness(bytes32 askId)
+        public
+        view
+        returns (bool ready, uint64 currentBlock, uint64 fromBlock, uint64 toBlock)
+    {
+        currentBlock = head();
+        Ask storage a = asks[askId];
+        bytes32 jobId = a.jobId;
+        Payment storage p = payments[jobId];
+        HookJobRequester.Job storage j = jobs[jobId];
+        fromBlock = p.windowStartBlock;
+        if (currentBlock < WINDOW_DEPTH) return (false, currentBlock, fromBlock, 0);
+        unchecked {
+            toBlock = currentBlock - WINDOW_DEPTH; // guarded above
+        }
+        if (
+            jobId == bytes32(0) || a.intakeId != bytes32(0) || p.cancelled || p.reserve == 0
+                || block.timestamp > p.reserveDeadline || j.status != HookJobRequester.JobStatus.Delivered
+                || j.review != HookJobRequester.ReviewStatus.None || candidateDigest[jobId] == bytes32(0)
+                || fromBlock > toBlock
+        ) return (false, currentBlock, fromBlock, toBlock);
+        ready = true;
     }
 
     function _question(bytes32 jobId, bytes32 askId) private view returns (bytes memory) {
@@ -329,9 +354,10 @@ contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
         {
             revert WrongQuestion();
         }
+        uint64 currentBlock = head();
         if (
             att.fromBlock != a.fromBlock || att.toBlock != a.toBlock || att.fromBlock > att.toBlock
-                || att.toBlock >= block.number || block.number - att.toBlock > windowAge[askId]
+                || att.toBlock >= currentBlock || currentBlock - att.toBlock > windowAge[askId]
                 || att.issuedAt < a.askedAt || att.issuedAt > block.timestamp || att.issuedAt > att.expiresAt
                 || block.timestamp - att.issuedAt > MAX_ANSWER_AGE
         ) revert InvalidWindow();
@@ -414,11 +440,12 @@ contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
         if (j.review != HookJobRequester.ReviewStatus.Unanswered) revert NotReady();
         Payment storage p = payments[jobId];
         if (p.cancelled || reserve == 0 || reserve > maxPrice) revert InvalidConfig();
+        uint64 currentBlock = head();
         _quote(p.intake, p.verdictAction, p.asset, reserve);
         ExactStoreToken.pull(p.asset, msg.sender, reserve);
         p.reserve = reserve;
         reserved[p.asset] += reserve;
-        p.windowStartBlock = uint64(block.number);
+        p.windowStartBlock = currentBlock;
         p.reserveDeadline = uint64(block.timestamp) + REVIEW_TIMEOUT;
         askId = keccak256(abi.encode(block.chainid, address(this), ++nonce));
         jobAsk[jobId] = askId;
@@ -501,7 +528,9 @@ contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
     }
 
     function setPanel(uint16 panel, uint16 quorum, uint64 ageBlocks) external onlyOwner nonReentrant {
-        if (panel < 2 || panel > 100 || quorum == 0 || quorum > panel || ageBlocks == 0) revert InvalidConfig();
+        if (panel < 2 || panel > 100 || quorum == 0 || quorum > panel || ageBlocks < WINDOW_DEPTH) {
+            revert InvalidConfig();
+        }
         minPanelSize = panel;
         minAgreed = quorum;
         maxWindowAgeBlocks = ageBlocks;
@@ -556,9 +585,11 @@ contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
     }
 
     function _quote(address at, bytes32 action, address token, uint256 cap) private view returns (uint256 price) {
+        // New prepayments/retries clamp cap to maxPrice at the caller. A previously funded
+        // verdict keeps its reserved cap even if the owner subsequently lowers maxPrice.
         price = IIntake(at).priceOf(action, token);
         if (price == 0) revert NotConfigured();
-        if (price > cap || price > maxPrice) revert PriceExceeded(price, cap < maxPrice ? cap : maxPrice);
+        if (price > cap) revert PriceExceeded(price, cap);
     }
 
     function _recordId(bytes32 id) private {

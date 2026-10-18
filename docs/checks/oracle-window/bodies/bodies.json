@@ -1,0 +1,26 @@
+[
+  {
+    "example": "ethereum.job.open",
+    "localFixtureOnly": true,
+    "rawBodyBytes": 2668,
+    "rawBodySha256": "0ad3b251bf8e7a5c803f1b6e08f363b35bfff69d28aa5e159e72eaa958f0eb8c"
+  },
+  {
+    "example": "ethereum.oracle.request",
+    "localFixtureOnly": true,
+    "rawBodyBytes": 2865,
+    "rawBodySha256": "f91697995b9f0499e1182751dd2d833dc243ceb749a80029c3ec43d60308978c"
+  },
+  {
+    "example": "robinhood.job.open",
+    "localFixtureOnly": true,
+    "rawBodyBytes": 2671,
+    "rawBodySha256": "7b9f3476aaae4689503c3531cf69f07a1178c3408b60edba289d8087079b0976"
+  },
+  {
+    "example": "robinhood.oracle.request",
+    "localFixtureOnly": true,
+    "rawBodyBytes": 2878,
+    "rawBodySha256": "be105155bfe958624eff359d0b358644c0d9997ca000570d32f39c0d100ee916"
+  }
+]

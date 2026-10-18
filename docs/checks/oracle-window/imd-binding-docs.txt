@@ -1,0 +1,70 @@
+Binding an answer to its request
+#
+The callback's 
+requestId
+ is the intake's and the attestation's is the oracle's; the writer pairs the two. A contract that asks a different question per request, one per user, review or claim, takes that pairing out of what it trusts: it writes the request's identifiers into the question, stores the question's hash when it asks, and in the callback requires
+ 
+a.questionHash
+ to match. The hash is signed with the answer, so an answer to another request's question is refused whoever delivers it, and so is one to a question someone else paid for.
+questionHash
+ is the keccak-256 of the question document: compact JSON, keys sorted, strings as
+ 
+JSON.stringify
+ writes them, integers in decimal. Its members are 
+answerType
+,
+ 
+chainId
+, 
+definitions
+ when there are any, 
+evidence
+ only when it is
+ 
+"panel"
+, 
+head
+ for a list answer, 
+question
+, 
+v
+ (
+1
+) and 
+window
+:
+cast keccak '{"answerType":"bool","chainId":1,"definitions":{"pass":"The review was accepted and every finding in it is marked fixed."},"evidence":"panel","question":"Did the review of request 0x2a2a72a13996058695e187dfd43bcee41682f8a6592b04b23bae308fca2784e1 pass?","v":1,"window":{"fromBlock":992,"toBlock":992}}'
+0xaa19db4fb4c28b7bafcf5287d97ffc1f9caeafcd93facfbb2480e1d4af675db9
+copy
+Window
+Absolute and on the question's chain, 
+{"fromBlock", "toBlock"}
+, with 
+toBlock
+ at least 5 blocks deep when the plane reads the ask: close it a few blocks behind the head. An 
+hours
+ window resolves only then, so its hash cannot be known in advance. On Robinhood Chain 
+block.number
+ is an Ethereum block number; read the chain's own from 
+ArbSys(address(100)).arbBlockNumber()
+.
+Text
+ASCII. Addresses and hashes in lowercase hex: the intake lowercases a value that is exactly an address or a 32-byte hex string before it hashes. Definitions sorted by key; with none, leave the member out rather than send 
+{}
+.
+Body
+Write it from the same values as the hash, then add 
+panelSize
+, 
+quorum
+ and 
+validForSeconds
+. Check one real body with 
+POST /requests/check
+ before deploying: a question it refuses is refused on every ask.
+In a job
+Builders on the network get this in the 
+oracle-consumer
+ skill: 
+OracleQuestion
+, a Solidity library that computes the hash and the body, and a worked example.

@@ -1,0 +1,54 @@
+{
+  "baseCommit": "378cd9b20db99e2190ed5a73fc73849250996e72",
+  "forgeBuild": true,
+  "forgeFmtCheck": true,
+  "foundry": {
+    "passed": 600,
+    "failed": 0,
+    "seed": "repository pinned"
+  },
+  "assignmentSeed": {
+    "passed": 600,
+    "failed": 0,
+    "seed": "0x1cce11b977345bde5d2e8864effc5b353b22f85c7b0d962b70d90077d67f4205"
+  },
+  "sdk": {
+    "passed": 64,
+    "failed": 0
+  },
+  "ui": {
+    "passed": 29,
+    "failed": 0
+  },
+  "windowRegressions": {
+    "redFailed": 6,
+    "greenPassed": 28
+  },
+  "isolatedCallbackTests": 21,
+  "callbackGas": {
+    "nativeEvm": {
+      "eoa": 127706,
+      "fiveOfSeven": 172804,
+      "coldRead1271": 189978
+    },
+    "robinhoodMock": {
+      "eoa": 133605,
+      "fiveOfSeven": 178704,
+      "coldRead1271": 195877
+    }
+  },
+  "runtimeBytes": {
+    "AutoHookJobRequester": 24546,
+    "HookRequestCodec": 14088,
+    "GatedHookDeployer": 20967,
+    "HookJobRequester": 24559
+  },
+  "oracleWindowDepth": 8,
+  "publicSignatureAndQuestionVectors": 4,
+  "officialOracleQuestionDifferential": true,
+  "exactFreeJobChecks": "both no blockers",
+  "exactFreeOracleChecks": "HTTP 400: free endpoint accepts drafting fields only",
+  "oracleDraftChecks": "both no blockers; not_answerable suggestion for local fixture records",
+  "liveHooksStoreProof": false,
+  "publicDeploymentOrPayment": false
+}

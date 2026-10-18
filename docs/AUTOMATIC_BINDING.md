@@ -1,7 +1,7 @@
 # Automatic oracle authorization
 
-This revision continues `9dd97150d292fee26912f9605e0686e4ddbb1645` with working automatic
-binding. Use `AutoHookJobRequester`, its immutable `HookRequestCodec`, and `GatedHookDeployer`.
+This revision continues `378cd9b20db99e2190ed5a73fc73849250996e72` with confirmed native-chain
+oracle windows, preserving the working automatic binding. Use `AutoHookJobRequester`, its immutable `HookRequestCodec`, and `GatedHookDeployer`.
 The old `HookJobRequester` remains a legacy manual consumer for existing integrations and tests;
 its owner-binding methods are not part of the new flow. No live deployment, payment, wallet
 signature, token, pool, backend or new trusted signer was created by this work. Local tests use disposable
@@ -28,7 +28,10 @@ HookSpec v1, ArtifactV2, and the official deployment policy. Both requesters exp
    as `0x` plus 40 hex digits. A job accepts **one immutable candidate**. Delivery and commitment
    may occur in either order. Commitment is a candidate selection, not approval.
 4. Once the job is Delivered and the candidate committed, **any wallet** may call
-   `requestVerdict(askId)`. This requires a later block than both candidate commitment and job delivery, and an active reserve.
+   `requestVerdict(askId)`. The native head must be at least eight blocks beyond both candidate
+   commitment and job delivery (or beyond the new ask creation on retry), with an active reserve.
+   `verdictReadiness(askId)` reports readiness, native head, start and closing block. Early calls
+   revert before quoting, pin creation or payment, and cannot spend reserves.
    The trigger pays native transaction gas only; the contract spends its reserved IMD once.
    The caller supplies no question, prefix, artifact, recipient or price. A lower verdict price
    credits the unused reserve to the original requester. A higher price reverts without spending.
@@ -75,17 +78,48 @@ A writer may mispair Intake and oracle IDs, but a different ask's signed questio
 Even a separately bought answer to this identical question only approves this identical candidate.
 
 The absolute window starts at the later of candidate commitment and job delivery (or at the
-new ask creation on retry), and ends at the trigger block minus one. Both inputs must therefore
-be present in a confirmed earlier block. This start is at or after unique ask creation. It is confirmed before requesting and cannot predate
-the unique ask. At callback the closing block must be in the past and no more than the configured
-block-age bound behind the current head (default 7,200 blocks). The signed issue time must be at
-or after the oracle trigger, no later than the current timestamp, no older than one hour and not
-after expiresAt. Signature expiry is also checked. The block-age bound is a separate deployment
-policy, not a guessed universal conversion from seconds to blocks. Delayed delivery can fail it.
+new ask creation on retry), and closes at **native head minus eight** (`WINDOW_DEPTH = 8`).
+The start must be less than or equal to that closing block before payment. A one-block window
+is valid at the first eligible head: for a latest input at native block S, head S+7 is too early;
+head S+8 requests [S,S]. This is already eight blocks deep at the trigger, satisfying IMD's
+five-block processing requirement without relying on Intake's confirmation delay. The captured
+Ethereum Intake setting is only three confirmations; Robinhood's is two. Neither controls this
+consumer's depth. The fixed window intentionally ends **before** the oracle trigger; only the
+signed issuance time must be at or after that trigger.
+
+Every recorded height uses the same `head()` function: open, commitment, job delivery, retry,
+trigger and callback freshness. Its implementation is in the immutable, runtime-pinned codec:
+
+| Question chain | Clock |
+|---|---|
+| Ethereum 1 and Sepolia 11155111 | Solidity `block.number` |
+| Robinhood 4663 | `ArbSys(address(100)).arbBlockNumber()` via STATICCALL |
+| Local 31337 | Solidity `block.number`, local fixtures only |
+| Any other chain | `UnsupportedClock(chainId)`, before build payment, retry funding or verdict spending |
+
+A missing, reverting or malformed Robinhood system-clock response fails with `InvalidClock`,
+without any L1 fallback. Values above 2^53-1 are refused (the official OracleQuestion JSON integer
+limit), so no narrowing conversion silently truncates a height. Base and other testnets remain
+unsupported by this automatic requester; their separate deployer-policy entries do not enable an
+Intake or a clock here. Sepolia has a supported clock but still sells no job.open in the captured
+capabilities. Adding a chain requires a reviewed codec/requester revision, not an owner clock switch.
+
+At callback, the signed window must equal the requested window exactly. The closing block must
+be strictly behind the native head and no more than the snapshotted block-age bound behind it
+(default 7,200). The signed issue time must be at or after the oracle trigger, no later than the
+current timestamp, no older than one hour and not after expiresAt. Signature expiry is also
+checked. `setPanel` rejects an age bound below eight, which could never accept even an immediate
+answer. Eight leaves no delivery slack; the operator must select a larger bound suited to native
+block cadence and observed oracle latency. Delayed delivery can still fail the chosen policy.
+The eight-block margin is admission depth, not a finality or reorg guarantee.
 
 Protocol canonicalization drift fails closed. Updating the prefix algorithm requires a reviewed
 new codec/consumer deployment; existing prefix bytes cannot be silently replaced. The codec's
-exact runtime hash is checked before a build can take payment. Compiler changes require an
+exact runtime hash is checked before a build can take payment. Its prefix, question, definitions
+and body encoding are unchanged; only clock support and shared open-time validation were added.
+The existing deployer/requester check now runs in `validateOpen` on that pinned codec, and quote
+checks share one helper to retain the 24,576-byte runtime cap. New prepayments/retries still obey
+the current maxPrice; a funded verdict still obeys its original reserve cap. Compiler changes require an
 explicit code/hash update; the project still pins solc 0.8.26, Cancun, optimizer 200, without IR,
 metadata hash, FFI or filesystem access.
 
@@ -186,11 +220,11 @@ This assignment provides source and local tests only. No actual deployment addre
 | AutoHookJobRequester(owner, Intake, IMD, signer, maxPrice, codec) | The deployment operator supplies the real launch owner and protocol addresses for the selected chain. Constructor makes no external calls and never assigns ownership to the factory. Existing protocol reference addresses are configuration inputs, not hardcoded recipients. |
 | GatedHookDeployer(owner, requester) | Deploy with the automatic requester as immutable verdict source. Never substitute the legacy requester when advertising automatic binding. |
 | `setProtocol(Intake, IMD, cap, jobAction, reviewAction)` | Launch owner, only when protocol configuration changes. Defaults use published padded action IDs job.open@job-1 and oracle.request@oracle-1; verify priceOf before opening. Existing jobs keep their original Intake/token/actions. |
-| `setPanel(panelSize, quorum, maxWindowAgeBlocks)` | Launch owner selects the deployment policy; defaults 7/5 and 7,200 blocks. Respect the paid door's current minimum/cap (captured minimum 5, maximum 100); test one-shot callback gas for any signer/policy change. |
+| `setPanel(panelSize, quorum, maxWindowAgeBlocks)` | Launch owner selects the deployment policy; defaults 7/5 and 7,200 native blocks; minimum age bound eight. Respect the paid door's current minimum/cap (captured minimum 5, maximum 100); test one-shot callback gas for any signer/policy change. |
 | `setManager(manager, codeHash, true)` on deployer | Launch owner performs initial manager-policy activation. Production pins are unchanged. Re-read manager code and check the appropriate chain; this is infrastructure setup, not a per-hook approval. |
 | Ad recipients and Store token configuration | Existing listing/featured-placement deployment runbook remains authoritative. This change does not alter ad fees, recipients, tokens or their settings. |
 | Worker source/build/review records | IMD workers and independent reviewers must preserve public reproducible source, exact commits and accepted submission identities. The creator submits the one candidate; the panel independently checks it. |
-| Monitoring/recovery | Operator monitors one-shot callback failure, signer incidents, expired unspent reserves and confirmed chain state. Owner incident calls are exceptional; users pay their own workflow gas. |
+| Monitoring/recovery | Operator verifies `head()` against the question-chain RPC counter before activation and monitors one-shot callback failure, clock availability, signer incidents, expired unspent reserves and confirmed chain state. Owner incident calls are exceptional; users pay their own workflow gas. |
 
 Use `python3 script/preflight_automatic.py --rpc <RPC> --requester <actual address> --deployer
 <actual address> --spec <full spec file>` for code/configuration checks without signing/sending.
@@ -200,21 +234,29 @@ it needs no result JSON or manual artifact metadata. It checks the signed approv
 through eth_call before printing unsigned calldata.
 
 Use `python3 -m sdk.automatic --help` for unsigned approve/open/commit/verdict/retry/refund
-transactions, and the new [wallet UI](../site/automatic.html). Each SDK invocation reads one pinned
-block; make a fresh invocation after any transaction. The UI uses textContent and never fetches a
-worker URI or asks a backend to sign.
+transactions, plus `status <askId>` for native-window readiness, and the [wallet UI](../site/automatic.html). Each SDK invocation reads one pinned
+block; make a fresh invocation after any transaction. The UI displays native head, closing block and blocks remaining, and reads readiness again before
+requesting a verdict. Both SDK and UI fail closed on unavailable clock/readiness calls, without
+substituting an RPC or L1 height. Readiness is a snapshot; price changes can still prevent an ask.
+The UI uses textContent and never fetches a worker URI or asks a backend to sign.
 
 ## Evidence and limitations
 
-[Saved vectors, preflights and check logs](checks/automatic-binding/README.md) distinguish:
+[Current window regressions, exact free checks and validation](checks/oracle-window/README.md)
+record the current build. [Earlier automatic-binding vectors and logs](checks/automatic-binding/README.md)
+remain historical evidence. Together they distinguish:
 
 - Four genuine public v2 signatures and canonical preimages (price, two panel/bool, panel/uint256
   with definitions). The required 76587543 vector exactly reproduces its live questionHash.
 - Offline/local contract tests, including cold callback gas, both candidate/delivery orders,
   legacy callback/binding orders, refund accounting, swaps, tampering and genuine hook execution.
-- Free public body/wording checks. The final supported-chain wording example has no blockers and
-  a not_answerable suggestion because its fixture records are not live. Drafting omits some full
-  body fields; it is not proof the full production body has been admitted.
+- Free public checks of the exact emitted Ethereum/Robinhood examples. Both job bodies have no
+  blockers. Exact oracle-body checks return HTTP 400 because the free endpoint rejects v, window,
+  definitions, quorum, validForSeconds and consumer; its documented drafting subset returns no
+  blockers and a not_answerable suggestion for local fixture identities. Both exact requests and
+  responses, and the separate drafting requests/responses, are retained. Neither proves full
+  oracle-body admission or live correctness. The retained prefix encoding is also compared locally with
+  the official OracleQuestion implementation and its independent signed-question vector.
 
 A live end-to-end Hooks Store build, accepted independent review, automatic callback and deployment
 has **not** been performed or claimed. No live proof can be manufactured from these unrelated

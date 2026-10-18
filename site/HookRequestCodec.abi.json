@@ -97,6 +97,19 @@
   },
   {
     "type": "function",
+    "name": "head",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "hexValue",
     "inputs": [
       {
@@ -570,6 +583,66 @@
   },
   {
     "type": "function",
+    "name": "validateOpen",
+    "inputs": [
+      {
+        "name": "spec",
+        "type": "tuple",
+        "internalType": "struct HookSpec",
+        "components": [
+          {
+            "name": "schemaVersion",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "templateId",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "chainId",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "poolManager",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "poolManagerCodeHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "permissions",
+            "type": "uint160",
+            "internalType": "uint160"
+          },
+          {
+            "name": "maxSpecifiedAmount",
+            "type": "uint128",
+            "internalType": "uint128"
+          }
+        ]
+      },
+      {
+        "name": "deployer",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "consumer",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "validateSpec",
     "inputs": [
       {
@@ -652,6 +725,16 @@
   },
   {
     "type": "error",
+    "name": "InvalidClock",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidConfig",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "InvalidLimit",
     "inputs": []
   },
@@ -687,6 +770,17 @@
       },
       {
         "name": "length",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "UnsupportedClock",
+    "inputs": [
+      {
+        "name": "chainId",
         "type": "uint256",
         "internalType": "uint256"
       }
