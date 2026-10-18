@@ -1,0 +1,172 @@
+TAP version 13
+# Subtest: published automatic ABI equals compiler output and selectors are pinned
+ok 1 - published automatic ABI equals compiler output and selectors are pinned
+  ---
+  duration_ms: 50.862088
+  type: 'test'
+  ...
+# Subtest: browser open encoding agrees with cast for UTF-8 and static HookSpec tuple
+ok 2 - browser open encoding agrees with cast for UTF-8 and static HookSpec tuple
+  ---
+  duration_ms: 101.491796
+  type: 'test'
+  ...
+# Subtest: browser candidate encoding agrees with cast including bytes20 right padding
+ok 3 - browser candidate encoding agrees with cast including bytes20 right padding
+  ---
+  duration_ms: 60.930956
+  type: 'test'
+  ...
+# Subtest: browser rejects injection, invalid UTF-8, unsafe integers and a mismatched candidate
+ok 4 - browser rejects injection, invalid UTF-8, unsafe integers and a mismatched candidate
+  ---
+  duration_ms: 1.411394
+  type: 'test'
+  ...
+# Subtest: wallet UI renders untrusted content as text and never needs a backend signer
+ok 5 - wallet UI renders untrusted content as text and never needs a backend signer
+  ---
+  duration_ms: 0.501348
+  type: 'test'
+  ...
+# Subtest: browser selectors match compiler artifacts
+ok 6 - browser selectors match compiler artifacts
+  ---
+  duration_ms: 3.55818
+  type: 'test'
+  ...
+# Subtest: decode static listing and dynamic metadata including label offsets
+ok 7 - decode static listing and dynamic metadata including label offsets
+  ---
+  duration_ms: 68.099263
+  type: 'test'
+  ...
+# Subtest: decode ordered featured and organic pages with continuation cursors
+ok 8 - decode ordered featured and organic pages with continuation cursors
+  ---
+  duration_ms: 112.959956
+  type: 'test'
+  ...
+# Subtest: every paid card visibly carries \#ad and renders hostile text as text
+ok 9 - every paid card visibly carries \#ad and renders hostile text as text
+  ---
+  duration_ms: 107.149144
+  type: 'test'
+  ...
+# Subtest: reject malformed ABI, absent ad labels and unexpected placement status
+ok 10 - reject malformed ABI, absent ad labels and unexpected placement status
+  ---
+  duration_ms: 86.124506
+  type: 'test'
+  ...
+# Subtest: listing references visibly escape bidi and invisible characters without link creation
+ok 11 - listing references visibly escape bidi and invisible characters without link creation
+  ---
+  duration_ms: 78.273605
+  type: 'test'
+  ...
+# Subtest: label encoding matches independent ABI encoder and rejects noncanonical search text
+ok 12 - label encoding matches independent ABI encoder and rejects noncanonical search text
+  ---
+  duration_ms: 40.391216
+  type: 'test'
+  ...
+# Subtest: published requester ABI is exactly the compiler ABI and has only capped paid calls
+ok 13 - published requester ABI is exactly the compiler ABI and has only capped paid calls
+  ---
+  duration_ms: 4.289394
+  type: 'test'
+  ...
+# Subtest: status page selectors and job event topics match the compiled contract
+ok 14 - status page selectors and job event topics match the compiled contract
+  ---
+  duration_ms: 422.138577
+  type: 'test'
+  ...
+# Subtest: pending receipt shows explicit signer revocation before individual closure
+ok 15 - pending receipt shows explicit signer revocation before individual closure
+  ---
+  duration_ms: 2.436111
+  type: 'test'
+  ...
+# Subtest: receipt reads distinguish pending arrival, retained answer and terminal job
+ok 16 - receipt reads distinguish pending arrival, retained answer and terminal job
+  ---
+  duration_ms: 5.568644
+  type: 'test'
+  ...
+# Subtest: malformed revocation reads fail rather than display a verified receipt
+ok 17 - malformed revocation reads fail rather than display a verified receipt
+  ---
+  duration_ms: 1.440568
+  type: 'test'
+  ...
+# Subtest: job callback and URI event use the protocol tuple without changing the static Job or oracle ABI
+ok 18 - job callback and URI event use the protocol tuple without changing the static Job or oracle ABI
+  ---
+  duration_ms: 3.419453
+  type: 'test'
+  ...
+# Subtest: URI event decoder agrees with cast for IPFS, HTTPS, Unicode and empty strings
+ok 19 - URI event decoder agrees with cast for IPFS, HTTPS, Unicode and empty strings
+  ---
+  duration_ms: 160.36957
+  type: 'test'
+  ...
+# Subtest: URI decoder rejects malformed offsets, lengths, padding, oversized data and invalid UTF-8
+ok 20 - URI decoder rejects malformed offsets, lengths, padding, oversized data and invalid UTF-8
+  ---
+  duration_ms: 9.290005
+  type: 'test'
+  ...
+# Subtest: history visibly escapes every bidi, zero-width and control code point including leading BOM
+ok 21 - history visibly escapes every bidi, zero-width and control code point including leading BOM
+  ---
+  duration_ms: 4.374742
+  type: 'test'
+  ...
+# Subtest: history exposes URI only as unverified text, with no HTML, links or content fetching
+ok 22 - history exposes URI only as unverified text, with no HTML, links or content fetching
+  ---
+  duration_ms: 5.233893
+  type: 'test'
+  ...
+# Subtest: history filters other contracts, requests, unknown topics and removed logs
+ok 23 - history filters other contracts, requests, unknown topics and removed logs
+  ---
+  duration_ms: 4.264138
+  type: 'test'
+  ...
+# Subtest: malformed URI logs show unavailable without hiding later history or granting review approval
+ok 24 - malformed URI logs show unavailable without hiding later history or granting review approval
+  ---
+  duration_ms: 1.704307
+  type: 'test'
+  ...
+# Subtest: build fingerprints match compiler artifacts and requester runtime stays below EIP-170
+ok 25 - build fingerprints match compiler artifacts and requester runtime stays below EIP-170
+  ---
+  duration_ms: 608.742785
+  type: 'test'
+  ...
+# Subtest: Passed history remains visible while missing or revoked signer provenance blocks deployment
+ok 26 - Passed history remains visible while missing or revoked signer provenance blocks deployment
+  ---
+  duration_ms: 6.840739
+  type: 'test'
+  ...
+# Subtest: gated deployer ABI is current and both deployed runtimes fit EIP-170
+ok 27 - gated deployer ABI is current and both deployed runtimes fit EIP-170
+  ---
+  duration_ms: 5.44809
+  type: 'test'
+  ...
+1..27
+# tests 27
+# suites 0
+# pass 27
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1522.167151

@@ -1,0 +1,10 @@
+No files changed, compilation skipped
+
+Ran 4 tests for test/AutomaticQuestionVectors.t.sol:AutomaticQuestionVectorsTest
+[PASS] testLive76587543PricePreimageAndSignature() (gas: 373041)
+[PASS] testLivePanelBoolArgentinaPreimageAndSignature() (gas: 362430)
+[PASS] testLivePanelBoolBitcoinPreimageAndSignature() (gas: 362389)
+[PASS] testLivePanelUintWithDefinitionsPreimageAndSignature() (gas: 377529)
+Suite result: ok. 4 passed; 0 failed; 0 skipped; finished in 5.54ms (2.59ms CPU time)
+
+Ran 1 test suite in 9.53ms (5.54ms CPU time): 4 tests passed, 0 failed, 0 skipped (4 total tests)

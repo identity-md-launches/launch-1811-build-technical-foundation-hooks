@@ -1,0 +1,11 @@
+{
+  "input": {
+    "question": "Did Bitcoin's genesis block get mined in January 2009?",
+    "chainId": 1,
+    "answerType": "bool",
+    "evidence": "panel",
+    "window": {
+      "hours": 1
+    }
+  }
+}

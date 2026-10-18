@@ -1,0 +1,587 @@
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.26;
+
+import {StoreAdmin} from "../../store/StoreAdmin.sol";
+import {ExactStoreToken} from "../../store/ExactStoreToken.sol";
+import {IIntake} from "../IIntake.sol";
+import {OracleAttestation, OracleAttestationConsumer} from "../OracleAttestation.sol";
+import {HookJobRequester} from "../HookJobRequester.sol";
+import {HookSpec, HookSpecLib} from "../../HookSpec.sol";
+import {GatedHookDeployer} from "../../deployment/GatedHookDeployer.sol";
+import {HookRequestCodec, HookQuestionPin} from "./HookRequestCodec.sol";
+
+/// @notice Automatic successor to the legacy owner-bound requester. No per-job owner binding.
+/// The job requester commits one candidate, then anyone can spend its prepaid verdict reserve.
+/// A signed, reconstructed question authorizes exactly that candidate; publication never does.
+contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
+    using HookSpecLib for HookSpec;
+
+    struct Payment {
+        address intake;
+        address asset;
+        bytes32 verdictAction;
+        uint256 reserve;
+        uint64 windowStartBlock;
+        uint64 reserveDeadline;
+        uint16 panelSize;
+        uint16 quorum;
+        bool cancelled;
+    }
+
+    struct Candidate {
+        GatedHookDeployer.Artifact artifact;
+        bytes20 reviewedCommit;
+    }
+
+    struct Ask {
+        bytes32 jobId;
+        bytes32 intakeId;
+        address pin;
+        uint64 askedAt;
+        uint64 deadline;
+        uint64 fromBlock;
+        uint64 toBlock;
+        // Allocated before callback. Bits 0..63 verifiedAt, 64..95 signer epoch.
+        uint256 verification;
+        bytes32 oracleUUID;
+    }
+
+    HookRequestCodec public immutable codec;
+    IIntake public intake;
+    address public asset;
+    uint256 public maxPrice;
+    bytes32 public jobAction = bytes32("job.open@job-1");
+    bytes32 public reviewAction = bytes32("oracle.request@oracle-1");
+    uint16 public minPanelSize = 7;
+    uint16 public minAgreed = 5;
+    uint64 private constant JOB_TIMEOUT = 7 days;
+    uint64 private constant REVIEW_TIMEOUT = 1 days;
+    uint64 private constant MAX_ANSWER_AGE = 1 hours;
+    // Block bound is deliberately independent of chain block-time estimates.
+    uint64 public maxWindowAgeBlocks = 7200;
+    uint32 public oracleSignerEpoch = 1;
+    mapping(uint32 => bytes32) public revokedSignerEpochs;
+    mapping(bytes32 => bool) public revokedReviewReceipts;
+    mapping(bytes32 => HookJobRequester.Job) private jobs;
+    mapping(bytes32 => HookSpec) private specs;
+    mapping(bytes32 => address) public deployerOf;
+    mapping(bytes32 => Payment) private payments;
+    mapping(bytes32 => Candidate) private candidates;
+    mapping(bytes32 => bytes32) public candidateDigest;
+    mapping(bytes32 => bytes32) public jobAsk;
+    mapping(bytes32 => Ask) private asks;
+    mapping(bytes32 => bytes32) public reviewOf;
+    mapping(bytes32 => bool) public usedIntakeRequestIds;
+    mapping(address => uint256) public reserved;
+    mapping(address => mapping(address => uint256)) public refunds;
+    mapping(bytes32 => uint64) private windowAge;
+    mapping(address => bytes32[]) private creatorJobs;
+    uint256 private nonce;
+    uint256 private locked = 1;
+
+    error InvalidConfig();
+    error NotConfigured();
+    error NotRequester();
+    error NotIntake();
+    error NotReady();
+    error AlreadyCommitted();
+    error UnknownOrSettled();
+    error DuplicateId();
+    error PriceExceeded(uint256 price, uint256 cap);
+    error InexactSpend();
+    error InvalidArtifact();
+    error WrongQuestion();
+    error InvalidWindow();
+    error WeakPanel();
+    error Revoked();
+    error DeadlineNotReached();
+    error Reentrancy();
+    error EscrowProtected();
+
+    event JobOpened(
+        bytes32 indexed requestId, address indexed requester, bytes32 indexed specHash, uint256 price, bytes body
+    );
+    event JobDelivered(bytes32 indexed requestId, bytes32 resultHash);
+    event JobResultURI(bytes32 indexed requestId, string uri);
+    event JobResultURIOmitted(bytes32 indexed requestId, uint256 uriBytes);
+    event JobFailed(bytes32 indexed requestId, uint8 status, bytes32 reason, uint16 agreed, uint16 answered);
+    event JobExpired(bytes32 indexed requestId);
+    event CandidateCommitted(bytes32 indexed jobId, bytes32 indexed askId, bytes32 digest, bytes20 reviewedCommit);
+    event VerdictRequested(bytes32 indexed askId, bytes32 indexed intakeId, address pin, uint256 price, bytes body);
+    event VerdictAnswered(bytes32 indexed askId, bytes32 indexed oracleUUID, bool passed, bytes32 digest);
+    event VerdictUnanswered(bytes32 indexed askId, bytes32 reason);
+    event ReserveRefunded(bytes32 indexed jobId, address asset, address requester, uint256 amount);
+    event RefundWithdrawn(address indexed asset, address indexed requester, uint256 amount);
+    event ProtocolSet(address intake, address asset, uint256 maxPrice, bytes32 jobAction, bytes32 reviewAction);
+    event PanelSet(uint16 panelSize, uint16 quorum, uint64 maxWindowAgeBlocks);
+    event OracleSignerEpochStarted(uint32 indexed epoch, address indexed signer);
+    event OracleSignerEpochRevoked(uint32 indexed epoch, bytes32 incidentHash);
+    event ReviewReceiptRevoked(bytes32 indexed jobId, bytes32 indexed intakeId, uint32 epoch, bytes32 incidentHash);
+
+    constructor(address owner_, address intake_, address asset_, address signer_, uint256 cap_, HookRequestCodec codec_)
+        OracleAttestationConsumer(signer_)
+        StoreAdmin(owner_)
+    {
+        if (intake_ == address(0) || asset_ == address(0) || address(codec_) == address(0) || cap_ == 0) {
+            revert InvalidConfig();
+        }
+        intake = IIntake(intake_);
+        asset = asset_;
+        maxPrice = cap_;
+        codec = codec_;
+    }
+
+    modifier nonReentrant() {
+        if (locked != 1) revert Reentrancy();
+        locked = 2;
+        _;
+        locked = 1;
+    }
+
+    function automaticBindingSupported() external pure returns (bool) {
+        return true;
+    }
+
+    /// @notice Prepay build and a caller-capped verdict reserve. No later token approval is needed
+    /// for the permissionless trigger. Build cost is spent; unused reserve is pull-refunded.
+    function openJob(
+        HookSpec calldata spec,
+        address deployer,
+        bytes calldata brief,
+        uint256 maxBuildFee,
+        uint256 verdictReserve
+    ) external nonReentrant returns (bytes32 jobId, bytes32 askId) {
+        if (address(codec).codehash != 0x748b72d59b384058ea147227ddb6dfc89109fcab644acf404f78a9a7bfe7334f) revert NotConfigured();
+        codec.validateSpec(spec);
+        if (deployer.code.length == 0 || GatedHookDeployer(deployer).requester() != HookJobRequester(address(this))) {
+            revert InvalidConfig();
+        }
+        codec.validateBrief(brief);
+        uint256 price = _quote(address(intake), jobAction, asset, maxBuildFee);
+        _quote(address(intake), reviewAction, asset, verdictReserve);
+        if (verdictReserve > maxPrice) revert PriceExceeded(verdictReserve, maxPrice);
+        askId = keccak256(abi.encode(block.chainid, address(this), ++nonce));
+        bytes memory body = _jobBody(spec, askId, deployer, brief);
+        ExactStoreToken.pull(asset, msg.sender, price + verdictReserve);
+        reserved[asset] += verdictReserve;
+        jobId = _request(
+            address(intake), asset, jobAction, body, this.onJobResult.selector, this.onJobFailure.selector, price
+        );
+        _recordId(jobId);
+        HookJobRequester.Job storage j = jobs[jobId];
+        j.requester = msg.sender;
+        j.openedAt = uint64(block.timestamp);
+        j.deadline = uint64(block.timestamp) + JOB_TIMEOUT;
+        j.status = HookJobRequester.JobStatus.Open;
+        j.specHash = HookSpecLib.hash(spec);
+        j.bodyHash = keccak256(body);
+        specs[jobId] = spec;
+        deployerOf[jobId] = deployer;
+        payments[jobId] = Payment(
+            address(intake),
+            asset,
+            reviewAction,
+            verdictReserve,
+            uint64(block.number),
+            uint64(block.timestamp) + JOB_TIMEOUT,
+            minPanelSize,
+            minAgreed,
+            false
+        );
+        jobAsk[jobId] = askId;
+        asks[askId].jobId = jobId;
+        creatorJobs[msg.sender].push(jobId);
+        emit JobOpened(jobId, msg.sender, j.specHash, price, body);
+    }
+
+    function _jobBody(HookSpec calldata spec, bytes32 askId, address deployer, bytes calldata brief)
+        private
+        view
+        returns (bytes memory)
+    {
+        return codec.jobBody(spec, HookSpecLib.hash(spec), askId, address(this), address(intake), deployer, brief);
+    }
+
+    /// @notice One immutable candidate per job, selected explicitly by its requester. This call
+    /// can precede or follow job delivery. The panel must prove it is the accepted reviewed build.
+    function commitArtifact(bytes32 jobId, GatedHookDeployer.Artifact calldata a, bytes20 reviewedCommit) external {
+        HookJobRequester.Job storage j = jobs[jobId];
+        if (msg.sender != j.requester) revert NotRequester();
+        if (candidateDigest[jobId] != bytes32(0)) revert AlreadyCommitted();
+        if (payments[jobId].cancelled) revert NotReady();
+        bytes32 digest = codec.validateCandidate(a, specs[jobId], jobId, deployerOf[jobId], reviewedCommit);
+        payments[jobId].windowStartBlock = uint64(block.number);
+        candidates[jobId] = Candidate(a, reviewedCommit);
+        candidateDigest[jobId] = digest;
+        emit CandidateCommitted(jobId, jobAsk[jobId], digest, reviewedCommit);
+    }
+
+    function onJobResult(bytes32 jobId, bytes32 resultHash, string calldata uri) external {
+        _jobCallback(jobId);
+        if (resultHash == bytes32(0)) revert InvalidArtifact();
+        HookJobRequester.Job storage j = jobs[jobId];
+        j.status = HookJobRequester.JobStatus.Delivered;
+        j.resultHash = resultHash;
+        payments[jobId].windowStartBlock = uint64(block.number);
+        emit JobDelivered(jobId, resultHash);
+        if (bytes(uri).length <= 1024) emit JobResultURI(jobId, uri);
+        else emit JobResultURIOmitted(jobId, bytes(uri).length);
+    }
+
+    function onJobFailure(bytes32 jobId, uint8 status, bytes32 reason, uint16 agreed, uint16 answered, bytes calldata)
+        external
+    {
+        _jobCallback(jobId);
+        HookJobRequester.Job storage j = jobs[jobId];
+        j.status = HookJobRequester.JobStatus.Failed;
+        j.failureStatus = status;
+        j.failureReason = reason;
+        emit JobFailed(jobId, status, reason, agreed, answered);
+    }
+
+    function _jobCallback(bytes32 id) private view {
+        if (msg.sender != payments[id].intake) revert NotIntake();
+        HookJobRequester.JobStatus s = jobs[id].status;
+        if (s != HookJobRequester.JobStatus.Open && s != HookJobRequester.JobStatus.Expired) revert UnknownOrSettled();
+    }
+
+    /// @notice Anyone may trigger this transaction once ready, paying only transaction gas.
+    /// No caller-selected question, prefix, artifact, recipient or fee is accepted here.
+    function requestVerdict(bytes32 askId) external nonReentrant returns (bytes32 intakeId) {
+        Ask storage a = asks[askId];
+        bytes32 jobId = a.jobId;
+        HookJobRequester.Job storage j = jobs[jobId];
+        Payment storage p = payments[jobId];
+        if (
+            jobId == bytes32(0) || a.intakeId != bytes32(0) || p.cancelled || p.reserve == 0
+                || block.timestamp > p.reserveDeadline || j.status != HookJobRequester.JobStatus.Delivered
+                || j.review != HookJobRequester.ReviewStatus.None || candidateDigest[jobId] == bytes32(0)
+                || block.number <= p.windowStartBlock
+        ) revert NotReady();
+        uint256 price = IIntake(p.intake).priceOf(p.verdictAction, p.asset);
+        if (price == 0) revert NotConfigured();
+        if (price > p.reserve) revert PriceExceeded(price, p.reserve);
+        a.askedAt = uint64(block.timestamp);
+        a.deadline = uint64(block.timestamp) + REVIEW_TIMEOUT;
+        a.fromBlock = p.windowStartBlock;
+        a.toBlock = uint64(block.number - 1);
+        bytes memory q = _question(jobId, askId);
+        bytes memory prefix_ = codec.prefix(block.chainid, q);
+        a.pin = address(new HookQuestionPin(prefix_));
+        a.verification = uint256(1) << 255;
+        windowAge[askId] = maxWindowAgeBlocks;
+        bytes memory body =
+            codec.oracleBody(block.chainid, address(this), q, a.fromBlock, a.toBlock, p.panelSize, p.quorum);
+        // Mark/spend before external interactions. Reverts restore reserve on refusal or bad spend.
+        j.review = HookJobRequester.ReviewStatus.Pending;
+        j.reviewDeadline = a.deadline;
+        reserved[p.asset] -= price;
+        p.reserve -= price;
+        intakeId = _request(
+            p.intake, p.asset, p.verdictAction, body, this.onReviewResult.selector, this.onReviewFailure.selector, price
+        );
+        _recordId(intakeId);
+        a.intakeId = intakeId;
+        j.reviewRequestId = intakeId;
+        reviewOf[intakeId] = askId;
+        historicalAsk[intakeId] = askId;
+        _refund(jobId);
+        emit VerdictRequested(askId, intakeId, a.pin, price, body);
+    }
+
+    function _question(bytes32 jobId, bytes32 askId) private view returns (bytes memory) {
+        HookJobRequester.Job storage j = jobs[jobId];
+        return codec.question(
+            block.chainid,
+            payments[jobId].intake,
+            address(this),
+            jobId,
+            askId,
+            j.specHash,
+            j.resultHash,
+            candidates[jobId].reviewedCommit,
+            candidateDigest[jobId]
+        );
+    }
+
+    function questionPrefix(bytes32 askId) public view returns (bytes memory out) {
+        address pin = asks[askId].pin;
+        if (pin == address(0)) revert NotReady();
+        return codec.readPrefix(pin);
+    }
+
+    function expectedQuestionHash(bytes32 askId, uint64 fromBlock, uint64 toBlock) public view returns (bytes32) {
+        address pin = asks[askId].pin;
+        if (pin == address(0)) revert NotReady();
+        return codec.hashQuestion(pin, fromBlock, toBlock);
+    }
+
+    function onReviewResult(bytes32 intakeId, OracleAttestation.Attestation calldata att, bytes calldata signature)
+        external
+    {
+        bytes32 askId = reviewOf[intakeId];
+        Ask storage a = asks[askId];
+        bytes32 jobId = a.jobId;
+        Payment storage p = payments[jobId];
+        if (msg.sender != p.intake) revert NotIntake();
+        if (askId == bytes32(0) || a.oracleUUID != bytes32(0)) revert UnknownOrSettled();
+        if (att.chainId != block.chainid || att.questionHash != expectedQuestionHash(askId, att.fromBlock, att.toBlock))
+        {
+            revert WrongQuestion();
+        }
+        if (
+            att.fromBlock != a.fromBlock || att.toBlock != a.toBlock || att.fromBlock > att.toBlock
+                || att.toBlock >= block.number || block.number - att.toBlock > windowAge[askId]
+                || att.issuedAt < a.askedAt || att.issuedAt > block.timestamp || att.issuedAt > att.expiresAt
+                || block.timestamp - att.issuedAt > MAX_ANSWER_AGE
+        ) revert InvalidWindow();
+        if (
+            att.panelSize < p.panelSize || att.quorum == 0 || att.quorum > att.panelSize || att.agreed < att.quorum
+                || att.agreed < p.quorum || att.agreed > att.panelSize
+        ) revert WeakPanel();
+        if (att.requestId == bytes32(0) || att.panelJobId == bytes32(0) || att.answer.length != 32) {
+            revert InvalidArtifact();
+        }
+        bytes32 digest = _verifyAttestation(att, signature);
+        bool passed = decodeBool(att);
+        _consume(att.requestId);
+        a.oracleUUID = att.requestId;
+        a.verification = (uint256(1) << 255) | uint256(att.issuedAt) | (uint256(oracleSignerEpoch) << 64);
+        delete reviewOf[intakeId];
+        HookJobRequester.Job storage j = jobs[jobId];
+        j.review = passed ? HookJobRequester.ReviewStatus.Passed : HookJobRequester.ReviewStatus.NotPassed;
+        j.reviewPanelSize = att.panelSize;
+        j.reviewAgreed = att.agreed;
+        j.reviewPanelJobId = att.panelJobId;
+        emit VerdictAnswered(askId, att.requestId, passed, digest);
+    }
+
+    function onReviewFailure(bytes32 intakeId, uint8, bytes32 reason, uint16, uint16, bytes calldata) external {
+        bytes32 askId = reviewOf[intakeId];
+        Ask storage a = asks[askId];
+        if (msg.sender != payments[a.jobId].intake) revert NotIntake();
+        if (askId == bytes32(0) || a.oracleUUID != bytes32(0)) revert UnknownOrSettled();
+        delete reviewOf[intakeId];
+        jobs[a.jobId].review = HookJobRequester.ReviewStatus.Unanswered;
+        emit VerdictUnanswered(askId, reason);
+    }
+
+    /// @notice Requester can recover unused reserve after build failure or deadline. Cancelling
+    /// permanently disables the ask even if the build's late callback subsequently arrives.
+    function cancelReserve(bytes32 jobId) external nonReentrant {
+        HookJobRequester.Job storage j = jobs[jobId];
+        if (msg.sender != j.requester) revert NotRequester();
+        if (j.status != HookJobRequester.JobStatus.Failed && block.timestamp <= payments[jobId].reserveDeadline) {
+            revert DeadlineNotReached();
+        }
+        if (asks[jobAsk[jobId]].intakeId != bytes32(0)) revert UnknownOrSettled();
+        payments[jobId].cancelled = true;
+        _refund(jobId);
+    }
+
+    function expireJob(bytes32 jobId) external {
+        HookJobRequester.Job storage j = jobs[jobId];
+        if (msg.sender != j.requester) revert NotRequester();
+        if (j.status != HookJobRequester.JobStatus.Open) revert UnknownOrSettled();
+        if (block.timestamp <= j.deadline) revert DeadlineNotReached();
+        j.status = HookJobRequester.JobStatus.Expired;
+        emit JobExpired(jobId);
+    }
+
+    function _refund(bytes32 jobId) private {
+        Payment storage p = payments[jobId];
+        uint256 amount = p.reserve;
+        if (amount == 0) return;
+        p.reserve = 0;
+        // Reserved includes both unspent job reserves and withdrawable credits.
+        refunds[p.asset][jobs[jobId].requester] += amount;
+        emit ReserveRefunded(jobId, p.asset, jobs[jobId].requester, amount);
+    }
+
+    function withdrawRefund(address token) external nonReentrant {
+        uint256 amount = refunds[token][msg.sender];
+        refunds[token][msg.sender] = 0;
+        reserved[token] -= amount;
+        ExactStoreToken.push(token, msg.sender, amount);
+        emit RefundWithdrawn(token, msg.sender, amount);
+    }
+
+    /// @notice Retry only an unanswered attempt, keeping the same immutable candidate. A fresh
+    /// ask identity prevents replay from a previous attempt. A genuine NotPassed cannot retry.
+    function retryVerdict(bytes32 jobId, uint256 reserve) external nonReentrant returns (bytes32 askId) {
+        HookJobRequester.Job storage j = jobs[jobId];
+        if (msg.sender != j.requester) revert NotRequester();
+        if (j.review != HookJobRequester.ReviewStatus.Unanswered) revert NotReady();
+        Payment storage p = payments[jobId];
+        if (p.cancelled || reserve == 0 || reserve > maxPrice) revert InvalidConfig();
+        _quote(p.intake, p.verdictAction, p.asset, reserve);
+        ExactStoreToken.pull(p.asset, msg.sender, reserve);
+        p.reserve = reserve;
+        reserved[p.asset] += reserve;
+        p.windowStartBlock = uint64(block.number);
+        p.reserveDeadline = uint64(block.timestamp) + REVIEW_TIMEOUT;
+        askId = keccak256(abi.encode(block.chainid, address(this), ++nonce));
+        jobAsk[jobId] = askId;
+        asks[askId].jobId = jobId;
+        j.review = HookJobRequester.ReviewStatus.None;
+        emit CandidateCommitted(jobId, askId, candidateDigest[jobId], candidates[jobId].reviewedCommit);
+    }
+
+    function reserveOf(bytes32 jobId) external view returns (address token, uint256 amount, bool cancelled) {
+        Payment storage p = payments[jobId];
+        return (p.asset, p.reserve, p.cancelled);
+    }
+
+    function getJob(bytes32 jobId) external view returns (HookJobRequester.Job memory) {
+        return jobs[jobId];
+    }
+
+    function getSpec(bytes32 jobId) external view returns (HookSpec memory) {
+        return specs[jobId];
+    }
+
+    function getCandidate(bytes32 jobId) external view returns (Candidate memory) {
+        return candidates[jobId];
+    }
+
+    function getAsk(bytes32 askId) external view returns (Ask memory) {
+        return asks[askId];
+    }
+
+    function getOrigin(bytes32 askId) external view returns (bytes32 jobId, address intake_, uint256 chainId) {
+        jobId = asks[askId].jobId;
+        return (jobId, payments[jobId].intake, block.chainid);
+    }
+
+    function jobsOf(address creator) external view returns (bytes32[] memory) {
+        return creatorJobs[creator];
+    }
+
+    function reviewVerifiedAt(bytes32 intakeId) public view returns (uint64) {
+        return uint64(_askForIntake(intakeId).verification);
+    }
+
+    function reviewReceiptSignerEpoch(bytes32 intakeId) public view returns (uint32) {
+        return uint32(_askForIntake(intakeId).verification >> 64);
+    }
+    // An immutable historic mapping is needed after reviewOf is cleared.
+    mapping(bytes32 => bytes32) private historicalAsk;
+
+    function _askForIntake(bytes32 intakeId) private view returns (Ask storage) {
+        return asks[historicalAsk[intakeId]];
+    }
+
+    function approvedArtifact(bytes32 jobId) external view returns (bytes32) {
+        HookJobRequester.Job storage j = jobs[jobId];
+        uint32 epoch = reviewReceiptSignerEpoch(j.reviewRequestId);
+        if (
+            j.review != HookJobRequester.ReviewStatus.Passed || epoch == 0 || revokedSignerEpochs[epoch] != bytes32(0)
+                || revokedReviewReceipts[j.reviewRequestId]
+        ) return bytes32(0);
+        return candidateDigest[jobId];
+    }
+
+    // Protocol and panel settings are snapshotted per job. Window age is snapshotted at trigger.
+    // The signature trust root is intentionally current at delivery; current maxPrice caps new prepayments.
+    function setProtocol(address intake_, address asset_, uint256 cap_, bytes32 jobAction_, bytes32 reviewAction_)
+        external
+        onlyOwner
+        nonReentrant
+    {
+        if (
+            intake_ == address(0) || asset_ == address(0) || cap_ == 0 || jobAction_ == bytes32(0)
+                || reviewAction_ == bytes32(0)
+        ) revert InvalidConfig();
+        intake = IIntake(intake_);
+        asset = asset_;
+        maxPrice = cap_;
+        jobAction = jobAction_;
+        reviewAction = reviewAction_;
+        emit ProtocolSet(intake_, asset_, cap_, jobAction_, reviewAction_);
+    }
+
+    function setPanel(uint16 panel, uint16 quorum, uint64 ageBlocks) external onlyOwner nonReentrant {
+        if (panel < 2 || panel > 100 || quorum == 0 || quorum > panel || ageBlocks == 0) revert InvalidConfig();
+        minPanelSize = panel;
+        minAgreed = quorum;
+        maxWindowAgeBlocks = ageBlocks;
+        emit PanelSet(panel, quorum, ageBlocks);
+    }
+
+    function setOracleSigner(address signer) external onlyOwner nonReentrant {
+        _setOracleSigner(signer);
+        ++oracleSignerEpoch;
+        emit OracleSignerEpochStarted(oracleSignerEpoch, signer);
+    }
+
+    function revokeSignerEpoch(uint32 epoch, bytes32 incidentHash) external onlyOwner {
+        if (
+            epoch == 0 || epoch >= oracleSignerEpoch || incidentHash == bytes32(0)
+                || revokedSignerEpochs[epoch] != bytes32(0)
+        ) revert InvalidConfig();
+        revokedSignerEpochs[epoch] = incidentHash;
+        emit OracleSignerEpochRevoked(epoch, incidentHash);
+    }
+
+    function closeRevokedVerdict(bytes32 jobId) external onlyOwner {
+        HookJobRequester.Job storage j = jobs[jobId];
+        uint32 epoch = reviewReceiptSignerEpoch(j.reviewRequestId);
+        bytes32 incident = revokedSignerEpochs[epoch];
+        if (
+            incident == bytes32(0)
+                || (j.review != HookJobRequester.ReviewStatus.Passed
+                    && j.review != HookJobRequester.ReviewStatus.NotPassed)
+        ) revert Revoked();
+        revokedReviewReceipts[j.reviewRequestId] = true;
+        j.review = HookJobRequester.ReviewStatus.Unanswered;
+        emit ReviewReceiptRevoked(jobId, j.reviewRequestId, epoch, incident);
+    }
+
+    /// @notice Exceptional owner recovery only. Cannot erase any verified true or false answer.
+    function confirmReviewExpiry(bytes32 intakeId) external onlyOwner {
+        bytes32 askId = reviewOf[intakeId];
+        Ask storage a = asks[askId];
+        if (askId == bytes32(0) || a.oracleUUID != bytes32(0)) revert UnknownOrSettled();
+        if (block.timestamp <= a.deadline) revert DeadlineNotReached();
+        delete reviewOf[intakeId];
+        jobs[a.jobId].review = HookJobRequester.ReviewStatus.Unanswered;
+        emit VerdictUnanswered(askId, "owner confirmed expiry");
+    }
+
+    function sweep(address token, address to, uint256 amount) external onlyOwner nonReentrant {
+        if (to == address(0) || amount > ExactStoreToken.balance(token, address(this)) - reserved[token]) {
+            revert EscrowProtected();
+        }
+        ExactStoreToken.push(token, to, amount);
+    }
+
+    function _quote(address at, bytes32 action, address token, uint256 cap) private view returns (uint256 price) {
+        price = IIntake(at).priceOf(action, token);
+        if (price == 0) revert NotConfigured();
+        if (price > cap || price > maxPrice) revert PriceExceeded(price, cap < maxPrice ? cap : maxPrice);
+    }
+
+    function _recordId(bytes32 id) private {
+        if (id == bytes32(0) || usedIntakeRequestIds[id]) revert DuplicateId();
+        usedIntakeRequestIds[id] = true;
+    }
+
+    function _request(
+        address at,
+        address token,
+        bytes32 action,
+        bytes memory body,
+        bytes4 success,
+        bytes4 failure,
+        uint256 price
+    ) private returns (bytes32 id) {
+        if (body.length > 16384) revert InvalidConfig();
+        uint256 beforeBalance = ExactStoreToken.balance(token, address(this));
+        ExactStoreToken.call(token, abi.encodeWithSelector(0x095ea7b3, at, 0));
+        ExactStoreToken.call(token, abi.encodeWithSelector(0x095ea7b3, at, price));
+        id = IIntake(at)
+            .requestWithFailure(action, body, IIntake.Callback(address(this), success), failure, token, price);
+        ExactStoreToken.call(token, abi.encodeWithSelector(0x095ea7b3, at, 0));
+        if (ExactStoreToken.balance(token, address(this)) != beforeBalance - price) revert InexactSpend();
+    }
+}

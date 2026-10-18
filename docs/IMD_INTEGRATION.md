@@ -1,14 +1,18 @@
-# IMD request integration (no backend)
+# Legacy manual IMD request integration (no backend)
+
+> Historical legacy/manual integration. The current automatic successor, fixed canonical prefix,
+> prepaid verdict flow and exact signed artifact authorization are documented in
+> [AUTOMATIC_BINDING.md](AUTOMATIC_BINDING.md). Existing manual requesters keep their old behavior.
 
 `src/imd/HookJobRequester.sol` lets a creator's wallet buy an IdentityMD `job.open` for standalone-hook code and lets any static website show that job's status, read straight from the chain. Nothing here was deployed, and no paid request was submitted. Everything was exercised locally against `test/helpers/MockIntake.sol`, which stands in for the Intake.
 
-## Current integration status
+## Historical legacy integration status
 
 The [deployed-interface investigation](INTEGRATION_RESOLUTION.md) found no contract-verifiable
 Intake/body-to-oracle/question proof. The existing owner binding described below is an assertion by
 that owner, not authentication supplied by the protocol. It remains for local/manual use, not a
-routine-founder production workaround. Automatic binding is disabled; keep paid activation disabled
-until the documented launch blockers are resolved.
+routine-founder production workaround. This legacy route is not automatic. The implemented successor
+uses canonical signed-question reconstruction; see [AUTOMATIC_BINDING.md](AUTOMATIC_BINDING.md).
 
 `closeRevokedVerdict(jobId)` now recovers the current finalized Passed or NotPassed verdict only after
 its verification epoch is explicitly revoked. It retains all history/consumption and enables a fresh
@@ -82,9 +86,10 @@ review, including a finalized `NotPassed`, cannot be cleared by delivery.
 
 ## Binding each review to its signed answer
 
-The automatic path remains disabled. `GatedHookDeployer.automaticBindingSupported()` is false,
-and the SDK requires explicit manual `owner-confirmed` mode. The missing protocol-signed or
-onchain Intake/body-to-oracle/question proof is detailed in [INTEGRATION_RESOLUTION.md](INTEGRATION_RESOLUTION.md#missing-protocol-primitive).
+For this legacy requester, `GatedHookDeployer.automaticBindingSupported()` is false and the SDK
+requires explicit manual `owner-confirmed` mode. With AutoHookJobRequester it returns true and the
+SDK defaults to the automatic path. The historical missing-preimage investigation is retained in
+[INTEGRATION_RESOLUTION.md](INTEGRATION_RESOLUTION.md#missing-protocol-primitive).
 A retained answer or unsigned HTTP lookup cannot authenticate its own pairing.
 
 

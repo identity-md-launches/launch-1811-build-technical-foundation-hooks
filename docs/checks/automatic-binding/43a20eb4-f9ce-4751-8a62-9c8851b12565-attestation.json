@@ -1,0 +1,94 @@
+{
+  "requestId": "43a20eb4-f9ce-4751-8a62-9c8851b12565",
+  "domain": {
+    "name": "IdentityMD Oracle",
+    "version": "2",
+    "chainId": 1,
+    "verifyingContract": "0x3fc72adfed89284e4f3f378646a5338f2f1e14ea"
+  },
+  "types": {
+    "OracleAttestation": [
+      {
+        "name": "requestId",
+        "type": "bytes32"
+      },
+      {
+        "name": "chainId",
+        "type": "uint256"
+      },
+      {
+        "name": "questionHash",
+        "type": "bytes32"
+      },
+      {
+        "name": "answerType",
+        "type": "uint8"
+      },
+      {
+        "name": "answer",
+        "type": "bytes"
+      },
+      {
+        "name": "figure",
+        "type": "uint256"
+      },
+      {
+        "name": "fromBlock",
+        "type": "uint64"
+      },
+      {
+        "name": "toBlock",
+        "type": "uint64"
+      },
+      {
+        "name": "blockHash",
+        "type": "bytes32"
+      },
+      {
+        "name": "panelJobId",
+        "type": "bytes32"
+      },
+      {
+        "name": "panelSize",
+        "type": "uint16"
+      },
+      {
+        "name": "quorum",
+        "type": "uint16"
+      },
+      {
+        "name": "agreed",
+        "type": "uint16"
+      },
+      {
+        "name": "issuedAt",
+        "type": "uint64"
+      },
+      {
+        "name": "expiresAt",
+        "type": "uint64"
+      }
+    ]
+  },
+  "primaryType": "OracleAttestation",
+  "message": {
+    "agreed": 11,
+    "answer": "0x0000000000000000000000000000000000000000000000000000000000000001",
+    "figure": "0",
+    "quorum": 11,
+    "chainId": 1,
+    "toBlock": 26213524,
+    "issuedAt": 1792255273,
+    "blockHash": "0xe965bbc9c49f48e043dc571dda9f0b45176941a93b776eff8c2b0f833330bc09",
+    "expiresAt": 1792341673,
+    "fromBlock": 26206347,
+    "panelSize": 15,
+    "requestId": "0x43a20eb4f9ce47518a629c8851b1256500000000000000000000000000000000",
+    "answerType": "bool",
+    "panelJobId": "0x0c599580f2394ad69766b23404013f3c00000000000000000000000000000000",
+    "questionHash": "0x01647b9a756632a15dcd092560b07f9383e1b6b124718c95d7da74eb2bd9b13f"
+  },
+  "signature": "0xb300ec313bb1b7d8984c853a9654f61d1fef7150291a8492f79f298bbbe9a0bd6575422ece45c23d748e34b07cad9560bacbf1ae1e14edef90b06ca79926f4041c",
+  "signer": "0x5598aa9146215bc13eb26f2c692ad1461fd32982",
+  "attestedAt": "2026-10-17T16:41:13.419Z"
+}

@@ -1,0 +1,11 @@
+{
+  "input": {
+    "question": "Did Argentina win the 2022 FIFA World Cup?",
+    "chainId": 1,
+    "answerType": "bool",
+    "evidence": "panel",
+    "window": {
+      "hours": 1
+    }
+  }
+}

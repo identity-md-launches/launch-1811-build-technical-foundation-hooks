@@ -137,13 +137,34 @@ class GatedDeployToolTest(unittest.TestCase):
         with self.assertRaisesRegex(StoreError, "another artifact"):
             prepare(Rpc(self.local.url), **params)
 
-    def test_automatic_route_is_disabled_before_any_rpc(self):
+    def test_automatic_route_refuses_a_legacy_requester(self):
         params = self._params(b"{}")
         params.pop("binding_mode")
-        rpc = Mock()
+        rpc = Rpc(self.local.url)
         with self.assertRaisesRegex(StoreError, "automatic binding disabled"):
             prepare(rpc, **params)
-        self.assertEqual(rpc.mock_calls, [])
+
+    def test_automatic_route_uses_exact_signed_digest_without_result_json(self):
+        self._job(b"local completion snapshot")
+        digest = self._digest()
+        self.local.call_transaction(self.requester, "setAutomaticApproval(bytes32,bytes32)", JOB, digest)
+        params = self._params(b"")
+        params["binding_mode"] = "automatic"
+        out = prepare(Rpc(self.local.url), **params)
+        self.assertTrue(out["automaticBindingSupported"])
+        self.assertEqual(out["bindingMode"], "automatic")
+        self.assertEqual(out["artifactDigest"], digest)
+        self.assertTrue(all(e["ok"] for e in out["evidence"]))
+        self.local.send(out["transaction"])
+        self.assertNotEqual(Rpc(self.local.url).code(out["hook"]), "0x")
+
+    def test_automatic_route_rejects_another_artifact_before_mining(self):
+        self._job(b"local completion snapshot")
+        self.local.call_transaction(self.requester, "setAutomaticApproval(bytes32,bytes32)", JOB, "0x" + "ab" * 32)
+        params = self._params(b"")
+        params["binding_mode"] = "automatic"
+        with self.assertRaisesRegex(StoreError, "authorizes another artifact"):
+            prepare(Rpc(self.local.url), **params)
 
     def test_nested_rejected_alternative_does_not_approve_substitution(self):
         doc = json.loads(self._doc())

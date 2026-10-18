@@ -1,7 +1,7 @@
 {
   "format": "hooks-store-deployment-preparation/v1",
   "sourceCommit": null,
-  "status": "Locally tested consolidated fixes; not independently audited or launch ready. Automatic binding is disabled.",
+  "status": "Historical legacy infrastructure draft. Its HookJobRequester remains manual; use automatic.draft.json and docs/AUTOMATIC_BINDING.md for the automatic successor. Nothing deployed.",
   "launchKind": "evm_contracts",
   "launcher": {
     "sources": [
@@ -215,10 +215,9 @@
   "historicalBuildEvidence": "deployment/audited-build.json",
   "integrationResolution": "docs/INTEGRATION_RESOLUTION.md",
   "launchBlockers": [
-    "Protocol-verifiable Intake/body to oracle UUID/question/artifact binding is absent; manual owner assertion is not an automatic solution.",
-    "Full HookSpec and authenticated originating request/deployer/chain/manager context have not been delivered to real workers.",
-    "No live four-step completion with both canonical v2 named files has been matched byte-for-byte to Intake resultHash and checked onchain.",
-    "No live Hooks Store oracle review/callback or canonical-question preimage proof; captured live price answer is only a format vector.",
-    "Independent adversarial review of these changes, real deployment/owner/recipient choices and approved operational handoff are outstanding."
-  ]
+    "These legacy requester entries use owner binding; automatic operation requires AutoHookJobRequester and HookRequestCodec from automatic.draft.json.",
+    "Independent review and a separately authorized real Hooks Store build/review/oracle pilot remain outstanding.",
+    "Actual deployment owner and operational handoff must be supplied by the deployment operator. Existing ad-recipient approval remains unchanged."
+  ],
+  "automaticSuccessor": "deployment/automatic.draft.json"
 }

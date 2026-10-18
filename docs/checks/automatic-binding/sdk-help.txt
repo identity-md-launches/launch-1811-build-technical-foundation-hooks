@@ -1,0 +1,44 @@
+usage: python3 -m sdk.gated_deploy [-h] --rpc RPC --deployer DEPLOYER
+                                   --job JOB --creation-code CREATION_CODE
+                                   --constructor-args CONSTRUCTOR_ARGS
+                                   [--source-hash SOURCE_HASH]
+                                   [--build-hash BUILD_HASH]
+                                   [--runtime-hash RUNTIME_HASH]
+                                   [--pool-manager POOL_MANAGER]
+                                   [--permissions PERMISSIONS]
+                                   [--source-submission SOURCE_SUBMISSION]
+                                   [--review-submission REVIEW_SUBMISSION]
+                                   [--result-document RESULT_DOCUMENT]
+                                   [--binding-mode {automatic,owner-confirmed}]
+                                   [--approval-document APPROVAL_DOCUMENT]
+
+Exact signed ArtifactV2 -> oracle-verdict checks -> mined salt -> UNSIGNED
+deployment calldata.
+
+options:
+  -h, --help            show this help message and exit
+  --rpc RPC
+  --deployer DEPLOYER
+  --job JOB
+  --creation-code CREATION_CODE
+  --constructor-args CONSTRUCTOR_ARGS
+  --source-hash SOURCE_HASH
+                        legacy owner-confirmed mode only
+  --build-hash BUILD_HASH
+                        legacy owner-confirmed mode only
+  --runtime-hash RUNTIME_HASH
+                        legacy owner-confirmed mode only
+  --pool-manager POOL_MANAGER
+                        legacy owner-confirmed mode only
+  --permissions PERMISSIONS
+                        legacy owner-confirmed mode only
+  --source-submission SOURCE_SUBMISSION
+                        legacy owner-confirmed mode only
+  --review-submission REVIEW_SUBMISSION
+                        legacy owner-confirmed mode only
+  --result-document RESULT_DOCUMENT
+                        required only for legacy owner-confirmed mode
+  --binding-mode {automatic,owner-confirmed}
+  --approval-document APPROVAL_DOCUMENT
+                        accepted approval file; must match the canonical bytes
+                        exactly

@@ -1,0 +1,5 @@
+verify 76587543-d7e6-471e-a01f-63e9e0dfc6e7: MATCH
+  computed 0xf4df38bb41d635b3de83f4215612d83e25696f6a40fc040f9de053baba7029df
+  live     0xf4df38bb41d635b3de83f4215612d83e25696f6a40fc040f9de053baba7029df
+prefix: 1622 bytes; full document 1637 bytes
+prefix tail: "d toward zero?\",\"v\":1,\"window\":{\"fromBlock\":"

@@ -1,6 +1,6 @@
 # Hooks Store foundation
 
-Current revision: consolidated fixes for audit ca404dfe on cc847d8. The [integration decision](docs/INTEGRATION_RESOLUTION.md) identifies a missing protocol-authenticated Intake/question mapping, so automatic binding remains disabled. Local recovery, approval freshness, UTF-8/JSON parsing, gas bounds and exact reviewed-build evidence are implemented; see [current gated deployment](docs/GATED_DEPLOYMENT.md) and [reproducible results](docs/checks/consolidated/README.md). Nothing was deployed or paid for.
+Current revision: automatic oracle binding and exact-artifact deployment authorization, continuing `9dd97150`. The [automatic workflow and runbook](docs/AUTOMATIC_BINDING.md) covers prepaid build/verdict fees, a permissionless `requestVerdict(askId)`, canonical signed-question reconstruction, immutable candidate selection and the official deployment gate. Use `AutoHookJobRequester` with `HookRequestCodec`; the legacy manual requester remains available for compatibility. [Vectors and checks](docs/checks/automatic-binding/README.md) separate public signature/preimage reproduction from local tests and free wording checks. No public deployment or paid work occurred.
 
 Deployment preparation from `b157921` is in the [executable runbook](docs/DEPLOYMENT_PREPARATION.md) and
 [manifest](deployment/manifest.json). Owner and ad-recipient approvals remain open; no public deployment
@@ -39,14 +39,14 @@ forge fmt --check
 sh script/verify-vendored.sh
 python3 -m unittest discover -s test -p 'test_*.py' -v
 # Optional static listing reader checks (Node.js built-ins only):
-node --test test/listings-reader.test.cjs test/requester-abi.test.cjs
+node --test test/*.test.cjs
 ```
 
 The repository fuzz seed is pinned in `foundry.toml`:
 `0x936d89b088020ddf36122a88c4c9aed7130c7a410f5c44680a7d121950c99345`.
-The consolidated revision also runs the assignment seed
-`0x40bbcf769875f858aac6849e21037c680c23d3811f18267f1b80562a06409c89`.
-[Current results](docs/checks/consolidated/README.md) include the complete Foundry, Python SDK and
+The automatic-binding revision also runs the assignment seed
+`0x63141e4fb7e43e7da95e0ee07c1fb764e4512f7c4b40763dcc1324444f87f3de`.
+[Current results](docs/checks/automatic-binding/README.md) include the complete Foundry, Python SDK and
 Node site suites. Tests do not read or mutate environment variables. Python integration tests start
 and stop disposable Anvil instances on loopback; they never use a public RPC or a funded wallet.
 
@@ -61,6 +61,9 @@ The Foundry suite mines and deploys real CREATE2 hooks, creates a fresh real v4 
 
 | Deliverable | Entry point |
 |---|---|
+| Automatic job/oracle consumer | [AutoHookJobRequester.sol](src/imd/automatic/AutoHookJobRequester.sol), [fixed codec](src/imd/automatic/HookRequestCodec.sol) |
+| Automatic wallet/SDK workflow | [wallet page](site/automatic.html), [unsigned SDK](sdk/automatic.py), [preflight](script/preflight_automatic.py) |
+| Automatic deployment configuration draft | [constructor/owner handoff](deployment/automatic.draft.json), [runbook](docs/AUTOMATIC_BINDING.md) |
 | Shared creator output | [JSON schema](schemas/hook-spec.v1.schema.json), [ABI struct](src/HookSpec.sol), [spec contract](docs/HOOK_SPEC.md) |
 | Reusable hook | [BoundedSwapHook.sol](src/BoundedSwapHook.sol) |
 | Store-callable contract interface | [IHooksStore.sol](src/interfaces/IHooksStore.sol) |
@@ -74,9 +77,9 @@ The Foundry suite mines and deploys real CREATE2 hooks, creates a fresh real v4 
 | Optional featured #ad escrow | [FeaturedPlacements.sol](src/store/FeaturedPlacements.sol), [read-only listing page](site/listings.html) |
 | Evidence and limits | [verification](docs/VERIFICATION.md), [chain support](docs/CHAINS.md), [threat model](docs/THREAT_MODEL.md) |
 
-Both creator frontends emit the same structured spec. They call `normalize_spec` / `build_spec`, then `StoreClient.plan`; they do not generate arbitrary Solidity or supply arbitrary bytecode. The Store gets a reviewable unsigned transaction. A separately controlled wallet can submit it to an allowed test network, after which a fresh client calls `verify`. The Python adapter can be embedded in a backend; other languages can call the same ABI directly.
+For the legacy template factory, both creator frontends emit the same structured spec. They call `normalize_spec` / `build_spec`, then `StoreClient.plan`; they do not generate arbitrary Solidity or supply arbitrary bytecode. The Store gets a reviewable unsigned transaction. A separately controlled wallet can submit it to an allowed test network, after which a fresh client calls `verify`. Other clients can call the same ABI directly; the automatic workflow requires no backend.
 
-## Configuration and responsibilities
+## Legacy template factory configuration
 
 Production protocol address candidates, first-party sources and read-only observations are now recorded in the
 [preparation manifest](deployment/manifest.json); no public application deployment address or owner is invented.
@@ -89,6 +92,8 @@ The deployment policy permits local chain `31337`, Ethereum Sepolia `11155111`, 
 The restriction is a property of this factory build (`DeploymentPolicy`), not of the hook template. The hook constructor only binds `spec.chainId` to the actual chain, so the public hook bytecode can be deployed directly on any chain. Such a deployment is not a Store deployment: this factory's registry and `verify` do not recognise it. Future mainnet support needs a separately reviewed factory release with an updated policy list. It does not need a new hook template, bytecode or HookSpec version, so the restriction does not permanently block mainnet. Full chain-specific status is in [CHAINS.md](docs/CHAINS.md).
 
 ## After launch
+
+The automatic consumer/deployer settings and constructor inputs are in [AUTOMATIC_BINDING.md](docs/AUTOMATIC_BINDING.md#after-launch--operational-responsibilities) and [automatic.draft.json](deployment/automatic.draft.json). The listing/ad settings below remain unchanged.
 
 For the new advertising contract, the explicit launch owner calls `configureToken(token)` once with
 the verified, 18-decimal IMD address for the settlement chain and `setProceedsRecipient(recipient)`
@@ -105,7 +110,7 @@ The Store operator owns wallet integration, RPC security, confirmation/reorg han
 
 Project-authored code is MIT-licensed. Vendored files retain their original licenses, including Uniswap v4's file-specific MIT/BUSL-1.1 terms; see [dependency provenance](docs/DEPENDENCIES.md).
 
-## IMD request integration
+## Legacy manual IMD request integration
 
 `HookJobRequester` buys an IdentityMD `job.open` for standalone-hook code and a separate signed
 oracle review. Paid calls are now `openJob(specHash, brief, userMaxPrice)` and
@@ -164,18 +169,21 @@ No deployment, paid request or fund movement was performed.
 
 A full 131,072-candidate page costs about 46M gas, more than common RPC `eth_call` caps. `HookMiner.mine` now stops early when gas runs low and returns `found = false` with `nextNonce` at the first unchecked nonce. Callers resume there and no candidate is skipped. A call with too little gas for even one candidate reverts `InsufficientGas`. Tests walk the whole search under a 10M-gas cap and get the same salt as an uncapped search.
 
-## Oracle-gated generated-hook deployment (2026-10-17)
+## Oracle-gated generated-hook deployment
 
-`src/deployment/GatedHookDeployer.sol` deploys a job-generated hook only after the oracle signs a
-`Passed` review verdict through `HookJobRequester`. The exact control-plane completion snapshot
-must commit a unique accepted approval file and the accepted source bundle; a marker inside arbitrary
-worker JSON is insufficient. Its ArtifactV2 digest binds exact source/review submissions, evidence,
-build, bytecode, constructor, runtime,
-chain, deployer, PoolManager and callback permissions. Both callback orders retain signer-epoch
-provenance; revoked or missing provenance blocks deployment without rewriting historical verdicts.
-`python3 -m sdk.gated_deploy --binding-mode owner-confirmed ...` prepares unsigned calldata.
-The automatic route is disabled pending an official authenticated Intake-to-oracle binding proof. See
-[docs/GATED_DEPLOYMENT.md](docs/GATED_DEPLOYMENT.md) for trust assumptions, the per-chain manager
-pins, "After launch" settings and the remaining live-pilot gates. `HooksStoreFactory` remains a
-legacy **ungated** testnet-only BoundedSwapHook route. Local code and tests only: not audited and
-not deployed.
+`AutoHookJobRequester` prepays the build and verdict reserve, exposes the full spec/context, and
+accepts one creator-selected ArtifactV2 plus reviewed commit. Anyone can trigger its fixed
+`requestVerdict(askId)` after both candidate and job delivery are confirmed. It reconstructs the
+canonical question hash from immutable prefix bytes and signed window bounds, verifies the v2
+attestation, and records an exact artifact approval without a per-hook owner binding call.
+
+The official `GatedHookDeployer` verifies that exact digest, unrevoked signer epoch, freshness,
+chain/deployer/manager, bytecode, constructor, runtime and permission bits, with deployment replay
+guards. The automatic path uses no result JSON parsing. Legacy requesters retain their exact
+accepted-file parser and explicit `--binding-mode owner-confirmed` compatibility route.
+
+`python3 -m sdk.gated_deploy --rpc ... --deployer ... --job ... --creation-code ...
+--constructor-args ...` reads the stored candidate, checks the gate and prints unsigned calldata.
+Use the [automatic wallet page](site/automatic.html) and [operational runbook](docs/AUTOMATIC_BINDING.md).
+`HooksStoreFactory` remains a legacy ungated testnet-only template route. All work is source and
+local tests; no live deployment or paid request occurred.

@@ -15,23 +15,14 @@ interface IGeneratedHook {
 }
 
 /// @title Oracle-gated CREATE2 deployer for generated Uniswap v4 hooks
-/// @notice Deploys an arbitrary generated hook only when ALL of these hold onchain, in this call:
-/// 1. the `HookJobRequester` job is `Delivered` and its review is `Passed` by the oracle-signed
-///    verdict the requester verified (an Intake completion, a URL or an owner allowlist is not);
-/// 2. the caller supplies the control-plane completion snapshot: its keccak256 equals the
-///    stored `resultHash`; its accepted source bundle and unique accepted approval file commit
-///    to this exact artifact (SHA-256 file hashes, never substring matching);
-/// 3. the artifact digest commits to the job (whose result hash commits to the document naming it), source and build identity, the creation code,
-///    constructor arguments, expected runtime code hash, chain, this deployer, the PoolManager and
-///    its code hash, and the callback permission mask;
-/// 4. the chain/PoolManager pair is enabled here; on production chains only the first-party pinned
-///    manager address and code hash can ever be enabled;
-/// 5. the CREATE2 address carries exactly the permission bits, and readback after deployment
-///    matches runtime code hash, `poolManager()` and `getHookPermissions()`.
-/// Each job deploys at most once and each artifact digest at most once.
-/// @dev The requester is immutable: the owner of this contract cannot point it at another verdict
-/// source. The requester's own owner still binds review asks and sets the oracle signer (see
-/// docs/GATED_DEPLOYMENT.md). This contract never creates tokens, pools or managers.
+/// @notice Deploys generated hooks only after a verified Passed verdict for the exact artifact.
+/// The automatic successor reconstructs the signed question over the full ArtifactV2, reviewed
+/// commit, spec, completion hash and unique originating ask. Its approvedArtifact read replaces
+/// result JSON parsing. Legacy requesters retain their accepted-file parser and manual binding.
+/// Both paths enforce signer epoch revocation, freshness, chain/deployer/manager policy, exact
+/// initcode and constructor bytes, runtime/readback, callback permission bits and one deployment
+/// per job/artifact. Constructors cannot reenter and reuse an approval.
+/// @dev The requester is immutable. No deployment creates tokens, pools or managers.
 contract GatedHookDeployer is StoreAdmin {
     struct Artifact {
         bytes32 jobRequestId;
@@ -197,10 +188,12 @@ contract GatedHookDeployer is StoreAdmin {
         return AcceptedArtifact.evidenceDocument(build, a.sourceSubmissionHash, a.reviewSubmissionHash);
     }
 
-    /// @notice Automatic Intake-to-oracle binding is unavailable in the documented protocol.
-    /// This deployment tool cannot make owner binding permissionless or authenticate HTTP metadata.
-    function automaticBindingSupported() external pure returns (bool) {
-        return false;
+    /// @notice True only for an immutable requester implementing canonical automatic binding.
+    /// Legacy requesters keep their explicit owner-confirmed compatibility path.
+    function automaticBindingSupported() public view returns (bool) {
+        (bool ok, bytes memory ret) =
+            address(requester).staticcall(abi.encodeWithSignature("automaticBindingSupported()"));
+        return ok && ret.length == 32 && abi.decode(ret, (uint256)) == 1;
     }
 
     function permissionsToFlags(Hooks.Permissions memory p) public pure returns (uint160 f) {
@@ -291,9 +284,20 @@ contract GatedHookDeployer is StoreAdmin {
             revert ReviewRevoked(job.reviewRequestId);
         }
         uint64 verifiedAt = requester.reviewVerifiedAt(job.reviewRequestId);
-        // Freshness is anchored at authenticated receipt, never job opening or delayed owner binding.
+        // Legacy freshness is anchored at authenticated receipt; the automatic successor uses signed issuedAt.
+        // Neither job opening nor delayed owner binding can refresh an approval.
         if (verifiedAt == 0 || block.timestamp > uint256(verifiedAt) + maxJobAge) {
             revert ApprovalStale(verifiedAt, maxJobAge);
+        }
+        digest = artifactDigest(a);
+        if (automaticBindingSupported()) {
+            // The successor reconstructs the signed question over the complete ArtifactV2,
+            // reviewed commit, spec, exact result, origin and unique ask. No result JSON parsing.
+            (bool ok, bytes memory ret) =
+                address(requester).staticcall(abi.encodeWithSignature("approvedArtifact(bytes32)", a.jobRequestId));
+            if (!ok || ret.length != 32 || abi.decode(ret, (bytes32)) != digest) revert ArtifactNotInResult(digest);
+            _checkReplay(a.jobRequestId, digest);
+            return digest;
         }
         if (keccak256(resultDocument) != job.resultHash) revert ResultHashMismatch();
         if (resultDocument.length > MAX_RESULT_DOCUMENT_BYTES) revert ResultDocumentTooLong(resultDocument.length);
@@ -311,9 +315,11 @@ contract GatedHookDeployer is StoreAdmin {
         ) {
             revert ArtifactNotInResult(digest);
         }
-        if (deployedHookOf[a.jobRequestId] != address(0)) {
-            revert AlreadyDeployed(a.jobRequestId, deployedHookOf[a.jobRequestId]);
-        }
+        _checkReplay(a.jobRequestId, digest);
+    }
+
+    function _checkReplay(bytes32 jobId, bytes32 digest) private view {
+        if (deployedHookOf[jobId] != address(0)) revert AlreadyDeployed(jobId, deployedHookOf[jobId]);
         if (usedArtifact[digest]) revert ArtifactReplayed(digest);
     }
 

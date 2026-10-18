@@ -1,0 +1,58 @@
+{
+  "baseCommit": "9dd97150d292fee26912f9605e0686e4ddbb1645",
+  "referenceCommit": "790493d99ee164a4d86779079a788b0c096b49e4",
+  "referenceRepository": "https://github.com/fa11up/infer-protocol",
+  "capturedAtDate": "2026-10-18",
+  "sources": {
+    "76587543-d7e6-471e-a01f-63e9e0dfc6e7": {
+      "request": "https://api.imd.fun/oracle/requests/76587543-d7e6-471e-a01f-63e9e0dfc6e7",
+      "attestation": "https://api.imd.fun/oracle/requests/76587543-d7e6-471e-a01f-63e9e0dfc6e7/attestation"
+    },
+    "a03ae889-4a5d-4300-982a-e4bcf59ecf98": {
+      "request": "https://api.imd.fun/oracle/requests/a03ae889-4a5d-4300-982a-e4bcf59ecf98",
+      "attestation": "https://api.imd.fun/oracle/requests/a03ae889-4a5d-4300-982a-e4bcf59ecf98/attestation"
+    },
+    "43a20eb4-f9ce-4751-8a62-9c8851b12565": {
+      "request": "https://api.imd.fun/oracle/requests/43a20eb4-f9ce-4751-8a62-9c8851b12565",
+      "attestation": "https://api.imd.fun/oracle/requests/43a20eb4-f9ce-4751-8a62-9c8851b12565/attestation"
+    },
+    "c65fecb5-2a13-4365-b6de-89f7a2c46bb2": {
+      "request": "https://api.imd.fun/oracle/requests/c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+      "attestation": "https://api.imd.fun/oracle/requests/c65fecb5-2a13-4365-b6de-89f7a2c46bb2/attestation"
+    }
+  },
+  "priceVectorNote": "Price record/signature reused from the previous consolidated capture; its question hash was independently matched to live readback in live-prefix.log. Other vectors fetched publicly during this assignment.",
+  "feesPaid": false,
+  "liveDeployment": false,
+  "filesSha256": {
+    "43a20eb4-f9ce-4751-8a62-9c8851b12565-attestation.json": "0254a313fe89d75fec9fc4689f39c6e7ae0b6f3f17017e04b90220283d2d82ae",
+    "43a20eb4-f9ce-4751-8a62-9c8851b12565-payload.json": "482709125d34ff778d892953ef6c01a937c8e4eb22b981ff4e5abfc5f39791a3",
+    "43a20eb4-f9ce-4751-8a62-9c8851b12565-prefix.sol.txt": "2f88b7487ea7903620ee8f9bcd2c6ee8ecf5f7a7559c31d34c68fd3c151584fa",
+    "43a20eb4-f9ce-4751-8a62-9c8851b12565.json": "1a3c9da920164f153c8295340b8f629bf0734d45a774cbd0ffaae4a4e02d11b2",
+    "76587543-d7e6-471e-a01f-63e9e0dfc6e7-attestation.json": "d2ce1f64ea0e9c143246f38cee94b2b04458e89e722c358e1dd334a3fab1368c",
+    "76587543-d7e6-471e-a01f-63e9e0dfc6e7.json": "bf427d9fcbc2e0f127e5c978fac09368b12e31372a83df7cb844305b11693591",
+    "a03ae889-4a5d-4300-982a-e4bcf59ecf98-attestation.json": "a0f6dd8ab4a9f7d204439ad1c9d17026f6530418258a8dcffad935d4d90b2f16",
+    "a03ae889-4a5d-4300-982a-e4bcf59ecf98-payload.json": "eb85262cf7c949a529c2f784cc059503be0a9e771c76d306b8dfef82d30a7498",
+    "a03ae889-4a5d-4300-982a-e4bcf59ecf98-prefix.sol.txt": "90bf817a97608c03e93f5f4d0be1fabf146daeadaa805113a70e8453960e0416",
+    "a03ae889-4a5d-4300-982a-e4bcf59ecf98.json": "bee178a2ee22590f84c1096d8eb3eb2e8f2633142ba49d26412656ce085058c4",
+    "c65fecb5-2a13-4365-b6de-89f7a2c46bb2-attestation.json": "eeaf97f8835fb5259b39fb6d2f583ddf9ac08a95b364898a72fb467769fa4f0a",
+    "c65fecb5-2a13-4365-b6de-89f7a2c46bb2-payload.json": "437aae5410934478a6b08216ddc6e7665838ed60ee5fbb489244d91c8d142af8",
+    "c65fecb5-2a13-4365-b6de-89f7a2c46bb2-prefix.sol.txt": "bb186c21cd3cd3c505fe812c6ebb0f0356512d5d187b7802129e6d7b60b250a1",
+    "c65fecb5-2a13-4365-b6de-89f7a2c46bb2.json": "29dd24390a45a45898e9c9cc6aeb6dec66b5788a54567a37eef6f0ea5f10180e",
+    "capabilities.json": "03a04fafe1bd8b360003b287006d63ca2d5d752961facf1805f1e48bbbad694e",
+    "current-payload.json": "9f7dcf29ced5fb52ebef2b209c3cb4c349109d0f06766ae39c49c023f5f73db3",
+    "current-prefix.sol.txt": "686345664e8f51ce0ef153675f46c5f9dfcae2a5a6eb14330298a9ad17711f5e",
+    "job.open.body.json": "73f62fefd307827195f124c85e991d73ded7a4b84d3a8b6818f9e6e6713add83",
+    "job.open.check.json": "1ad4247684f52efe680c7730b4e156fb841f216f302c6870680ad8795f49538d",
+    "live-payload.json": "49e8e40ceef8452ad19f24a3a35f891acd996b43ca01e1c30107221f59290602",
+    "live-prefix.sol.txt": "49641f851a9116f9038c9913c142ca5d031d0736276a57b6ab4c54a9fc052102",
+    "oracle.request.body.json": "13a327ddd83d6af0bd4d3d2ac72a7fcdd33b674bd4d712d40fba747a510d8dfc",
+    "question-prefix.txt": "7a739faa45d69dc6de4e7d82b2566f11d9540296e554cb6b6244f62af591b201",
+    "reference/SwarmFeed.sol.txt": "44553bbd2bbcf00207db7b84f1fa4f4e7333303c181a552d623b5be09aeadffa",
+    "reference/question-prefix.mjs": "eb07ee19a54ece7ee106a514226dbfaabc0d1c95cc2dd43947b0d63c5fcb6d10",
+    "sdk-help.txt": "b4748c98d725d460b9b6145b2527aae181a165a68a5302d0b9b01e98bb0dcaf4",
+    "supported-chain.wording-example.json": "72469eb5d01503dddb4b5ab09f2256b18329322ccb6c4056ad15f66b87d8336f",
+    "supported-chain.wording.check.json": "babaccca850489d78d651da6126bc38f94794e92c6ae321fa3a98825197d9530",
+    "vector-reproduction.json": "0f6deac4d0cfaf81336bed5a76d4ad64b1c43e96c16d0f1261783a88b99fcfdf"
+  }
+}

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hooks Store automatic oracle workflow</title>
+<style>
+body {font:16px/1.5 system-ui,sans-serif;max-width:58rem;margin:2rem auto;padding:0 1rem}
+label{display:block;margin-top:1rem}input,textarea{font:inherit;width:100%;box-sizing:border-box;padding:.4rem}
+textarea{min-height:7rem}button{font:inherit;margin:.7rem .5rem .7rem 0}pre{white-space:pre-wrap;overflow-wrap:anywhere}
+.note{color:#555}fieldset{margin-top:1.5rem;border:1px solid #bbb}a{color:#164e94}
+</style>
+</head>
+<body>
+<nav><a href="index.html">Job history</a> · <a href="listings.html">Listings and #ads</a></nav>
+<h1>Build, review and authorize a hook</h1>
+<p>This workflow uses AutoHookJobRequester. Your wallet prepays the build and reserves the verdict fee. You select one reviewed artifact; anyone can then trigger its fixed oracle question. A valid true panel answer authorizes exactly that artifact for the official deployer. No owner binding transaction is needed.</p>
+<p class="note">Nothing is deployed by loading this page. Enter the operator-published contract addresses and select the correct wallet network. The panel and the existing IdentityMD v2 signer remain trusted. Public oracle vectors and local tests are available; no live Hooks Store success is claimed. An unanswered request can lose its spent fee. Unused reserve belongs to you.</p>
+<label>Automatic requester address<input id="requester" autocomplete="off"></label>
+<label>Official gated deployer address<input id="deployer" autocomplete="off"></label>
+<button id="connect">Connect wallet and check requester</button><span id="account"></span>
+<fieldset><legend>1. Prepay a build and verdict</legend>
+<label>Full HookSpec v1 JSON<textarea id="spec" spellcheck="false"></textarea></label>
+<label>Creator brief<textarea id="brief" maxlength="2000"></textarea></label>
+<label>Maximum build fee (IMD base units)<input id="buildFee" inputmode="numeric" value="500000000000000000"></label>
+<label>Reserved verdict fee (IMD base units)<input id="reserve" inputmode="numeric" value="500000000000000000"></label>
+<p class="note">At the published 0.5 IMD per action this prepays 1 IMD. Approve the quoted build fee plus reserve, then open the job. These are separate wallet transactions, each requiring native gas. A price increase can require a new approval. Build fees are spent immediately.</p>
+<button id="approve">Approve prepaid IMD</button><button id="open">Open build job</button>
+</fieldset>
+<fieldset><legend>2. Inspect and commit the exact accepted reviewed build</legend>
+<label>Job Intake request ID<input id="job" autocomplete="off"></label>
+<button id="status">Read job, ask and approval</button>
+<label>Full HookArtifactV2 JSON from the accepted build/review<textarea id="artifact" spellcheck="false"></textarea></label>
+<label>Reviewed git commit (0x plus 40 hex digits)<input id="commit" autocomplete="off"></label>
+<p class="note">Compare the accepted source, independent review, compiler settings, bytecode and deployment context before committing. One candidate per job: this choice cannot be replaced. Worker publication grants no approval. The panel must independently verify acceptance and reproduction.</p>
+<button id="commitArtifact">Commit artifact</button>
+</fieldset>
+<fieldset><legend>3. Trigger the oracle and prepare deployment</legend>
+<label>Unique ask ID<input id="ask" autocomplete="off"></label>
+<button id="verdict">Request verdict (any wallet pays gas)</button>
+<p class="note">The build must be Delivered and the candidate committed. Both must be confirmed in an earlier block. This transaction spends the reserve once and pins the canonical question; it accepts no custom question or artifact. The asynchronous callback records true or false. A false result is terminal. An expired or missing answer needs exceptional owner recovery; a signed false cannot be cleared by expiry.</p>
+<p>After Passed, use <code>python3 -m sdk.gated_deploy --binding-mode automatic</code> to produce the unsigned deployment transaction for the exact candidate. The official contract checks it again. No result JSON is needed in automatic mode. See <a href="../docs/AUTOMATIC_BINDING.md">the workflow and operational runbook</a>.</p>
+<label>Refund token address (the job's IMD)<input id="token" autocomplete="off"></label>
+<button id="withdraw">Withdraw unused reserve credit</button><button id="cancel">Cancel unspent reserve after build failure/deadline</button>
+</fieldset>
+<pre id="output" role="status"></pre>
+<script src="automatic.js"></script><script src="automatic-ui.js"></script>
+</body></html>

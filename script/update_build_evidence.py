@@ -10,7 +10,7 @@ from pathlib import Path
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
-BASE = 'cc847d8f35bc0b814d390eb76092eed6051c5ae3'
+BASE = '9dd97150d292fee26912f9605e0686e4ddbb1645'
 
 
 def write(path, value):
@@ -20,13 +20,14 @@ def write(path, value):
 def main():
     historical = json.loads((ROOT / 'deployment/audited-build.json').read_text())
     paths = set(historical['files']) | {str(p.relative_to(ROOT)) for p in (ROOT / 'src/deployment').glob('*.sol')}
+    paths |= {str(p.relative_to(ROOT)) for p in (ROOT / 'src/imd/automatic').glob('*.sol')}
     current = {'sourceCommit': None, 'baseCommit': BASE,
-               'description': 'Local build of the consolidated integration/fixes; not independently audited. Historical audited-build.json is unchanged.',
+               'description': 'Local build of automatic canonical oracle binding and exact-artifact authorization; not independently audited. Historical audited-build.json is unchanged.',
                'algorithm': 'sha256', 'files': {}, 'contracts': {}}
     for path in sorted(paths):
         current['files'][path] = hashlib.sha256((ROOT / path).read_bytes()).hexdigest()
     fp = json.loads((ROOT / 'docs/build-fingerprints.json').read_text())
-    names = list(historical['contracts']) + ['GatedHookDeployer']
+    names = list(historical['contracts']) + ['GatedHookDeployer', 'AutoHookJobRequester', 'HookRequestCodec']
     for name in names:
         built = json.loads((ROOT / f'out/{name}.sol/{name}.json').read_text())
         c = current['contracts'][name] = {}
@@ -40,7 +41,7 @@ def main():
         c['immutableReferences'] = built['deployedBytecode'].get('immutableReferences', {})
         if c['deployedBytecode']['bytes'] > 24576:
             raise ValueError(name + ' exceeds EIP-170')
-        if name in ('HookJobRequester', 'GatedHookDeployer'):
+        if name in ('HookJobRequester', 'GatedHookDeployer', 'AutoHookJobRequester', 'HookRequestCodec'):
             write(f'site/{name}.abi.json', built['abi'])
         if c['immutableReferences']:
             f['note'] = 'Compiler runtime template; constructor fills immutables, so live code hashes differ.'

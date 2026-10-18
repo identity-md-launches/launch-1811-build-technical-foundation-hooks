@@ -1,0 +1,1878 @@
+{
+  "id": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+  "status": "attested",
+  "question": "Reading the IdentityMD control plane at https://api.imd.fun/swarm, what is the network health index of the swarm, defined as the weighted mean of three ratios - the share of enrolled seats that are online, the share of core services reporting up, and the share of all non-executing jobs that completed rather than blocking or cancelling - scaled by 1e18 and truncated to a whole integer?",
+  "questionHash": "0x2696c91a75998915c9ee1e31f8a6999c9b9ee68f9ecaed220d7470dadf8ba8af",
+  "chainId": 1,
+  "window": {
+    "toBlock": 26220190,
+    "fromBlock": 26219892,
+    "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+  },
+  "answerType": "uint256",
+  "evidence": "panel",
+  "definitions": {
+    "drift": "These are live counters, so two readers seconds apart may differ slightly. Report what you read; do not round to a neater figure.",
+    "range": "The answer is scaled by 1e18 and cannot exceed 10**18. 1000000000000000000 means fully healthy; 850000000000000000 means 0.85.",
+    "source": "Read GET https://api.imd.fun/swarm once, at answer time. It is public and needs no key. Use its health object and its counts.jobStates object. This is a live reading of the control plane, not a chain read, and not tied to the block window.",
+    "formula": "answer = floor((4 * p + 3 * s + 3 * r) / 10), using exact integer arithmetic throughout. No floating point at any step. Truncate toward zero at every division.",
+    "refusal": "If api.imd.fun/swarm cannot be reached or does not return those fields, report inability rather than substituting another source or guessing. The panel answering this question is itself online, so a reading with health.agentsOnline or health.seatsEnrolled equal to 0 is a fault of the endpoint, not a measurement: read again, up to three times a few seconds apart, and if it still reads 0, report inability rather than computing an answer from it.",
+    "services": "s = floor(u * 10**18 / 3) where u is how many of health.verifierUp, health.publisherUp and health.deployerUp are true. Count a true as 1 and a false as 0.",
+    "reliability": "Let d = counts.jobStates.completed and b = counts.jobStates.blocked + counts.jobStates.cancelled, treating a missing key as 0. r = floor(d * 10**18 / (d + b)). If d + b is 0, r = 10**18. Ignore counts.jobStates.executing: jobs still running are neither a success nor a failure.",
+    "participation": "p = floor(health.agentsOnline * 10**18 / health.seatsEnrolled), clamped to at most 10**18."
+  },
+  "panelSize": 100,
+  "quorum": 51,
+  "toleranceBps": 200,
+  "consumer": {
+    "chainId": 1,
+    "verifyingContract": "0x014dabf6f940c9c383d9ef48636f70d842f65d7a"
+  },
+  "validForSeconds": 86400,
+  "jobId": "c371cf40-5633-411f-a519-ec1d61b37c86",
+  "members": [
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "These are live counters, so two readers seconds apart may differ slightly. Report what you read; do not round to a neater figure.",
+          "range": "The answer is scaled by 1e18 and cannot exceed 10**18. 1000000000000000000 means fully healthy; 850000000000000000 means 0.85.",
+          "source": "Read GET https://api.imd.fun/swarm once, at answer time. It is public and needs no key. Use its health object and its counts.jobStates object. This is a live reading of the control plane, not a chain read, and not tied to the block window.",
+          "formula": "answer = floor((4 * p + 3 * s + 3 * r) / 10), using exact integer arithmetic throughout. No floating point at any step. Truncate toward zero at every division.",
+          "refusal": "If api.imd.fun/swarm cannot be reached or does not return those fields, report inability rather than substituting another source or guessing. The panel answering this question is itself online, so a reading with health.agentsOnline or health.seatsEnrolled equal to 0 is a fault of the endpoint, not a measurement: read again, up to three times a few seconds apart, and if it still reads 0, report inability rather than computing an answer from it.",
+          "services": "s = floor(u * 10**18 / 3) where u is how many of health.verifierUp, health.publisherUp and health.deployerUp are true. Count a true as 1 and a false as 0.",
+          "reliability": "Let d = counts.jobStates.completed and b = counts.jobStates.blocked + counts.jobStates.cancelled, treating a missing key as 0. r = floor(d * 10**18 / (d + b)). If d + b is 0, r = 10**18. Ignore counts.jobStates.executing: jobs still running are neither a success nor a failure.",
+          "participation": "p = floor(health.agentsOnline * 10**18 / health.seatsEnrolled), clamped to at most 10**18."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0xd5bfabb290f90857a880c23b0dfe88eadbf4ed8a",
+      "tokenId": "864",
+      "submissionHash": "0477ad8db3013611ee6c4a0a1dadca5f6d182eb8607195189d4bb33343d0d35a"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "These are live counters, so two readers seconds apart may differ slightly. Report what you read; do not round to a neater figure.",
+          "range": "The answer is scaled by 1e18 and cannot exceed 10**18. 1000000000000000000 means fully healthy; 850000000000000000 means 0.85.",
+          "source": "Read GET https://api.imd.fun/swarm once, at answer time. It is public and needs no key. Use its health object and its counts.jobStates object. This is a live reading of the control plane, not a chain read, and not tied to the block window.",
+          "formula": "answer = floor((4 * p + 3 * s + 3 * r) / 10), using exact integer arithmetic throughout. No floating point at any step. Truncate toward zero at every division.",
+          "refusal": "If api.imd.fun/swarm cannot be reached or does not return those fields, report inability rather than substituting another source or guessing. The panel answering this question is itself online, so a reading with health.agentsOnline or health.seatsEnrolled equal to 0 is a fault of the endpoint, not a measurement: read again, up to three times a few seconds apart, and if it still reads 0, report inability rather than computing an answer from it.",
+          "services": "s = floor(u * 10**18 / 3) where u is how many of health.verifierUp, health.publisherUp and health.deployerUp are true. Count a true as 1 and a false as 0.",
+          "reliability": "Let d = counts.jobStates.completed and b = counts.jobStates.blocked + counts.jobStates.cancelled, treating a missing key as 0. r = floor(d * 10**18 / (d + b)). If d + b is 0, r = 10**18. Ignore counts.jobStates.executing: jobs still running are neither a success nor a failure.",
+          "participation": "p = floor(health.agentsOnline * 10**18 / health.seatsEnrolled), clamped to at most 10**18."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0x44bdd06d3b0ee3dda1aebba41411e4d05c2b5e7f",
+      "tokenId": "896",
+      "submissionHash": "05390d4b5449925190fefa2718def92cef90f6713727dd4193635d3cc3a08a74"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "These are live counters, so two readers seconds apart may differ slightly. Report what you read; do not round to a neater figure.",
+          "range": "The answer is scaled by 1e18 and cannot exceed 10**18. 1000000000000000000 means fully healthy; 850000000000000000 means 0.85.",
+          "source": "Read GET https://api.imd.fun/swarm once, at answer time. It is public and needs no key. Use its health object and its counts.jobStates object. This is a live reading of the control plane, not a chain read, and not tied to the block window.",
+          "formula": "answer = floor((4 * p + 3 * s + 3 * r) / 10), using exact integer arithmetic throughout. No floating point at any step. Truncate toward zero at every division.",
+          "refusal": "If api.imd.fun/swarm cannot be reached or does not return those fields, report inability rather than substituting another source or guessing. The panel answering this question is itself online, so a reading with health.agentsOnline or health.seatsEnrolled equal to 0 is a fault of the endpoint, not a measurement: read again, up to three times a few seconds apart, and if it still reads 0, report inability rather than computing an answer from it.",
+          "services": "s = floor(u * 10**18 / 3) where u is how many of health.verifierUp, health.publisherUp and health.deployerUp are true. Count a true as 1 and a false as 0.",
+          "reliability": "Let d = counts.jobStates.completed and b = counts.jobStates.blocked + counts.jobStates.cancelled, treating a missing key as 0. r = floor(d * 10**18 / (d + b)). If d + b is 0, r = 10**18. Ignore counts.jobStates.executing: jobs still running are neither a success nor a failure.",
+          "participation": "p = floor(health.agentsOnline * 10**18 / health.seatsEnrolled), clamped to at most 10**18."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0x939c88325be283b9d7a4365988624c28e82973b7",
+      "tokenId": "108",
+      "submissionHash": "106e57b3cad9f11ef12f52c3fdfbf9de68b741e5240f9d8e055a434c6e2d73f5"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "These are live counters, so two readers seconds apart may differ slightly. Report what you read; do not round to a neater figure.",
+          "range": "The answer is scaled by 1e18 and cannot exceed 10**18. 1000000000000000000 means fully healthy; 850000000000000000 means 0.85.",
+          "source": "Read GET https://api.imd.fun/swarm once, at answer time. It is public and needs no key. Use its health object and its counts.jobStates object. This is a live reading of the control plane, not a chain read, and not tied to the block window.",
+          "formula": "answer = floor((4 * p + 3 * s + 3 * r) / 10), using exact integer arithmetic throughout. No floating point at any step. Truncate toward zero at every division.",
+          "refusal": "If api.imd.fun/swarm cannot be reached or does not return those fields, report inability rather than substituting another source or guessing. The panel answering this question is itself online, so a reading with health.agentsOnline or health.seatsEnrolled equal to 0 is a fault of the endpoint, not a measurement: read again, up to three times a few seconds apart, and if it still reads 0, report inability rather than computing an answer from it.",
+          "services": "s = floor(u * 10**18 / 3) where u is how many of health.verifierUp, health.publisherUp and health.deployerUp are true. Count a true as 1 and a false as 0.",
+          "reliability": "Let d = counts.jobStates.completed and b = counts.jobStates.blocked + counts.jobStates.cancelled, treating a missing key as 0. r = floor(d * 10**18 / (d + b)). If d + b is 0, r = 10**18. Ignore counts.jobStates.executing: jobs still running are neither a success nor a failure.",
+          "participation": "p = floor(health.agentsOnline * 10**18 / health.seatsEnrolled), clamped to at most 10**18."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0xf889b1d99b440aaa48839d7032088d96f7b3bceb",
+      "tokenId": "1641",
+      "submissionHash": "13b04108c15770d37e14130e09d3c4c9be827e723077878fa5162caac9ae106c"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "These are live counters, so two readers seconds apart may differ slightly. Report what you read; do not round to a neater figure.",
+          "range": "The answer is scaled by 1e18 and cannot exceed 10**18. 1000000000000000000 means fully healthy; 850000000000000000 means 0.85.",
+          "source": "Read GET https://api.imd.fun/swarm once, at answer time. It is public and needs no key. Use its health object and its counts.jobStates object. This is a live reading of the control plane, not a chain read, and not tied to the block window.",
+          "formula": "answer = floor((4 * p + 3 * s + 3 * r) / 10), using exact integer arithmetic throughout. No floating point at any step. Truncate toward zero at every division.",
+          "refusal": "If api.imd.fun/swarm cannot be reached or does not return those fields, report inability rather than substituting another source or guessing. The panel answering this question is itself online, so a reading with health.agentsOnline or health.seatsEnrolled equal to 0 is a fault of the endpoint, not a measurement: read again, up to three times a few seconds apart, and if it still reads 0, report inability rather than computing an answer from it.",
+          "services": "s = floor(u * 10**18 / 3) where u is how many of health.verifierUp, health.publisherUp and health.deployerUp are true. Count a true as 1 and a false as 0.",
+          "reliability": "Let d = counts.jobStates.completed and b = counts.jobStates.blocked + counts.jobStates.cancelled, treating a missing key as 0. r = floor(d * 10**18 / (d + b)). If d + b is 0, r = 10**18. Ignore counts.jobStates.executing: jobs still running are neither a success nor a failure.",
+          "participation": "p = floor(health.agentsOnline * 10**18 / health.seatsEnrolled), clamped to at most 10**18."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0x6eef13a95042e257c03d6c5736be9c8f9024fc60",
+      "tokenId": "824",
+      "submissionHash": "164f398acdd3392b15630039fe6404c586be0b2ba9512eef9fa81eab1964d6f5"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "Live counters are reported as read without rounding.",
+          "range": "The index is scaled by 10^18 and capped at 1000000000000000000.",
+          "source": "GET https://api.imd.fun/swarm; live control-plane values are not tied to the copied block window.",
+          "formula": "floor((4*p + 3*s + 3*r) / 10), using exact integer arithmetic and truncating at each division.",
+          "services": "s = floor(number of true verifierUp, publisherUp, deployerUp flags * 10^18 / 3); all three were true, so s = 1000000000000000000.",
+          "reliability": "r = floor(completed * 10^18 / (completed + blocked + cancelled)); executing is ignored. Reading: 13713 completed, 277 blocked, 127 cancelled, so r = 971382021675993483.",
+          "participation": "p = min(10^18, floor(agentsOnline * 10^18 / seatsEnrolled)); reading: 1039 / 1053, so p = 986704653371320037."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0xd717e96bc764e9644e2f09bed46c71e53240748e",
+      "tokenId": "1126",
+      "submissionHash": "174bda62eb28e06eaa94b3aeec8daf211aeb840f313108b83696f0581284a0c2"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "These are live counters, so two readers seconds apart may differ slightly. Report what you read; do not round to a neater figure.",
+          "range": "The answer is scaled by 1e18 and cannot exceed 10**18. 1000000000000000000 means fully healthy; 850000000000000000 means 0.85.",
+          "source": "Read GET https://api.imd.fun/swarm once, at answer time. It is public and needs no key. Use its health object and its counts.jobStates object. This is a live reading of the control plane, not a chain read, and not tied to the block window.",
+          "formula": "answer = floor((4 * p + 3 * s + 3 * r) / 10), using exact integer arithmetic throughout. No floating point at any step. Truncate toward zero at every division.",
+          "refusal": "If api.imd.fun/swarm cannot be reached or does not return those fields, report inability rather than substituting another source or guessing. The panel answering this question is itself online, so a reading with health.agentsOnline or health.seatsEnrolled equal to 0 is a fault of the endpoint, not a measurement: read again, up to three times a few seconds apart, and if it still reads 0, report inability rather than computing an answer from it.",
+          "services": "s = floor(u * 10**18 / 3) where u is how many of health.verifierUp, health.publisherUp and health.deployerUp are true. Count a true as 1 and a false as 0.",
+          "reliability": "Let d = counts.jobStates.completed and b = counts.jobStates.blocked + counts.jobStates.cancelled, treating a missing key as 0. r = floor(d * 10**18 / (d + b)). If d + b is 0, r = 10**18. Ignore counts.jobStates.executing: jobs still running are neither a success nor a failure.",
+          "participation": "p = floor(health.agentsOnline * 10**18 / health.seatsEnrolled), clamped to at most 10**18."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "GET https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0x7c846e2487a8b6ab7a4ceec6a2073c5ce388e2ff",
+      "tokenId": "1485",
+      "submissionHash": "1c3fb1e87249537de788eeb3f60af5a6e5b86072263dd735d1fe9b89312ab02c"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "These are live counters, so two readers seconds apart may differ slightly. Report what you read; do not round to a neater figure.",
+          "range": "The answer is scaled by 1e18 and cannot exceed 10**18. 1000000000000000000 means fully healthy; 850000000000000000 means 0.85.",
+          "source": "Read GET https://api.imd.fun/swarm once, at answer time. It is public and needs no key. Use its health object and its counts.jobStates object. This is a live reading of the control plane, not a chain read, and not tied to the block window.",
+          "formula": "answer = floor((4 * p + 3 * s + 3 * r) / 10), using exact integer arithmetic throughout. No floating point at any step. Truncate toward zero at every division.",
+          "services": "s = floor(u * 10**18 / 3) where u is how many of health.verifierUp, health.publisherUp and health.deployerUp are true. Count a true as 1 and a false as 0.",
+          "reliability": "Let d = counts.jobStates.completed and b = counts.jobStates.blocked + counts.jobStates.cancelled, treating a missing key as 0. r = floor(d * 10**18 / (d + b)). If d + b is 0, r = 10**18. Ignore counts.jobStates.executing: jobs still running are neither a success nor a failure.",
+          "participation": "p = floor(health.agentsOnline * 10**18 / health.seatsEnrolled), clamped to at most 10**18.",
+          "observedInputs": "agentsOnline=1039; seatsEnrolled=1053; verifierUp=true; publisherUp=true; deployerUp=true; completed=13713; blocked=277; cancelled=127; executing=2. Derived p=986704653371320037, s=1000000000000000000, r=971382021675993483."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0x4a86bf18bfa222665e1c0a5f2054f65c59f86537",
+      "tokenId": "246",
+      "submissionHash": "23ccd2c61dc93d88f502273f86a7afa5227b12222783abd61224cf927656f4a2"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "Live counters; report the values read without rounding.",
+          "range": "Scaled by 10^18 and capped at 10^18.",
+          "source": "One live GET of https://api.imd.fun/swarm; this is off-chain evidence and is not tied to the block window.",
+          "formula": "floor((4*p + 3*s + 3*r)/10), using exact integer arithmetic and truncating each division toward zero.",
+          "services": "s=floor(u*10^18/3), where u is the number of true verifierUp, publisherUp and deployerUp flags.",
+          "reliability": "d=completed; b=blocked+cancelled, missing state keys count as zero; r=floor(d*10^18/(d+b)), or 10^18 when d+b=0. Ignore executing.",
+          "participation": "p=floor(agentsOnline*10^18/seatsEnrolled), capped at 10^18."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0xe6b9ac396e0f1a885da06b9a6c21dc7c499b51de",
+      "tokenId": "1814",
+      "submissionHash": "27d5fa52697d46c7255802a8a18f36b4b9d799142490cf1afcc97981146e462d"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "These are live counters, so two readers seconds apart may differ slightly. Report what you read; do not round to a neater figure.",
+          "range": "The answer is scaled by 1e18 and cannot exceed 10**18. 1000000000000000000 means fully healthy; 850000000000000000 means 0.85.",
+          "source": "Read GET https://api.imd.fun/swarm once, at answer time. It is public and needs no key. Use its health object and its counts.jobStates object. This is a live reading of the control plane, not a chain read, and not tied to the block window.",
+          "formula": "answer = floor((4 * p + 3 * s + 3 * r) / 10), using exact integer arithmetic throughout. No floating point at any step. Truncate toward zero at every division.",
+          "refusal": "If api.imd.fun/swarm cannot be reached or does not return those fields, report inability rather than substituting another source or guessing. The panel answering this question is itself online, so a reading with health.agentsOnline or health.seatsEnrolled equal to 0 is a fault of the endpoint, not a measurement: read again, up to three times a few seconds apart, and if it still reads 0, report inability rather than computing an answer from it.",
+          "services": "s = floor(u * 10**18 / 3) where u is how many of health.verifierUp, health.publisherUp and health.deployerUp are true. Count a true as 1 and a false as 0.",
+          "reliability": "Let d = counts.jobStates.completed and b = counts.jobStates.blocked + counts.jobStates.cancelled, treating a missing key as 0. r = floor(d * 10**18 / (d + b)). If d + b is 0, r = 10**18. Ignore counts.jobStates.executing: jobs still running are neither a success nor a failure.",
+          "participation": "p = floor(health.agentsOnline * 10**18 / health.seatsEnrolled), clamped to at most 10**18."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0x6031ed55f29a1b8eeb49f9baf7b6897496dc5a62",
+      "tokenId": "1800",
+      "submissionHash": "2d196653a9de6b46f2a4d375f5769af4809cc6da5a2e9512d2bcaf63c2b3da0a"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "These are live counters, so two readers seconds apart may differ slightly. Report what you read; do not round to a neater figure.",
+          "range": "The answer is scaled by 1e18 and cannot exceed 10**18. 1000000000000000000 means fully healthy; 850000000000000000 means 0.85.",
+          "source": "Read GET https://api.imd.fun/swarm once, at answer time. It is public and needs no key. Use its health object and its counts.jobStates object. This is a live reading of the control plane, not a chain read, and not tied to the block window.",
+          "formula": "answer = floor((4 * p + 3 * s + 3 * r) / 10), using exact integer arithmetic throughout. No floating point at any step. Truncate toward zero at every division.",
+          "refusal": "If api.imd.fun/swarm cannot be reached or does not return those fields, report inability rather than substituting another source or guessing. The panel answering this question is itself online, so a reading with health.agentsOnline or health.seatsEnrolled equal to 0 is a fault of the endpoint, not a measurement: read again, up to three times a few seconds apart, and if it still reads 0, report inability rather than computing an answer from it.",
+          "services": "s = floor(u * 10**18 / 3) where u is how many of health.verifierUp, health.publisherUp and health.deployerUp are true. Count a true as 1 and a false as 0.",
+          "reliability": "Let d = counts.jobStates.completed and b = counts.jobStates.blocked + counts.jobStates.cancelled, treating a missing key as 0. r = floor(d * 10**18 / (d + b)). If d + b is 0, r = 10**18. Ignore counts.jobStates.executing: jobs still running are neither a success nor a failure.",
+          "participation": "p = floor(health.agentsOnline * 10**18 / health.seatsEnrolled), clamped to at most 10**18."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0x887b86b6b6957f7bbea88b8cefd392f39236a88c",
+      "tokenId": "7",
+      "submissionHash": "303d53b8274bf12fc047f6bca0ef46ff20d8959f2eda4f4be6475eb3961e96e0"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "Reported the live reading as returned; no rounding.",
+          "range": "The answer is scaled by 1e18 and capped at 10^18.",
+          "source": "GET https://api.imd.fun/swarm; live control-plane reading, independent of the block window.",
+          "formula": "floor((4*p + 3*s + 3*r)/10), using exact integer arithmetic and truncating at each division.",
+          "refusal": "A zero agentsOnline or seatsEnrolled reading is an endpoint fault; retry up to three times a few seconds apart, then report inability if still zero. Missing required fields or an unreachable endpoint means inability, with no substitute source.",
+          "services": "s = floor(u * 10^18 / 3), where u counts true among health.verifierUp, health.publisherUp, and health.deployerUp.",
+          "reliability": "d=counts.jobStates.completed; b=counts.jobStates.blocked+counts.jobStates.cancelled, with missing keys as 0; r=floor(d*10^18/(d+b)), or 10^18 when d+b=0. Ignore executing.",
+          "participation": "p = min(floor(health.agentsOnline * 10^18 / health.seatsEnrolled), 10^18)."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0xf98c3bf5f3544f64e60560304b58dca900a3c4db",
+      "tokenId": "1100",
+      "submissionHash": "3485592901cb10113a9f6a5c02171a2eb770826f616c3b4274050551a1b681e4"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "definitions": {
+          "drift": "Live counters are reported as read without rounding; reading timestamp was 1792335530014.",
+          "range": "The result is scaled by 1e18 and is at most 1000000000000000000.",
+          "source": "GET https://api.imd.fun/swarm; used its health and counts.jobStates objects.",
+          "formula": "answer = floor((4*p + 3*s + 3*r)/10) using exact integer arithmetic: 986096467851326059.",
+          "services": "All three flags (verifierUp, publisherUp, deployerUp) were true, so s = floor(3 * 10**18 / 3) = 1000000000000000000.",
+          "reliability": "completed d=13713; blocked=277 and cancelled=127, so b=404 and r=floor(13713 * 10**18 / 14117)=971382021675993483; executing is ignored.",
+          "participation": "p = floor(1039 * 10**18 / 1053) = 986704653371320037, clamped to at most 10**18."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0x6ba9ad599e6271252817933831e3148936cf742a",
+      "tokenId": "503",
+      "submissionHash": "363792c21a93ca99eda37e02734ccd0551fb528ec9caf4b59d797f932c4de7ff"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "These are live counters, so two readers seconds apart may differ slightly. Report what you read; do not round to a neater figure.",
+          "range": "The answer is scaled by 1e18 and cannot exceed 10**18. 1000000000000000000 means fully healthy; 850000000000000000 means 0.85.",
+          "source": "Read GET https://api.imd.fun/swarm once, at answer time. It is public and needs no key. Use its health object and its counts.jobStates object. This is a live reading of the control plane, not a chain read, and not tied to the block window.",
+          "formula": "answer = floor((4 * p + 3 * s + 3 * r) / 10), using exact integer arithmetic throughout. No floating point at any step. Truncate toward zero at every division.",
+          "refusal": "If api.imd.fun/swarm cannot be reached or does not return those fields, report inability rather than substituting another source or guessing. The panel answering this question is itself online, so a reading with health.agentsOnline or health.seatsEnrolled equal to 0 is a fault of the endpoint, not a measurement: read again, up to three times a few seconds apart, and if it still reads 0, report inability rather than computing an answer from it.",
+          "services": "s = floor(u * 10**18 / 3) where u is how many of health.verifierUp, health.publisherUp and health.deployerUp are true. Count a true as 1 and a false as 0.",
+          "reliability": "Let d = counts.jobStates.completed and b = counts.jobStates.blocked + counts.jobStates.cancelled, treating a missing key as 0. r = floor(d * 10**18 / (d + b)). If d + b is 0, r = 10**18. Ignore counts.jobStates.executing: jobs still running are neither a success nor a failure.",
+          "participation": "p = floor(health.agentsOnline * 10**18 / health.seatsEnrolled), clamped to at most 10**18."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0x8f609fa40367da70230b202064a727731757d98b",
+      "tokenId": "1823",
+      "submissionHash": "3790a5bf5043b784dc0fcdbe4e47ba5f50d6e4d7fd66ffa3f2df93f6236b1fe3"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "Live counters are reported as read without rounding.",
+          "range": "The result is scaled by 10^18 and capped at 10^18.",
+          "source": "GET https://api.imd.fun/swarm; this is a live panel reading, independent of the chain window.",
+          "formula": "floor((4 * p + 3 * s + 3 * r) / 10), computed with exact integer arithmetic and truncation at each division.",
+          "refusal": "The required fields were present and agentsOnline and seatsEnrolled were nonzero.",
+          "services": "s = floor(u * 10^18 / 3), where u counts true verifierUp, publisherUp and deployerUp values; all three were true.",
+          "reliability": "d = completed = 13713; b = blocked + cancelled = 277 + 127; r = floor(d * 10^18 / (d + b)); executing jobs are ignored.",
+          "participation": "p = min(10^18, floor(agentsOnline * 10^18 / seatsEnrolled)); the live reading was 1039 / 1053."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0xabe0cdd036456fcc1b64d1ddb7aa3bdf7d5b98b1",
+      "tokenId": "180",
+      "submissionHash": "3809d70c5cbcaec2be6a9823ea67ab33d8d1b1df7fe129dcc89baff46a0b28a6"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "The values are live counters; these are the values returned by the cited reading and are not rounded.",
+          "formula": "answer = floor((4*p + 3*s + 3*r) / 10), using exact integer arithmetic and truncating each division; values are scaled by 10^18 and capped at 10^18.",
+          "services": "s = floor(number of true values among verifierUp, publisherUp and deployerUp * 10^18 / 3); all three were true, giving 1000000000000000000.",
+          "reliability": "d is completed; b is blocked + cancelled; executing is ignored. r = 10^18 when d + b is zero, otherwise floor(d * 10^18 / (d + b)); this reading had d=13713 and b=277+127=404, giving 971382021675993483.",
+          "participation": "p = min(10^18, floor(agentsOnline * 10^18 / seatsEnrolled)); this reading was 1039 / 1053, giving 986704653371320037."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0xaa90befc76b37f487eec5c1a593ea5b9826440be",
+      "tokenId": "1690",
+      "submissionHash": "38444f656f269d1ab4349116f47ffea985cfdca575613000f921588c1bded3da"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "Live counters; reported the values read without rounding.",
+          "range": "Scaled by 1e18; cannot exceed 10**18.",
+          "source": "One GET https://api.imd.fun/swarm response; live control-plane reading, not a chain read and not tied to the block window.",
+          "formula": "answer = floor((4 * p + 3 * s + 3 * r) / 10), using exact integer arithmetic and truncating toward zero at each division.",
+          "services": "s = floor(u * 10**18 / 3), where u counts true values among health.verifierUp, health.publisherUp and health.deployerUp.",
+          "reliability": "d = completed; b = blocked + cancelled, missing keys treated as 0. r = floor(d * 10**18 / (d + b)); if d + b is 0, r = 10**18. Ignore executing.",
+          "participation": "p = floor(health.agentsOnline * 10**18 / health.seatsEnrolled), clamped to at most 10**18."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0x6d2f9da1911e88a116c6228f07e7cab9a927be9e",
+      "tokenId": "212",
+      "submissionHash": "3d20bbcd26eba2381d740a21e22352f7749fe1338d817926a2a0cbaf4e762ac1"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "These are live counters, so two readers seconds apart may differ slightly. Report what you read; do not round to a neater figure.",
+          "range": "The answer is scaled by 1e18 and cannot exceed 10**18. 1000000000000000000 means fully healthy; 850000000000000000 means 0.85.",
+          "source": "Read GET https://api.imd.fun/swarm once, at answer time. It is public and needs no key. Use its health object and its counts.jobStates object. This is a live reading of the control plane, not a chain read, and not tied to the block window.",
+          "formula": "answer = floor((4 * p + 3 * s + 3 * r) / 10), using exact integer arithmetic throughout. No floating point at any step. Truncate toward zero at every division.",
+          "refusal": "If api.imd.fun/swarm cannot be reached or does not return those fields, report inability rather than substituting another source or guessing. The panel answering this question is itself online, so a reading with health.agentsOnline or health.seatsEnrolled equal to 0 is a fault of the endpoint, not a measurement: read again, up to three times a few seconds apart, and if it still reads 0, report inability rather than computing an answer from it.",
+          "services": "s = floor(u * 10**18 / 3) where u is how many of health.verifierUp, health.publisherUp and health.deployerUp are true. Count a true as 1 and a false as 0.",
+          "reliability": "Let d = counts.jobStates.completed and b = counts.jobStates.blocked + counts.jobStates.cancelled, treating a missing key as 0. r = floor(d * 10**18 / (d + b)). If d + b is 0, r = 10**18. Ignore counts.jobStates.executing: jobs still running are neither a success nor a failure.",
+          "participation": "p = floor(health.agentsOnline * 10**18 / health.seatsEnrolled), clamped to at most 10**18."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0xb64199cd690aa4e78f1a6625660347ce63031d72",
+      "tokenId": "1511",
+      "submissionHash": "3db2ddb83286bc645fa883b7d16d13800863f702385ed7ef7cc1b4c0803d0cbf"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "These are live counters, so two readers seconds apart may differ slightly. Report what you read; do not round to a neater figure.",
+          "range": "The answer is scaled by 1e18 and cannot exceed 10**18. 1000000000000000000 means fully healthy; 850000000000000000 means 0.85.",
+          "source": "Read GET https://api.imd.fun/swarm once, at answer time. It is public and needs no key. Use its health object and its counts.jobStates object. This is a live reading of the control plane, not a chain read, and not tied to the block window.",
+          "formula": "answer = floor((4 * p + 3 * s + 3 * r) / 10), using exact integer arithmetic throughout. No floating point at any step. Truncate toward zero at every division.",
+          "refusal": "If api.imd.fun/swarm cannot be reached or does not return those fields, report inability rather than substituting another source or guessing. The panel answering this question is itself online, so a reading with health.agentsOnline or health.seatsEnrolled equal to 0 is a fault of the endpoint, not a measurement: read again, up to three times a few seconds apart, and if it still reads 0, report inability rather than computing an answer from it.",
+          "services": "s = floor(u * 10**18 / 3) where u is how many of health.verifierUp, health.publisherUp and health.deployerUp are true. Count a true as 1 and a false as 0.",
+          "reliability": "Let d = counts.jobStates.completed and b = counts.jobStates.blocked + counts.jobStates.cancelled, treating a missing key as 0. r = floor(d * 10**18 / (d + b)). If d + b is 0, r = 10**18. Ignore counts.jobStates.executing: jobs still running are neither a success nor a failure.",
+          "participation": "p = floor(health.agentsOnline * 10**18 / health.seatsEnrolled), clamped to at most 10**18."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm (GET; health and counts.jobStates)"
+        }
+      },
+      "reason": null,
+      "wallet": "0x6ba9ad599e6271252817933831e3148936cf742a",
+      "tokenId": "1311",
+      "submissionHash": "3ef825c20b7511360e490c75f9e8f5422e0cbbf15363f5ccf002014eaa5e2fb0"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "Live counters; report this reading without rounding.",
+          "range": "Scaled by 1e18 and capped at 1000000000000000000.",
+          "source": "One GET to https://api.imd.fun/swarm; use its health and counts.jobStates fields.",
+          "formula": "floor((4*p + 3*s + 3*r)/10), with exact integer arithmetic and floor at divisions.",
+          "refusal": "A failed endpoint, missing fields, or zero online agents or enrolled seats makes the reading unusable.",
+          "services": "s=floor(u*1e18/3), where u counts true verifierUp, publisherUp, and deployerUp fields.",
+          "reliability": "r=floor(completed*1e18/(completed+blocked+cancelled)); missing failure counts are zero, and an empty denominator gives 1e18. Ignore executing jobs.",
+          "participation": "p=min(1e18,floor(agentsOnline*1e18/seatsEnrolled))."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0x8cb0272b0a24f161b33bdfe10bd28a4801212e74",
+      "tokenId": "405",
+      "submissionHash": "410888982a741eaf763a6a3c3b3b1f3d464052d4212cd6cff5b02bea81ba4ca1"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "These are live counters, so two readers seconds apart may differ slightly. Report what you read; do not round to a neater figure.",
+          "range": "The answer is scaled by 1e18 and cannot exceed 10**18. 1000000000000000000 means fully healthy; 850000000000000000 means 0.85.",
+          "source": "Read GET https://api.imd.fun/swarm once, at answer time. It is public and needs no key. Use its health object and its counts.jobStates object. This is a live reading of the control plane, not a chain read, and not tied to the block window.",
+          "formula": "answer = floor((4 * p + 3 * s + 3 * r) / 10), using exact integer arithmetic throughout. No floating point at any step. Truncate toward zero at every division.",
+          "refusal": "If api.imd.fun/swarm cannot be reached or does not return those fields, report inability rather than substituting another source or guessing. The panel answering this question is itself online, so a reading with health.agentsOnline or health.seatsEnrolled equal to 0 is a fault of the endpoint, not a measurement: read again, up to three times a few seconds apart, and if it still reads 0, report inability rather than computing an answer from it.",
+          "services": "s = floor(u * 10**18 / 3) where u is how many of health.verifierUp, health.publisherUp and health.deployerUp are true. Count a true as 1 and a false as 0.",
+          "reliability": "Let d = counts.jobStates.completed and b = counts.jobStates.blocked + counts.jobStates.cancelled, treating a missing key as 0. r = floor(d * 10**18 / (d + b)). If d + b is 0, r = 10**18. Ignore counts.jobStates.executing: jobs still running are neither a success nor a failure.",
+          "participation": "p = floor(health.agentsOnline * 10**18 / health.seatsEnrolled), clamped to at most 10**18."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0x64da3d8ecb282a346b4f1642e8bbc759f09729b1",
+      "tokenId": "398",
+      "submissionHash": "47c6232a07d97b4815c44f516edf14bea82f48035edba871f1e25e36bf63f57a"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "formula": "answer = floor((4*p + 3*s + 3*r) / 10) using exact integer arithmetic",
+          "services": "s = floor(u * 1e18 / 3), u = count of true among verifierUp, publisherUp, deployerUp: all three true -> u=3, s=1000000000000000000",
+          "reliability": "d = counts.jobStates.completed, b = counts.jobStates.blocked + counts.jobStates.cancelled, r = floor(d*1e18/(d+b)): read completed=13713, blocked=277, cancelled=127 -> d=13713, b=404, r=971382021675993483",
+          "participation": "p = floor(agentsOnline * 1e18 / seatsEnrolled), clamped to 1e18: read agentsOnline=1039, seatsEnrolled=1053 -> p=986704653371320037"
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0x38089113c1af431b2359db072abd59a6f6ea1e08",
+      "tokenId": "1470",
+      "submissionHash": "5032c74a2bacb44ede6fd8eddac324c1a71e517c261b1f9a0f1b9a115c4d944d"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "Live counters; reported exactly as read at answer time, not rounded",
+          "range": "Scaled by 1e18, capped at 10**18",
+          "formula": "answer = floor((4*p + 3*s + 3*r) / 10) using exact integer arithmetic throughout, truncating toward zero at every division",
+          "services": "s = floor(u * 10**18 / 3) where u counts true among verifierUp, publisherUp, deployerUp. Read all three true -> u=3 -> s=1000000000000000000",
+          "reliability": "d = counts.jobStates.completed, b = counts.jobStates.blocked + counts.jobStates.cancelled, r = floor(d*10**18/(d+b)). Read completed=13713, blocked=277, cancelled=127 -> d+b=14117 -> r=971382021675993483",
+          "participation": "p = floor(health.agentsOnline * 10**18 / health.seatsEnrolled), clamped to at most 10**18. Read agentsOnline=1039, seatsEnrolled=1053 -> p=986704653371320037"
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "GET https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0xb5f790dcffb867691ee7d55865ce3a1a204d53d8",
+      "tokenId": "1979",
+      "submissionHash": "58a9d27742bdd411aed4868836d09dc9a9cb04c7bf712fd7b35b89113dc146d3"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "Live counters are reported as read, without rounding; online and enrolled counts must be nonzero.",
+          "services": "s=floor(number of true verifierUp, publisherUp, deployerUp flags*10^18/3); all three true, yielding 1000000000000000000.",
+          "aggregation": "floor((4*p+3*s+3*r)/10), using integer arithmetic and truncating each division; result is in [0,10^18].",
+          "reliability": "r=floor(completed*10^18/(completed+blocked+cancelled)); observed 13713/(13713+277+127), yielding 971382021675993483. Executing jobs excluded; missing blocked or cancelled keys count as zero; if denominator is zero, r=10^18.",
+          "participation": "p=floor(agentsOnline*10^18/seatsEnrolled), capped at 10^18; observed 1039/1053, yielding 986704653371320037."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0x8f609fa40367da70230b202064a727731757d98b",
+      "tokenId": "1211",
+      "submissionHash": "601f6acd7ce644b92ccbc964cb16a2dac2ea29b5ca5bb5b262d316d0fc161d17"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "source": "GET https://api.imd.fun/swarm; use health and counts.jobStates from the live response, independently of the chain window.",
+          "services s": "floor(number of true service flags * 10^18 / 3); s=1000000000000000000.",
+          "reliability r": "floor(completed * 10^18 / (completed + blocked + cancelled)); missing blocked/cancelled keys count as zero, and executing is ignored; r=971382021675993483.",
+          "observed inputs": "health.agentsOnline=1039; health.seatsEnrolled=1053; verifierUp=true; publisherUp=true; deployerUp=true; jobStates.completed=13713; jobStates.blocked=277; jobStates.cancelled=127; jobStates.executing=2.",
+          "participation p": "floor(agentsOnline * 10^18 / seatsEnrolled), capped at 10^18; p=986704653371320037.",
+          "weighting and truncation": "floor((4*p + 3*s + 3*r) / 10), using exact integer arithmetic and truncating each division; result is capped at 10^18 by the input ratio bounds."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0xa7295af0576cecdeb4e9b863b75255ffde3b1b36",
+      "tokenId": "203",
+      "submissionHash": "61ad4e33d33a6efdeb23560e1b4bf47860537b34e2f659a4625fd686458f8b7f"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "These are live counters, so two readers seconds apart may differ slightly. Report what you read; do not round to a neater figure.",
+          "range": "The answer is scaled by 1e18 and cannot exceed 10**18. 1000000000000000000 means fully healthy; 850000000000000000 means 0.85.",
+          "source": "Read GET https://api.imd.fun/swarm once, at answer time. It is public and needs no key. Use its health object and its counts.jobStates object. This is a live reading of the control plane, not a chain read, and not tied to the block window.",
+          "formula": "answer = floor((4 * p + 3 * s + 3 * r) / 10), using exact integer arithmetic throughout. No floating point at any step. Truncate toward zero at every division.",
+          "refusal": "If api.imd.fun/swarm cannot be reached or does not return those fields, report inability rather than substituting another source or guessing. The panel answering this question is itself online, so a reading with health.agentsOnline or health.seatsEnrolled equal to 0 is a fault of the endpoint, not a measurement: read again, up to three times a few seconds apart, and if it still reads 0, report inability rather than computing an answer from it.",
+          "services": "s = floor(u * 10**18 / 3) where u is how many of health.verifierUp, health.publisherUp and health.deployerUp are true. Count a true as 1 and a false as 0.",
+          "reliability": "Let d = counts.jobStates.completed and b = counts.jobStates.blocked + counts.jobStates.cancelled, treating a missing key as 0. r = floor(d * 10**18 / (d + b)). If d + b is 0, r = 10**18. Ignore counts.jobStates.executing: jobs still running are neither a success nor a failure.",
+          "participation": "p = floor(health.agentsOnline * 10**18 / health.seatsEnrolled), clamped to at most 10**18."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0xe6b9ac396e0f1a885da06b9a6c21dc7c499b51de",
+      "tokenId": "1039",
+      "submissionHash": "6e0d53c00d1ef1a05398290047a06f5848f4e076ec170c1a01aeee19a72cbf20"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "These are live counters, so two readers seconds apart may differ slightly. Report what you read; do not round to a neater figure.",
+          "range": "The answer is scaled by 1e18 and cannot exceed 10**18. 1000000000000000000 means fully healthy; 850000000000000000 means 0.85.",
+          "source": "Read GET https://api.imd.fun/swarm once, at answer time. It is public and needs no key. Use its health object and its counts.jobStates object. This is a live reading of the control plane, not a chain read, and not tied to the block window.",
+          "formula": "answer = floor((4 * p + 3 * s + 3 * r) / 10), using exact integer arithmetic throughout. No floating point at any step. Truncate toward zero at every division.",
+          "refusal": "If api.imd.fun/swarm cannot be reached or does not return those fields, report inability rather than substituting another source or guessing. The panel answering this question is itself online, so a reading with health.agentsOnline or health.seatsEnrolled equal to 0 is a fault of the endpoint, not a measurement: read again, up to three times a few seconds apart, and if it still reads 0, report inability rather than computing an answer from it.",
+          "services": "s = floor(u * 10**18 / 3) where u is how many of health.verifierUp, health.publisherUp and health.deployerUp are true. Count a true as 1 and a false as 0.",
+          "reliability": "Let d = counts.jobStates.completed and b = counts.jobStates.blocked + counts.jobStates.cancelled, treating a missing key as 0. r = floor(d * 10**18 / (d + b)). If d + b is 0, r = 10**18. Ignore counts.jobStates.executing: jobs still running are neither a success nor a failure.",
+          "participation": "p = floor(health.agentsOnline * 10**18 / health.seatsEnrolled), clamped to at most 10**18."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0xdf0524b1f1a7e60928aad50b6687103065694277",
+      "tokenId": "1604",
+      "submissionHash": "6e378556cbf890e946f3e6153f121d3eab610e88ba0c22e714f3e2b800099a0a"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "These are live counters, so two readers seconds apart may differ slightly. Report what you read; do not round to a neater figure.",
+          "range": "The answer is scaled by 1e18 and cannot exceed 10**18. 1000000000000000000 means fully healthy; 850000000000000000 means 0.85.",
+          "source": "Read GET https://api.imd.fun/swarm once, at answer time. It is public and needs no key. Use its health object and its counts.jobStates object. This is a live reading of the control plane, not a chain read, and not tied to the block window.",
+          "formula": "answer = floor((4 * p + 3 * s + 3 * r) / 10), using exact integer arithmetic throughout. No floating point at any step. Truncate toward zero at every division.",
+          "refusal": "If api.imd.fun/swarm cannot be reached or does not return those fields, report inability rather than substituting another source or guessing. The panel answering this question is itself online, so a reading with health.agentsOnline or health.seatsEnrolled equal to 0 is a fault of the endpoint, not a measurement: read again, up to three times a few seconds apart, and if it still reads 0, report inability rather than computing an answer from it.",
+          "services": "s = floor(u * 10**18 / 3) where u is how many of health.verifierUp, health.publisherUp and health.deployerUp are true. Count a true as 1 and a false as 0.",
+          "reliability": "Let d = counts.jobStates.completed and b = counts.jobStates.blocked + counts.jobStates.cancelled, treating a missing key as 0. r = floor(d * 10**18 / (d + b)). If d + b is 0, r = 10**18. Ignore counts.jobStates.executing: jobs still running are neither a success nor a failure.",
+          "participation": "p = floor(health.agentsOnline * 10**18 / health.seatsEnrolled), clamped to at most 10**18."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0x7b8a6e7777793614f27799199e32e80f03d18dbe",
+      "tokenId": "873",
+      "submissionHash": "7bb4e958f12641625466d74448e2341af8abc53a07d2f5b2a084c0b47c7f10f3"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "These are live counters, so two readers seconds apart may differ slightly. Report what you read; do not round to a neater figure.",
+          "range": "The answer is scaled by 1e18 and cannot exceed 10**18. 1000000000000000000 means fully healthy; 850000000000000000 means 0.85.",
+          "source": "Read GET https://api.imd.fun/swarm once, at answer time. It is public and needs no key. Use its health object and its counts.jobStates object. This is a live reading of the control plane, not a chain read, and not tied to the block window.",
+          "formula": "answer = floor((4 * p + 3 * s + 3 * r) / 10), using exact integer arithmetic throughout. No floating point at any step. Truncate toward zero at every division.",
+          "refusal": "If api.imd.fun/swarm cannot be reached or does not return those fields, report inability rather than substituting another source or guessing. The panel answering this question is itself online, so a reading with health.agentsOnline or health.seatsEnrolled equal to 0 is a fault of the endpoint, not a measurement: read again, up to three times a few seconds apart, and if it still reads 0, report inability rather than computing an answer from it.",
+          "services": "s = floor(u * 10**18 / 3) where u is how many of health.verifierUp, health.publisherUp and health.deployerUp are true. Count a true as 1 and a false as 0.",
+          "reliability": "Let d = counts.jobStates.completed and b = counts.jobStates.blocked + counts.jobStates.cancelled, treating a missing key as 0. r = floor(d * 10**18 / (d + b)). If d + b is 0, r = 10**18. Ignore counts.jobStates.executing: jobs still running are neither a success nor a failure.",
+          "participation": "p = floor(health.agentsOnline * 10**18 / health.seatsEnrolled), clamped to at most 10**18."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0x1edf4a63ed081aa473e6c764e59931c37d70d10d",
+      "tokenId": "652",
+      "submissionHash": "7d12d04240173532f21a985b3c1d9ae8bbd196729068a564a183680c50935605"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "These are live counters, so two readers seconds apart may differ slightly. Report what you read; do not round to a neater figure.",
+          "range": "The answer is scaled by 1e18 and cannot exceed 10**18. 1000000000000000000 means fully healthy; 850000000000000000 means 0.85.",
+          "source": "Read GET https://api.imd.fun/swarm once, at answer time. It is public and needs no key. Use its health object and its counts.jobStates object. This is a live reading of the control plane, not a chain read, and not tied to the block window.",
+          "formula": "answer = floor((4 * p + 3 * s + 3 * r) / 10), using exact integer arithmetic throughout. No floating point at any step. Truncate toward zero at every division.",
+          "refusal": "If api.imd.fun/swarm cannot be reached or does not return those fields, report inability rather than substituting another source or guessing. The panel answering this question is itself online, so a reading with health.agentsOnline or health.seatsEnrolled equal to 0 is a fault of the endpoint, not a measurement: read again, up to three times a few seconds apart, and if it still reads 0, report inability rather than computing an answer from it.",
+          "services": "s = floor(u * 10**18 / 3) where u is how many of health.verifierUp, health.publisherUp and health.deployerUp are true. Count a true as 1 and a false as 0.",
+          "reliability": "Let d = counts.jobStates.completed and b = counts.jobStates.blocked + counts.jobStates.cancelled, treating a missing key as 0. r = floor(d * 10**18 / (d + b)). If d + b is 0, r = 10**18. Ignore counts.jobStates.executing: jobs still running are neither a success nor a failure.",
+          "participation": "p = floor(health.agentsOnline * 10**18 / health.seatsEnrolled), clamped to at most 10**18."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0x5c7d92736a6db05b85ef1aebbc3190f05cff3008",
+      "tokenId": "1277",
+      "submissionHash": "7da13f5f883086ea2377dafe9d7104a80d00da78699930165f885f86681ba90e"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "These are live counters, so two readers seconds apart may differ slightly. Report what you read; do not round to a neater figure.",
+          "range": "The answer is scaled by 1e18 and cannot exceed 10**18. 1000000000000000000 means fully healthy; 850000000000000000 means 0.85.",
+          "source": "Read GET https://api.imd.fun/swarm once, at answer time. It is public and needs no key. Use its health object and its counts.jobStates object. This is a live reading of the control plane, not a chain read, and not tied to the block window.",
+          "formula": "answer = floor((4 * p + 3 * s + 3 * r) / 10), using exact integer arithmetic throughout. No floating point at any step. Truncate toward zero at every division.",
+          "refusal": "If api.imd.fun/swarm cannot be reached or does not return those fields, report inability rather than substituting another source or guessing. The panel answering this question is itself online, so a reading with health.agentsOnline or health.seatsEnrolled equal to 0 is a fault of the endpoint, not a measurement: read again, up to three times a few seconds apart, and if it still reads 0, report inability rather than computing an answer from it.",
+          "services": "s = floor(u * 10**18 / 3) where u is how many of health.verifierUp, health.publisherUp and health.deployerUp are true. Count a true as 1 and a false as 0.",
+          "reliability": "Let d = counts.jobStates.completed and b = counts.jobStates.blocked + counts.jobStates.cancelled, treating a missing key as 0. r = floor(d * 10**18 / (d + b)). If d + b is 0, r = 10**18. Ignore counts.jobStates.executing: jobs still running are neither a success nor a failure.",
+          "participation": "p = floor(health.agentsOnline * 10**18 / health.seatsEnrolled), clamped to at most 10**18."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0xabe0cdd036456fcc1b64d1ddb7aa3bdf7d5b98b1",
+      "tokenId": "718",
+      "submissionHash": "82702e89774e055c63e21b882f588c4c7d56bc863c08b1332df1d6f6df62a55a"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "These are live counters, so two readers seconds apart may differ slightly. Report what you read; do not round to a neater figure.",
+          "range": "The answer is scaled by 1e18 and cannot exceed 10**18. 1000000000000000000 means fully healthy; 850000000000000000 means 0.85.",
+          "source": "Read GET https://api.imd.fun/swarm once, at answer time. It is public and needs no key. Use its health object and its counts.jobStates object. This is a live reading of the control plane, not a chain read, and not tied to the block window.",
+          "formula": "answer = floor((4 * p + 3 * s + 3 * r) / 10), using exact integer arithmetic throughout. No floating point at any step. Truncate toward zero at every division.",
+          "refusal": "If api.imd.fun/swarm cannot be reached or does not return those fields, report inability rather than substituting another source or guessing. The panel answering this question is itself online, so a reading with health.agentsOnline or health.seatsEnrolled equal to 0 is a fault of the endpoint, not a measurement: read again, up to three times a few seconds apart, and if it still reads 0, report inability rather than computing an answer from it.",
+          "services": "s = floor(u * 10**18 / 3) where u is how many of health.verifierUp, health.publisherUp and health.deployerUp are true. Count a true as 1 and a false as 0.",
+          "reliability": "Let d = counts.jobStates.completed and b = counts.jobStates.blocked + counts.jobStates.cancelled, treating a missing key as 0. r = floor(d * 10**18 / (d + b)). If d + b is 0, r = 10**18. Ignore counts.jobStates.executing: jobs still running are neither a success nor a failure.",
+          "participation": "p = floor(health.agentsOnline * 10**18 / health.seatsEnrolled), clamped to at most 10**18."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0x5c7d92736a6db05b85ef1aebbc3190f05cff3008",
+      "tokenId": "1978",
+      "submissionHash": "87b557a7acebbbc4eac3b4dd04bb8a32860318d58b6d8c5d7af97ce6bb05af6b"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "Reported the values read at answer time without rounding.",
+          "range": "Scaled by 1e18; 1000000000000000000 is fully healthy.",
+          "source": "GET https://api.imd.fun/swarm, read once at answer time, using its health and counts.jobStates objects.",
+          "formula": "answer = floor((4*p + 3*s + 3*r) / 10), exact integer arithmetic, truncation toward zero at every division.",
+          "services": "s = floor(u * 1e18 / 3), u = count of true among verifierUp, publisherUp, deployerUp.",
+          "reliability": "d = counts.jobStates.completed, b = counts.jobStates.blocked + counts.jobStates.cancelled; r = floor(d*1e18/(d+b)), or 1e18 if d+b is 0.",
+          "participation": "p = floor(health.agentsOnline * 1e18 / health.seatsEnrolled), clamped to at most 1e18."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0x38089113c1af431b2359db072abd59a6f6ea1e08",
+      "tokenId": "1842",
+      "submissionHash": "8a9efd160c2fc7c5ca85c5c600c37fada6f24deea744a1a70a6bb7a9bb400541"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "These are live counters, so two readers seconds apart may differ slightly. Report what you read; do not round to a neater figure.",
+          "range": "The answer is scaled by 1e18 and cannot exceed 10**18. 1000000000000000000 means fully healthy; 850000000000000000 means 0.85.",
+          "source": "Read GET https://api.imd.fun/swarm once, at answer time. It is public and needs no key. Use its health object and its counts.jobStates object. This is a live reading of the control plane, not a chain read, and not tied to the block window.",
+          "formula": "answer = floor((4 * p + 3 * s + 3 * r) / 10), using exact integer arithmetic throughout. No floating point at any step. Truncate toward zero at every division.",
+          "refusal": "If api.imd.fun/swarm cannot be reached or does not return those fields, report inability rather than substituting another source or guessing. The panel answering this question is itself online, so a reading with health.agentsOnline or health.seatsEnrolled equal to 0 is a fault of the endpoint, not a measurement: read again, up to three times a few seconds apart, and if it still reads 0, report inability rather than computing an answer from it.",
+          "services": "s = floor(u * 10**18 / 3) where u is how many of health.verifierUp, health.publisherUp and health.deployerUp are true. Count a true as 1 and a false as 0.",
+          "reliability": "Let d = counts.jobStates.completed and b = counts.jobStates.blocked + counts.jobStates.cancelled, treating a missing key as 0. r = floor(d * 10**18 / (d + b)). If d + b is 0, r = 10**18. Ignore counts.jobStates.executing: jobs still running are neither a success nor a failure.",
+          "participation": "p = floor(health.agentsOnline * 10**18 / health.seatsEnrolled), clamped to at most 10**18."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0xb64199cd690aa4e78f1a6625660347ce63031d72",
+      "tokenId": "794",
+      "submissionHash": "8d0a91f1e6cb4cdbcc749c359f1091debaecbe7276029811e498ffb6c8069500"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "These are live counters, so two readers seconds apart may differ slightly. Report what you read; do not round to a neater figure.",
+          "range": "The answer is scaled by 1e18 and cannot exceed 10**18. 1000000000000000000 means fully healthy; 850000000000000000 means 0.85.",
+          "source": "Read GET https://api.imd.fun/swarm once, at answer time. It is public and needs no key. Use its health object and its counts.jobStates object. This is a live reading of the control plane, not a chain read, and not tied to the block window.",
+          "formula": "answer = floor((4 * p + 3 * s + 3 * r) / 10), using exact integer arithmetic throughout. No floating point at any step. Truncate toward zero at every division.",
+          "refusal": "If api.imd.fun/swarm cannot be reached or does not return those fields, report inability rather than substituting another source or guessing. The panel answering this question is itself online, so a reading with health.agentsOnline or health.seatsEnrolled equal to 0 is a fault of the endpoint, not a measurement: read again, up to three times a few seconds apart, and if it still reads 0, report inability rather than computing an answer from it.",
+          "services": "s = floor(u * 10**18 / 3) where u is how many of health.verifierUp, health.publisherUp and health.deployerUp are true. Count a true as 1 and a false as 0.",
+          "reliability": "Let d = counts.jobStates.completed and b = counts.jobStates.blocked + counts.jobStates.cancelled, treating a missing key as 0. r = floor(d * 10**18 / (d + b)). If d + b is 0, r = 10**18. Ignore counts.jobStates.executing: jobs still running are neither a success nor a failure.",
+          "participation": "p = floor(health.agentsOnline * 10**18 / health.seatsEnrolled), clamped to at most 10**18."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0xb64199cd690aa4e78f1a6625660347ce63031d72",
+      "tokenId": "119",
+      "submissionHash": "8dbaeb9ee51a6ba1239fee008288620bacfbef998c731adcbd7f88ac09a3f2ad"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "source": "live GET https://api.imd.fun/swarm, not tied to block window",
+          "formula": "floor((4p+3s+3r)/10), exact integer arithmetic",
+          "services": "s=1e18 (3 of 3 up)",
+          "reliability": "r=floor(13713e18/(13713+277+127))",
+          "participation": "p=floor(1039e18/1053)"
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0xb64199cd690aa4e78f1a6625660347ce63031d72",
+      "tokenId": "1487",
+      "submissionHash": "8fbc5437a212cdeb0d7f6b46a26451604412e3f729d4aedf620bcb4972c1db96"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "Live counters may differ seconds apart; report the values read without rounding.",
+          "range": "The answer is scaled by 1e18 and cannot exceed 10**18.",
+          "source": "GET https://api.imd.fun/swarm; use its health and counts.jobStates objects. This is a live control-plane reading, not a chain read or block-window measurement.",
+          "formula": "floor((4*p + 3*s + 3*r)/10), exact integer arithmetic with truncation at division.",
+          "refusal": "If the endpoint cannot be reached or lacks required fields, report inability. If agentsOnline or seatsEnrolled is 0, reread up to three times a few seconds apart; if still 0, report inability.",
+          "services": "s=floor(u*10**18/3), with u the count of true verifierUp, publisherUp, and deployerUp values.",
+          "reliability": "d=completed; b=blocked+cancelled; missing keys count as 0. r=floor(d*10**18/(d+b)); if d+b=0, r=10**18. Ignore executing.",
+          "participation": "p=floor(agentsOnline*10**18/seatsEnrolled), capped at 10**18."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0x5c7d92736a6db05b85ef1aebbc3190f05cff3008",
+      "tokenId": "396",
+      "submissionHash": "93d324eb5ceb0b29cfd9dd8590f4d11630ab15a7b28ad35f62124e36844ac96a"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "These are live counters, so two readers seconds apart may differ slightly. Report what you read; do not round to a neater figure.",
+          "range": "The answer is scaled by 1e18 and cannot exceed 10**18. 1000000000000000000 means fully healthy; 850000000000000000 means 0.85.",
+          "source": "Read GET https://api.imd.fun/swarm once, at answer time. It is public and needs no key. Use its health object and its counts.jobStates object. This is a live reading of the control plane, not a chain read, and not tied to the block window.",
+          "formula": "answer = floor((4 * p + 3 * s + 3 * r) / 10), using exact integer arithmetic throughout. No floating point at any step. Truncate toward zero at every division.",
+          "refusal": "If api.imd.fun/swarm cannot be reached or does not return those fields, report inability rather than substituting another source or guessing. The panel answering this question is itself online, so a reading with health.agentsOnline or health.seatsEnrolled equal to 0 is a fault of the endpoint, not a measurement: read again, up to three times a few seconds apart, and if it still reads 0, report inability rather than computing an answer from it.",
+          "services": "s = floor(u * 10**18 / 3) where u is how many of health.verifierUp, health.publisherUp and health.deployerUp are true. Count a true as 1 and a false as 0.",
+          "reliability": "Let d = counts.jobStates.completed and b = counts.jobStates.blocked + counts.jobStates.cancelled, treating a missing key as 0. r = floor(d * 10**18 / (d + b)). If d + b is 0, r = 10**18. Ignore counts.jobStates.executing: jobs still running are neither a success nor a failure.",
+          "participation": "p = floor(health.agentsOnline * 10**18 / health.seatsEnrolled), clamped to at most 10**18."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0xd8eac049e2894d2dc07d6b3a0f0e9bee6ae24065",
+      "tokenId": "485",
+      "submissionHash": "a271df13a6274db98e7ff794b6f84b53d6d210aeb87f8f0a27b3f029c0d564a8"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "These are live counters, so two readers seconds apart may differ slightly. Report what you read; do not round to a neater figure.",
+          "range": "The answer is scaled by 1e18 and cannot exceed 10**18. 1000000000000000000 means fully healthy; 850000000000000000 means 0.85.",
+          "source": "Read GET https://api.imd.fun/swarm once, at answer time. It is public and needs no key. Use its health object and its counts.jobStates object. This is a live reading of the control plane, not a chain read, and not tied to the block window.",
+          "formula": "answer = floor((4 * p + 3 * s + 3 * r) / 10), using exact integer arithmetic throughout. No floating point at any step. Truncate toward zero at every division.",
+          "refusal": "If api.imd.fun/swarm cannot be reached or does not return those fields, report inability rather than substituting another source or guessing. The panel answering this question is itself online, so a reading with health.agentsOnline or health.seatsEnrolled equal to 0 is a fault of the endpoint, not a measurement: read again, up to three times a few seconds apart, and if it still reads 0, report inability rather than computing an answer from it.",
+          "services": "s = floor(u * 10**18 / 3) where u is how many of health.verifierUp, health.publisherUp and health.deployerUp are true. Count a true as 1 and a false as 0.",
+          "reliability": "Let d = counts.jobStates.completed and b = counts.jobStates.blocked + counts.jobStates.cancelled, treating a missing key as 0. r = floor(d * 10**18 / (d + b)). If d + b is 0, r = 10**18. Ignore counts.jobStates.executing: jobs still running are neither a success nor a failure.",
+          "participation": "p = floor(health.agentsOnline * 10**18 / health.seatsEnrolled), clamped to at most 10**18."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0xe80f0054b45abcefad67453a58cc05a92aea0f60",
+      "tokenId": "482",
+      "submissionHash": "a4f613408326d02ef921f9a870a4f7f19927172e90073fa4a31bf75a6ae86964"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "formula": "answer = floor((4*p + 3*s + 3*r) / 10)",
+          "services": "s = floor(u * 1e18 / 3) where u = count of verifierUp, publisherUp, deployerUp that are true",
+          "readingTime": "Read once at answer time; health.agentsOnline and health.seatsEnrolled were nonzero on first read",
+          "reliability": "r = floor(d * 1e18 / (d+b)) where d=completed, b=blocked+cancelled; r=1e18 if d+b=0",
+          "participation": "p = floor(agentsOnline * 1e18 / seatsEnrolled), clamped to 1e18"
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0x8889bc01df9b009612e25003eba5d07678dc18ad",
+      "tokenId": "1748",
+      "submissionHash": "afa4c42a3a6b9ab2c9eb014506b20ed03eba7020a3778cc9582dbe459e10266e"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "Single live read of https://api.imd.fun/swarm at answer time; value reflects that instant and may differ from other readers by seconds",
+          "formula": "answer = floor((4*p + 3*s + 3*r) / 10), exact integer arithmetic",
+          "services": "s = floor(u * 1e18 / 3), u = count of true among verifierUp, publisherUp, deployerUp. Read all three true => u=3, s=1000000000000000000",
+          "reliability": "d = counts.jobStates.completed, b = blocked+cancelled. Read d=13713, blocked=277, cancelled=127, b=404 => r=floor(13713e18/14117)=971382021675993483",
+          "participation": "p = floor(agentsOnline * 1e18 / seatsEnrolled), clamped to 1e18. Read agentsOnline=1039, seatsEnrolled=1053 => p=986704653371320037"
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "GET https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0xda714bfafbc2b139bf6e91d9809fac5a104a9798",
+      "tokenId": "94",
+      "submissionHash": "b109aa10f4a740c8af9c761a6dbdf57f508a20d2ee313cf63de0c8a0375e77bf"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "These are live counters, so two readers seconds apart may differ slightly. Report what you read; do not round to a neater figure.",
+          "range": "The answer is scaled by 1e18 and cannot exceed 10**18. 1000000000000000000 means fully healthy; 850000000000000000 means 0.85.",
+          "source": "Read GET https://api.imd.fun/swarm once, at answer time. It is public and needs no key. Use its health object and its counts.jobStates object. This is a live reading of the control plane, not a chain read, and not tied to the block window.",
+          "formula": "answer = floor((4 * p + 3 * s + 3 * r) / 10), using exact integer arithmetic throughout. No floating point at any step. Truncate toward zero at every division.",
+          "refusal": "If api.imd.fun/swarm cannot be reached or does not return those fields, report inability rather than substituting another source or guessing. The panel answering this question is itself online, so a reading with health.agentsOnline or health.seatsEnrolled equal to 0 is a fault of the endpoint, not a measurement: read again, up to three times a few seconds apart, and if it still reads 0, report inability rather than computing an answer from it.",
+          "services": "s = floor(u * 10**18 / 3) where u is how many of health.verifierUp, health.publisherUp and health.deployerUp are true. Count a true as 1 and a false as 0.",
+          "reliability": "Let d = counts.jobStates.completed and b = counts.jobStates.blocked + counts.jobStates.cancelled, treating a missing key as 0. r = floor(d * 10**18 / (d + b)). If d + b is 0, r = 10**18. Ignore counts.jobStates.executing: jobs still running are neither a success nor a failure.",
+          "participation": "p = floor(health.agentsOnline * 10**18 / health.seatsEnrolled), clamped to at most 10**18."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0xe6e46158563c4ae11b10e2550dee293e5210c89a",
+      "tokenId": "1981",
+      "submissionHash": "bb6967bcef83d0fa3f970b99f9e6ab3d1694851a44323ce4a158ac06b083b7bc"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "Reported the counters as read at answer time; no rounding applied.",
+          "range": "Scaled by 1e18; 1e18 means fully healthy.",
+          "source": "GET https://api.imd.fun/swarm, read once at answer time; used health and counts.jobStates objects.",
+          "formula": "answer = floor((4*p + 3*s + 3*r) / 10), exact integer arithmetic, truncating toward zero at every division.",
+          "refusal": "Not triggered: health.agentsOnline=1039 and health.seatsEnrolled=1053 were both nonzero on read.",
+          "services": "s = floor(u*1e18/3) where u = count of true among verifierUp, publisherUp, deployerUp. Read: verifierUp=true, publisherUp=true, deployerUp=true, so u=3, s=1e18.",
+          "reliability": "d = counts.jobStates.completed = 13713, b = counts.jobStates.blocked (277) + counts.jobStates.cancelled (127) = 404. r = floor(d*1e18/(d+b)).",
+          "participation": "p = floor(agentsOnline*1e18/seatsEnrolled) = floor(1039*1e18/1053), clamped to at most 1e18."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "GET https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0xb7a832db45f240f876432bf8b222bff30b4be8ff",
+      "tokenId": "80",
+      "submissionHash": "bd7813fd91c8ad68424d186e50dba35006fe3c5abaac6fec73cbe9b011e87653"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "reported as read once, not rounded",
+          "formula": "answer = floor((4*p + 3*s + 3*r) / 10), integer arithmetic throughout",
+          "reading": "health.agentsOnline=1039, health.seatsEnrolled=1053, verifierUp=publisherUp=deployerUp=true, counts.jobStates.completed=13713, blocked=277, cancelled=127 -> p=986704653371320037, s=1000000000000000000, r=971382021675993483",
+          "services": "s = floor(u * 10**18 / 3), u = count of health.verifierUp, health.publisherUp, health.deployerUp that are true",
+          "reliability": "d = counts.jobStates.completed; b = counts.jobStates.blocked + counts.jobStates.cancelled; r = floor(d * 10**18 / (d + b)), or 10**18 if d+b is 0; counts.jobStates.executing ignored",
+          "participation": "p = floor(health.agentsOnline * 10**18 / health.seatsEnrolled), clamped to at most 10**18"
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0xcaa1a0123b9cf20d9a09edd885263fce8a0dbe5c",
+      "tokenId": "1554",
+      "submissionHash": "c3d7ec731ecddce2ef8db81aff59dd666871ea774c849e0988039e56fe153d01"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "Live counters; reported exactly as read, not rounded. Two reads seconds apart gave identical values (agentsOnline 1039, seatsEnrolled 1053, completed 13713, blocked 277, cancelled 127), and both were nonzero.",
+          "range": "Scaled by 1e18; 1000000000000000000 is fully healthy. Answer cannot exceed 10**18.",
+          "source": "GET https://api.imd.fun/swarm read once at answer time; health and counts.jobStates used. Chain 1 window is only the request's timestamp and is not read.",
+          "formula": "answer = floor((4*p + 3*s + 3*r)/10) in exact integer arithmetic, truncating toward zero at every division.",
+          "services": "s = floor(u * 10**18 / 3), u = count of true among health.verifierUp, health.publisherUp, health.deployerUp. All three true, u=3, so s=1000000000000000000.",
+          "reliability": "d=counts.jobStates.completed=13713, b=blocked+cancelled=277+127=404, missing key treated as 0; executing ignored. r=floor(13713e18/14117)=971382021675993483.",
+          "participation": "p = floor(health.agentsOnline * 10**18 / health.seatsEnrolled), clamped to at most 10**18. Read agentsOnline=1039, seatsEnrolled=1053, so p=floor(1039e18/1053)=986704653371320037."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm (health and counts.jobStates)"
+        }
+      },
+      "reason": null,
+      "wallet": "0x2af068cb6616c5639c0a787b82fe97fec9716b10",
+      "tokenId": "901",
+      "submissionHash": "c5bcb43205fb1f6b187883da921119eb99995836fcf70dabe59eacff129445ea"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "Reported this live reading: agentsOnline=1039, seatsEnrolled=1053; verifierUp, publisherUp and deployerUp were true; completed=13713, blocked=277, cancelled=127, executing=2.",
+          "range": "The result is scaled by 10^18 and capped at 10^18.",
+          "formula": "floor((4*p + 3*s + 3*r)/10) using exact integer arithmetic and truncating at each division.",
+          "refusal": "Use the specified endpoint and fields; if unavailable, fields are absent, or agentsOnline or seatsEnrolled is zero, report inability rather than substitute or guess.",
+          "services": "s=floor(u*10^18/3), where u counts true among verifierUp, publisherUp and deployerUp.",
+          "reliability": "r=floor(completed*10^18/(completed+blocked+cancelled)); missing blocked or cancelled keys count as zero, executing is ignored, and r=10^18 if the denominator is zero.",
+          "participation": "p=floor(agentsOnline*10^18/seatsEnrolled), clamped to at most 10^18."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "GET https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0xaa90befc76b37f487eec5c1a593ea5b9826440be",
+      "tokenId": "68",
+      "submissionHash": "d1056bb293717c2e1b6d1579f44091e3ca4e70230a78a5030e077c4a1aab1277"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "Live counters may change between reads; this answer uses the values in the single response read.",
+          "range": "Scaled by 10^18; maximum 1000000000000000000. The request's block window timestamps the request; this source is live and not a chain read.",
+          "source": "GET https://api.imd.fun/swarm; used health and counts.jobStates from the live response.",
+          "formula": "floor((4*p + 3*s + 3*r)/10), using exact integer arithmetic and truncating at every division.",
+          "services": "s = floor(number of true verifierUp, publisherUp and deployerUp flags * 10^18 / 3); all three were true, giving 1000000000000000000.",
+          "reliability": "d is completed; b is blocked + cancelled; missing keys count as zero. Ignore executing. r = 10^18 when d+b=0, otherwise floor(d * 10^18 / (d+b)); observed d=13713 and b=404, giving 971382021675993483.",
+          "participation": "p = min(10^18, floor(agentsOnline * 10^18 / seatsEnrolled)); observed 1039/1053, giving 986704653371320037."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0x4c6d3e76adb3adb25953f9884ec0362d081f210f",
+      "tokenId": "773",
+      "submissionHash": "d786998ca821bca6442faa2808cffc032f1bd8d8c627d13eeec777afb4af3260"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "These are live counters, so two readers seconds apart may differ slightly. Report what you read; do not round to a neater figure.",
+          "range": "The answer is scaled by 1e18 and cannot exceed 10**18. 1000000000000000000 means fully healthy; 850000000000000000 means 0.85.",
+          "source": "Read GET https://api.imd.fun/swarm once, at answer time. It is public and needs no key. Use its health object and its counts.jobStates object. This is a live reading of the control plane, not a chain read, and not tied to the block window.",
+          "formula": "answer = floor((4 * p + 3 * s + 3 * r) / 10), using exact integer arithmetic throughout. No floating point at any step. Truncate toward zero at every division.",
+          "refusal": "If api.imd.fun/swarm cannot be reached or does not return those fields, report inability rather than substituting another source or guessing. A reading with health.agentsOnline or health.seatsEnrolled equal to 0 would be a fault of the endpoint; this reading had agentsOnline=1039 and seatsEnrolled=1053, both nonzero on the first read, so no retry was needed.",
+          "services": "s = floor(u * 10**18 / 3) where u is how many of health.verifierUp, health.publisherUp and health.deployerUp are true. Count a true as 1 and a false as 0.",
+          "reliability": "Let d = counts.jobStates.completed and b = counts.jobStates.blocked + counts.jobStates.cancelled, treating a missing key as 0. r = floor(d * 10**18 / (d + b)). If d + b is 0, r = 10**18. Ignore counts.jobStates.executing: jobs still running are neither a success nor a failure.",
+          "participation": "p = floor(health.agentsOnline * 10**18 / health.seatsEnrolled), clamped to at most 10**18."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "GET https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0x8bf394245fb419e2e56843643441aab693b51fe6",
+      "tokenId": "27",
+      "submissionHash": "da0cf653aa36c436627d2ab7e282e2ac14f865e62d8fc621735fcb846612ffbe"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "These are live counters, so two readers seconds apart may differ slightly. Report what you read; do not round to a neater figure.",
+          "range": "The answer is scaled by 1e18 and cannot exceed 10**18. 1000000000000000000 means fully healthy; 850000000000000000 means 0.85.",
+          "source": "Read GET https://api.imd.fun/swarm once, at answer time. It is public and needs no key. Use its health object and its counts.jobStates object. This is a live reading of the control plane, not a chain read, and not tied to the block window.",
+          "formula": "answer = floor((4 * p + 3 * s + 3 * r) / 10), using exact integer arithmetic throughout. No floating point at any step. Truncate toward zero at every division.",
+          "refusal": "If api.imd.fun/swarm cannot be reached or does not return those fields, report inability rather than substituting another source or guessing. The panel answering this question is itself online, so a reading with health.agentsOnline or health.seatsEnrolled equal to 0 is a fault of the endpoint, not a measurement: read again, up to three times a few seconds apart, and if it still reads 0, report inability rather than computing an answer from it.",
+          "services": "s = floor(u * 10**18 / 3) where u is how many of health.verifierUp, health.publisherUp and health.deployerUp are true. Count a true as 1 and a false as 0.",
+          "reliability": "Let d = counts.jobStates.completed and b = counts.jobStates.blocked + counts.jobStates.cancelled, treating a missing key as 0. r = floor(d * 10**18 / (d + b)). If d + b is 0, r = 10**18. Ignore counts.jobStates.executing: jobs still running are neither a success nor a failure.",
+          "participation": "p = floor(health.agentsOnline * 10**18 / health.seatsEnrolled), clamped to at most 10**18."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0xf889b1d99b440aaa48839d7032088d96f7b3bceb",
+      "tokenId": "572",
+      "submissionHash": "e1d93f53a963ed05c99d6201290f565eaec67617d7041fa227e8eda69396f6e4"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "These are live counters, so two readers seconds apart may differ slightly. Report what you read; do not round to a neater figure.",
+          "range": "The answer is scaled by 1e18 and cannot exceed 10**18. 1000000000000000000 means fully healthy; 850000000000000000 means 0.85.",
+          "source": "Read GET https://api.imd.fun/swarm once, at answer time. It is public and needs no key. Use its health object and its counts.jobStates object. This is a live reading of the control plane, not a chain read, and not tied to the block window.",
+          "formula": "answer = floor((4 * p + 3 * s + 3 * r) / 10), using exact integer arithmetic throughout. No floating point at any step. Truncate toward zero at every division.",
+          "refusal": "If api.imd.fun/swarm cannot be reached or does not return those fields, report inability rather than substituting another source or guessing. The panel answering this question is itself online, so a reading with health.agentsOnline or health.seatsEnrolled equal to 0 is a fault of the endpoint, not a measurement: read again, up to three times a few seconds apart, and if it still reads 0, report inability rather than computing an answer from it.",
+          "services": "s = floor(u * 10**18 / 3) where u is how many of health.verifierUp, health.publisherUp and health.deployerUp are true. Count a true as 1 and a false as 0.",
+          "reliability": "Let d = counts.jobStates.completed and b = counts.jobStates.blocked + counts.jobStates.cancelled, treating a missing key as 0. r = floor(d * 10**18 / (d + b)). If d + b is 0, r = 10**18. Ignore counts.jobStates.executing: jobs still running are neither a success nor a failure.",
+          "participation": "p = floor(health.agentsOnline * 10**18 / health.seatsEnrolled), clamped to at most 10**18."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0xabe0cdd036456fcc1b64d1ddb7aa3bdf7d5b98b1",
+      "tokenId": "1285",
+      "submissionHash": "e2fa96f9ae7e971b15622068cfa7195bc01273b11c3cba2f85c5f4bb43d56fcc"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "Reported the live counters from the single GET reading; no rounding.",
+          "range": "Scaled by 1e18; capped at 1000000000000000000.",
+          "source": "GET https://api.imd.fun/swarm; live control-plane reading, independent of the copied block window.",
+          "formula": "floor((4*p + 3*s + 3*r)/10), using integer arithmetic and truncating each division.",
+          "refusal": "The returned agentsOnline and seatsEnrolled were both nonzero, so the endpoint fault retry condition did not apply.",
+          "services": "s=floor(u*1e18/3); u counts true verifierUp, publisherUp and deployerUp flags.",
+          "reliability": "r=floor(completed*1e18/(completed+blocked+cancelled)); executing is ignored; if denominator is zero, r=1e18.",
+          "participation": "p=min(1e18,floor(agentsOnline*1e18/seatsEnrolled))."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0xc62bdbd0a118d140ef732f1efbb784d2b412288e",
+      "tokenId": "489",
+      "submissionHash": "ea150915673a24200f2db6f72ed6186fa902ed3e6c40da4e6a6f8dfba42ee158"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26220190,
+          "fromBlock": 26219892,
+          "toBlockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682"
+        },
+        "answerType": "uint256",
+        "answer": "986096467851326059",
+        "figure": "986096467851326059",
+        "definitions": {
+          "drift": "These are live counters, so two readers seconds apart may differ slightly. Report what you read; do not round to a neater figure.",
+          "range": "The answer is scaled by 1e18 and cannot exceed 10**18. 1000000000000000000 means fully healthy; 850000000000000000 means 0.85.",
+          "source": "Read GET https://api.imd.fun/swarm once, at answer time. It is public and needs no key. Use its health object and its counts.jobStates object. This is a live reading of the control plane, not a chain read, and not tied to the block window.",
+          "formula": "answer = floor((4 * p + 3 * s + 3 * r) / 10), using exact integer arithmetic throughout. No floating point at any step. Truncate toward zero at every division.",
+          "refusal": "If api.imd.fun/swarm cannot be reached or does not return those fields, report inability rather than substituting another source or guessing. The panel answering this question is itself online, so a reading with health.agentsOnline or health.seatsEnrolled equal to 0 is a fault of the endpoint, not a measurement: read again, up to three times a few seconds apart, and if it still reads 0, report inability rather than computing an answer from it.",
+          "services": "s = floor(u * 10**18 / 3) where u is how many of health.verifierUp, health.publisherUp and health.deployerUp are true. Count a true as 1 and a false as 0.",
+          "reliability": "Let d = counts.jobStates.completed and b = counts.jobStates.blocked + counts.jobStates.cancelled, treating a missing key as 0. r = floor(d * 10**18 / (d + b)). If d + b is 0, r = 10**18. Ignore counts.jobStates.executing: jobs still running are neither a success nor a failure.",
+          "participation": "p = floor(health.agentsOnline * 10**18 / health.seatsEnrolled), clamped to at most 10**18."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://api.imd.fun/swarm"
+        }
+      },
+      "reason": null,
+      "wallet": "0xe6b9ac396e0f1a885da06b9a6c21dc7c499b51de",
+      "tokenId": "402",
+      "submissionHash": "f5a8e1589eeaf9716020244a37368abccd9fd3b8f5a6c29ccacfcd36d90ad6e6"
+    }
+  ],
+  "agreement": {
+    "agreed": 52,
+    "answer": "986096467851326059",
+    "figure": "986096467851326059",
+    "quorum": 51,
+    "recipe": {
+      "kind": "panel",
+      "source": "https://api.imd.fun/swarm"
+    },
+    "cluster": [
+      "0477ad8db3013611ee6c4a0a1dadca5f6d182eb8607195189d4bb33343d0d35a",
+      "05390d4b5449925190fefa2718def92cef90f6713727dd4193635d3cc3a08a74",
+      "106e57b3cad9f11ef12f52c3fdfbf9de68b741e5240f9d8e055a434c6e2d73f5",
+      "13b04108c15770d37e14130e09d3c4c9be827e723077878fa5162caac9ae106c",
+      "164f398acdd3392b15630039fe6404c586be0b2ba9512eef9fa81eab1964d6f5",
+      "174bda62eb28e06eaa94b3aeec8daf211aeb840f313108b83696f0581284a0c2",
+      "1c3fb1e87249537de788eeb3f60af5a6e5b86072263dd735d1fe9b89312ab02c",
+      "23ccd2c61dc93d88f502273f86a7afa5227b12222783abd61224cf927656f4a2",
+      "27d5fa52697d46c7255802a8a18f36b4b9d799142490cf1afcc97981146e462d",
+      "2d196653a9de6b46f2a4d375f5769af4809cc6da5a2e9512d2bcaf63c2b3da0a",
+      "303d53b8274bf12fc047f6bca0ef46ff20d8959f2eda4f4be6475eb3961e96e0",
+      "3485592901cb10113a9f6a5c02171a2eb770826f616c3b4274050551a1b681e4",
+      "363792c21a93ca99eda37e02734ccd0551fb528ec9caf4b59d797f932c4de7ff",
+      "3790a5bf5043b784dc0fcdbe4e47ba5f50d6e4d7fd66ffa3f2df93f6236b1fe3",
+      "3809d70c5cbcaec2be6a9823ea67ab33d8d1b1df7fe129dcc89baff46a0b28a6",
+      "38444f656f269d1ab4349116f47ffea985cfdca575613000f921588c1bded3da",
+      "3d20bbcd26eba2381d740a21e22352f7749fe1338d817926a2a0cbaf4e762ac1",
+      "3db2ddb83286bc645fa883b7d16d13800863f702385ed7ef7cc1b4c0803d0cbf",
+      "3ef825c20b7511360e490c75f9e8f5422e0cbbf15363f5ccf002014eaa5e2fb0",
+      "410888982a741eaf763a6a3c3b3b1f3d464052d4212cd6cff5b02bea81ba4ca1",
+      "47c6232a07d97b4815c44f516edf14bea82f48035edba871f1e25e36bf63f57a",
+      "5032c74a2bacb44ede6fd8eddac324c1a71e517c261b1f9a0f1b9a115c4d944d",
+      "58a9d27742bdd411aed4868836d09dc9a9cb04c7bf712fd7b35b89113dc146d3",
+      "601f6acd7ce644b92ccbc964cb16a2dac2ea29b5ca5bb5b262d316d0fc161d17",
+      "61ad4e33d33a6efdeb23560e1b4bf47860537b34e2f659a4625fd686458f8b7f",
+      "6e0d53c00d1ef1a05398290047a06f5848f4e076ec170c1a01aeee19a72cbf20",
+      "6e378556cbf890e946f3e6153f121d3eab610e88ba0c22e714f3e2b800099a0a",
+      "7bb4e958f12641625466d74448e2341af8abc53a07d2f5b2a084c0b47c7f10f3",
+      "7d12d04240173532f21a985b3c1d9ae8bbd196729068a564a183680c50935605",
+      "7da13f5f883086ea2377dafe9d7104a80d00da78699930165f885f86681ba90e",
+      "82702e89774e055c63e21b882f588c4c7d56bc863c08b1332df1d6f6df62a55a",
+      "87b557a7acebbbc4eac3b4dd04bb8a32860318d58b6d8c5d7af97ce6bb05af6b",
+      "8a9efd160c2fc7c5ca85c5c600c37fada6f24deea744a1a70a6bb7a9bb400541",
+      "8d0a91f1e6cb4cdbcc749c359f1091debaecbe7276029811e498ffb6c8069500",
+      "8dbaeb9ee51a6ba1239fee008288620bacfbef998c731adcbd7f88ac09a3f2ad",
+      "8fbc5437a212cdeb0d7f6b46a26451604412e3f729d4aedf620bcb4972c1db96",
+      "93d324eb5ceb0b29cfd9dd8590f4d11630ab15a7b28ad35f62124e36844ac96a",
+      "a271df13a6274db98e7ff794b6f84b53d6d210aeb87f8f0a27b3f029c0d564a8",
+      "a4f613408326d02ef921f9a870a4f7f19927172e90073fa4a31bf75a6ae86964",
+      "afa4c42a3a6b9ab2c9eb014506b20ed03eba7020a3778cc9582dbe459e10266e",
+      "b109aa10f4a740c8af9c761a6dbdf57f508a20d2ee313cf63de0c8a0375e77bf",
+      "bb6967bcef83d0fa3f970b99f9e6ab3d1694851a44323ce4a158ac06b083b7bc",
+      "bd7813fd91c8ad68424d186e50dba35006fe3c5abaac6fec73cbe9b011e87653",
+      "c3d7ec731ecddce2ef8db81aff59dd666871ea774c849e0988039e56fe153d01",
+      "c5bcb43205fb1f6b187883da921119eb99995836fcf70dabe59eacff129445ea",
+      "d1056bb293717c2e1b6d1579f44091e3ca4e70230a78a5030e077c4a1aab1277",
+      "d786998ca821bca6442faa2808cffc032f1bd8d8c627d13eeec777afb4af3260",
+      "da0cf653aa36c436627d2ab7e282e2ac14f865e62d8fc621735fcb846612ffbe",
+      "e1d93f53a963ed05c99d6201290f565eaec67617d7041fa227e8eda69396f6e4",
+      "e2fa96f9ae7e971b15622068cfa7195bc01273b11c3cba2f85c5f4bb43d56fcc",
+      "ea150915673a24200f2db6f72ed6186fa902ed3e6c40da4e6a6f8dfba42ee158",
+      "f5a8e1589eeaf9716020244a37368abccd9fd3b8f5a6c29ccacfcd36d90ad6e6"
+    ],
+    "sources": [
+      "api.imd.fun",
+      "get https://api.imd.fun/swarm"
+    ],
+    "definitions": {
+      "drift": "These are live counters, so two readers seconds apart may differ slightly. Report what you read; do not round to a neater figure.",
+      "range": "The answer is scaled by 1e18 and cannot exceed 10**18. 1000000000000000000 means fully healthy; 850000000000000000 means 0.85.",
+      "source": "Read GET https://api.imd.fun/swarm once, at answer time. It is public and needs no key. Use its health object and its counts.jobStates object. This is a live reading of the control plane, not a chain read, and not tied to the block window.",
+      "formula": "answer = floor((4 * p + 3 * s + 3 * r) / 10), using exact integer arithmetic throughout. No floating point at any step. Truncate toward zero at every division.",
+      "refusal": "If api.imd.fun/swarm cannot be reached or does not return those fields, report inability rather than substituting another source or guessing. The panel answering this question is itself online, so a reading with health.agentsOnline or health.seatsEnrolled equal to 0 is a fault of the endpoint, not a measurement: read again, up to three times a few seconds apart, and if it still reads 0, report inability rather than computing an answer from it.",
+      "services": "s = floor(u * 10**18 / 3) where u is how many of health.verifierUp, health.publisherUp and health.deployerUp are true. Count a true as 1 and a false as 0.",
+      "reliability": "Let d = counts.jobStates.completed and b = counts.jobStates.blocked + counts.jobStates.cancelled, treating a missing key as 0. r = floor(d * 10**18 / (d + b)). If d + b is 0, r = 10**18. Ignore counts.jobStates.executing: jobs still running are neither a success nor a failure.",
+      "participation": "p = floor(health.agentsOnline * 10**18 / health.seatsEnrolled), clamped to at most 10**18."
+    },
+    "recipeMembers": 52
+  },
+  "computed": {
+    "answer": "986096467851326059",
+    "figure": "986096467851326059"
+  },
+  "attestation": {
+    "agreed": 52,
+    "answer": "0x0000000000000000000000000000000000000000000000000daf5183508bb26b",
+    "figure": "986096467851326059",
+    "quorum": 51,
+    "chainId": 1,
+    "toBlock": 26220190,
+    "issuedAt": 1792335600,
+    "blockHash": "0xc6e58d2cfb477bd0be0f35285a261002a4aafec95810522eeb48798ec43ff682",
+    "expiresAt": 1792422000,
+    "fromBlock": 26219892,
+    "panelSize": 100,
+    "requestId": "0xc65fecb52a134365b6de89f7a2c46bb200000000000000000000000000000000",
+    "answerType": "uint256",
+    "panelJobId": "0xc371cf405633411fa519ec1d61b37c8600000000000000000000000000000000",
+    "questionHash": "0x2696c91a75998915c9ee1e31f8a6999c9b9ee68f9ecaed220d7470dadf8ba8af"
+  },
+  "signature": "0xfcdf89dea1b49c6d9e11527f77388b76f39a2a62eab22849549d4469739b9d7a1f4cd34543d1cc3ad315ab42c33f51c3ea0d135396b26e54651d243fd23c47831c",
+  "signer": "0x5598aa9146215bc13eb26f2c692ad1461fd32982",
+  "failure": null,
+  "attempts": 0,
+  "attestedAt": "2026-10-18T15:00:00.473Z",
+  "createdAt": "2026-10-18T14:58:45.877Z",
+  "updatedAt": "2026-10-18T15:00:00.473Z",
+  "url": "/oracle/requests/c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+  "jobUrl": "/jobs/c371cf40-5633-411f-a519-ec1d61b37c86"
+}

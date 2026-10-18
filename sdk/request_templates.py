@@ -1,4 +1,6 @@
-"""Proposed IMD-schema job/oracle templates, assembled exactly like HookJobRequester.
+"""Legacy manual-requester templates, assembled exactly like HookJobRequester.
+
+The automatic successor uses the fixed onchain HookRequestCodec and sdk.automatic instead.
 
 No requests are opened. The request checker is a separate explicit free-only command.
 Four steps preserve independent build/test/review, then publish named approval evidence

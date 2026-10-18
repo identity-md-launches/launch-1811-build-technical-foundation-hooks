@@ -1,0 +1,49 @@
+{
+  "format": "hooks-store-automatic-infrastructure-draft/v1",
+  "baseCommit": "9dd97150d292fee26912f9605e0686e4ddbb1645",
+  "status": "Source and local tests only; no transactions authorized or executed. This is not launch.json.",
+  "runbook": "docs/AUTOMATIC_BINDING.md",
+  "contracts": [
+    {
+      "contract": "HookRequestCodec",
+      "source": "src/imd/automatic/HookRequestCodec.sol",
+      "constructorTypes": [],
+      "constructorArgs": [],
+      "ownerCalls": []
+    },
+    {
+      "contract": "AutoHookJobRequester",
+      "source": "src/imd/automatic/AutoHookJobRequester.sol",
+      "constructorTypes": ["address", "address", "address", "address", "uint256", "address"],
+      "constructorArgs": ["$owner", "$intake", "$asset", "$oracleSigner", "500000000000000000", "$contract:HookRequestCodec"],
+      "defaultActions": ["job.open@job-1", "oracle.request@oracle-1"],
+      "defaultPanel": {"panelSize": 7, "quorum": 5, "maxWindowAgeBlocks": 7200},
+      "ownerCalls": [],
+      "readback": ["owner()", "intake()", "asset()", "oracleSigner()", "codec()", "maxPrice()", "automaticBindingSupported()"],
+      "configurationChanges": ["setProtocol(address,address,uint256,bytes32,bytes32)", "setPanel(uint16,uint16,uint64)", "setOracleSigner(address)"]
+    },
+    {
+      "contract": "GatedHookDeployer",
+      "source": "src/deployment/GatedHookDeployer.sol",
+      "constructorTypes": ["address", "address"],
+      "constructorArgs": ["$owner", "$contract:AutoHookJobRequester"],
+      "ownerCalls": ["setManager($poolManager,$verifiedManagerCodeHash,true)"],
+      "readback": ["owner()", "requester()", "automaticBindingSupported()", "pinnedManager(uint256)", "managers(address)"]
+    }
+  ],
+  "inputs": {
+    "$owner": "Actual launch owner supplied by the deployment operator; never factory/msg.sender or a guessed address.",
+    "$intake": "Verified Intake v2 on the selected chain, from the supplied protocol reference and current capability/code checks.",
+    "$asset": "That chain's existing IMD asset, from the protocol reference; never mint or replace it.",
+    "$oracleSigner": "The existing IdentityMD v2 oracle signer/trust root from the reference; no new signer.",
+    "$poolManager": "Chain-specific manager from the unchanged GatedHookDeployer pinned policy.",
+    "$verifiedManagerCodeHash": "Read code and match the unchanged production pin before owner activation."
+  },
+  "responsibilities": [
+    "Infrastructure setup only; no per-hook owner binding call.",
+    "Check runtime sizes, codec code hash, protocol quotes, owner handoff and enabled manager before admitting user fees.",
+    "Ethereum and Robinhood sell both actions in the captured capabilities. Sepolia is oracle-only; Base has no supported Intake. Never guess support.",
+    "The existing listing/ad fee and recipient configuration remain as in the historical Store runbook.",
+    "Obtain independent adversarial review and separate authorization for any later live pilot or deployment."
+  ]
+}

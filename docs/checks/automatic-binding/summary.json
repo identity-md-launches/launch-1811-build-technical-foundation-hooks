@@ -1,0 +1,48 @@
+{
+  "forgeBuild": true,
+  "forgeFmtCheck": true,
+  "foundry": {
+    "passed": 572,
+    "failed": 0,
+    "seed": "repository pinned seed"
+  },
+  "assignmentSeed": {
+    "passed": 572,
+    "failed": 0,
+    "seed": "0x63141e4fb7e43e7da95e0ee07c1fb764e4512f7c4b40763dcc1324444f87f3de"
+  },
+  "python": {
+    "passed": 61,
+    "failed": 0
+  },
+  "node": {
+    "passed": 27,
+    "failed": 0
+  },
+  "coldCallbackForwardedGas": {
+    "eoa": 126868,
+    "fiveOfSevenERC1271": 171967,
+    "coldReadERC1271": 189141
+  },
+  "runtimeBytes": {
+    "AutoHookJobRequester": 24303,
+    "HookRequestCodec": 13409,
+    "GatedHookDeployer": 20967,
+    "HookJobRequester": 24559,
+    "BoundedSwapHook": 3431,
+    "questionPinExample": 2714
+  },
+  "localMockTransactionGas": {
+    "approval": 46152,
+    "commitArtifact": 481707,
+    "openJob": 3347035,
+    "requestVerdict": 3178505,
+    "deploy": 1088372
+  },
+  "publicHooksStoreLiveProof": false,
+  "publicSignatureAndQuestionVectors": 4,
+  "freeJobBlockers": [],
+  "freeSupportedChainWordingBlockers": [],
+  "freeWordingCaveat": "Drafting subset only; not_answerable suggestion for local fixture identities; no full body admission or live Hooks Store review.",
+  "legacyWorstSupportedCallbackGas": 192264
+}

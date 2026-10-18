@@ -1,7 +1,7 @@
 {
   "sourceCommit": null,
-  "baseCommit": "cc847d8f35bc0b814d390eb76092eed6051c5ae3",
-  "description": "Local build of the consolidated integration/fixes; not independently audited. Historical audited-build.json is unchanged.",
+  "baseCommit": "9dd97150d292fee26912f9605e0686e4ddbb1645",
+  "description": "Local build of automatic canonical oracle binding and exact-artifact authorization; not independently audited. Historical audited-build.json is unchanged.",
   "algorithm": "sha256",
   "files": {
     "dependencies.lock.json": "7e020eb009266adbc78c97455aacab9de9f36b071e1be718eb7af1ba994c0c00",
@@ -16,13 +16,15 @@
     "src/HooksStoreFactory.sol": "73ff62b154d53c3fcfa35019757dfe51d2c6346fd203e03d9df61965330d5dd9",
     "src/deployment/AcceptedArtifact.sol": "3a484113bc77db4964229e060e349a26600958b5b52f6376126c5a85a3d4a8da",
     "src/deployment/DeploymentPolicy.sol": "8fd240a38f3cc915112d9e9e1bea682342d6ad788140774a9ab7623b9038031d",
-    "src/deployment/GatedHookDeployer.sol": "ceebab8f77e187fa556d0a9c0f72d022be760484d746e42232e48bd2999aabb5",
+    "src/deployment/GatedHookDeployer.sol": "7a591bffbc1f8245616ca11ddd0db145eac5c2f4ab8e88e2b5c52bb34d467b85",
     "src/deployment/HookDeployment.sol": "1770c5fec1cc6212d705da31cb9395047b7d3021879edfa911f5dace40afba57",
     "src/deployment/HookMiner.sol": "df61b7d11409985bb4bad8e313b3486b05155a964b94d236add1151d78e3553e",
     "src/deployment/ResultJson.sol": "ee5628f1a8485c6c2cc6bb4fe036046256a04c11044aca9b90c5a2e61225e21d",
     "src/imd/HookJobRequester.sol": "ee866d553bbe4dfd4b1a1efed7803d6054f5f5cc545d06f6334764c4da85fc61",
     "src/imd/IIntake.sol": "1fbab751d469c12a3488a8f690e647aa315c6369478b3f34be46ba842f64cda2",
     "src/imd/OracleAttestation.sol": "36c589a16ab829e31d0549d7e81e5961d3172580ff8f4ef980c1e9617e087a20",
+    "src/imd/automatic/AutoHookJobRequester.sol": "bd7c4b5f20b4c47e565ec0b7fbbec757bfaef8b0087201dc2506bbf1e48bb4b2",
+    "src/imd/automatic/HookRequestCodec.sol": "33f2355a8610b4b8f9497bead5c131ff15dac5892a8fb7bdda7055ffa5af6e0f",
     "src/interfaces/IHooksStore.sol": "9eedb6a4ef45f7ca3bd5c1b5b9ea628c7a8edd2ebf0359e2db618c6214f65a24",
     "src/store/ExactStoreToken.sol": "b745c4cee9e13edd71cd8290f52720197cf58da07bc7a5db9021d610719bf387",
     "src/store/FeaturedPlacements.sol": "38c8dfdda297d9107f69da9908c0d257f62b2a0af70508de39f69e634a517f7d",
@@ -77,43 +79,43 @@
         "bytes": 24559
       },
       "immutableReferences": {
-        "62625": [
+        "66599": [
           {
             "start": 19109,
             "length": 32
           }
         ],
-        "62627": [
+        "66601": [
           {
             "start": 19067,
             "length": 32
           }
         ],
-        "62629": [
+        "66603": [
           {
             "start": 19025,
             "length": 32
           }
         ],
-        "62631": [
+        "66605": [
           {
             "start": 19190,
             "length": 32
           }
         ],
-        "62633": [
+        "66607": [
           {
             "start": 19230,
             "length": 32
           }
         ],
-        "62636": [
+        "66610": [
           {
             "start": 18497,
             "length": 32
           }
         ],
-        "62639": [
+        "66613": [
           {
             "start": 18546,
             "length": 32
@@ -142,7 +144,7 @@
         "bytes": 8232
       },
       "immutableReferences": {
-        "58995": [
+        "61235": [
           {
             "start": 800,
             "length": 32
@@ -160,41 +162,160 @@
     },
     "GatedHookDeployer": {
       "bytecode": {
-        "sha256": "48804e2de2d5c75900017e9f07f713260ece9c1f51dddb8c3d4b750221c3b232",
-        "bytes": 20830
+        "sha256": "d35013870d3c038672d85a53234c634d3bc0dd2929d430c16109288112f4cc38",
+        "bytes": 21384
       },
       "deployedBytecode": {
-        "sha256": "a9229630b959fe750ed01232d8ffcdb9c14ab216f9b550f57f314878ad26cb9a",
-        "bytes": 20427
+        "sha256": "929cdea4da3c0b0c9eddd1bcc0b14431356de524d254c66f86bdcd1cc7938d21",
+        "bytes": 20967
       },
       "immutableReferences": {
-        "50388": [
+        "50947": [
           {
-            "start": 1090,
+            "start": 1096,
             "length": 32
           },
           {
-            "start": 6474,
+            "start": 1686,
             "length": 32
           },
           {
-            "start": 6786,
+            "start": 6695,
             "length": 32
           },
           {
-            "start": 6969,
+            "start": 7007,
             "length": 32
           },
           {
-            "start": 7132,
+            "start": 7190,
             "length": 32
           },
           {
-            "start": 7318,
+            "start": 7353,
+            "length": 32
+          },
+          {
+            "start": 7539,
+            "length": 32
+          },
+          {
+            "start": 7830,
             "length": 32
           }
         ]
       }
+    },
+    "AutoHookJobRequester": {
+      "bytecode": {
+        "sha256": "87ed2c1ee5190eae0115f79f35cb50363d594f5dd48c26c72047b460f4c0ddf2",
+        "bytes": 25951
+      },
+      "deployedBytecode": {
+        "sha256": "a6769f23f7e973baba08dd13b248cc69726d40f3bc80383dfdd437835f65c547",
+        "bytes": 24303
+      },
+      "immutableReferences": {
+        "12545": [
+          {
+            "start": 1891,
+            "length": 32
+          },
+          {
+            "start": 3777,
+            "length": 32
+          },
+          {
+            "start": 5608,
+            "length": 32
+          },
+          {
+            "start": 5694,
+            "length": 32
+          },
+          {
+            "start": 5980,
+            "length": 32
+          },
+          {
+            "start": 8312,
+            "length": 32
+          },
+          {
+            "start": 10828,
+            "length": 32
+          },
+          {
+            "start": 12917,
+            "length": 32
+          },
+          {
+            "start": 13232,
+            "length": 32
+          },
+          {
+            "start": 15868,
+            "length": 32
+          },
+          {
+            "start": 18005,
+            "length": 32
+          }
+        ],
+        "20178": [
+          {
+            "start": 18209,
+            "length": 32
+          }
+        ],
+        "20180": [
+          {
+            "start": 18167,
+            "length": 32
+          }
+        ],
+        "20182": [
+          {
+            "start": 18125,
+            "length": 32
+          }
+        ],
+        "20184": [
+          {
+            "start": 18290,
+            "length": 32
+          }
+        ],
+        "20186": [
+          {
+            "start": 18330,
+            "length": 32
+          }
+        ],
+        "20189": [
+          {
+            "start": 17049,
+            "length": 32
+          }
+        ],
+        "20192": [
+          {
+            "start": 17098,
+            "length": 32
+          }
+        ]
+      }
+    },
+    "HookRequestCodec": {
+      "bytecode": {
+        "sha256": "30bb9fe6a6910f547752c804b5dbee1b04329fe13b810635bb8501c59ce263e0",
+        "bytes": 13437
+      },
+      "deployedBytecode": {
+        "sha256": "ca8f8375224d15e01c057ae1590f45b1acf541e51f6f2f2e49a55a4a4b3ed96c",
+        "bytes": 13409
+      },
+      "immutableReferences": {}
     }
   }
 }

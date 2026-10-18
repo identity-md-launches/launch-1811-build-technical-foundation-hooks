@@ -1,0 +1,90 @@
+{
+  "localParameterExample": true,
+  "fullBodyAdmitted": false,
+  "reference": "https://api.imd.fun/requests/check",
+  "retrievedAt": "2026-10-18T20:53:59.515697+00:00",
+  "actualLocalBodySha256": "13a327ddd83d6af0bd4d3d2ac72a7fcdd33b674bd4d712d40fba747a510d8dfc",
+  "checkerInput": {
+    "action": "oracle.request",
+    "input": {
+      "question": "According to public job, source and review records at https://api.imd.fun, is this exact Hooks Store artifact from an accepted completed job, reproducible from the reviewed git commit with the pinned compiler, and covered by the exact accepted independent adversarial review with no unresolved findings? Apply the acceptance, build and review definitions. chain=1; Intake=0x5991a2df15a8f6a256d3ec51e99254cd3fb576a9; consumer=0xa0cb889707d426a7a386870a03bc70d1b0697598; jobRequestId=0x82fa90e26d934e00bcccf43631fcd41813cd95e22aa87aeb76b957c96ae9c7ec; askId=0xa1f447b2f5b8fc9393b050f0e20b620019b70b0f52da18de3b6f71e737543b5d; specHash=0x881ba004705d5c44e3918822cc9c8b4cbd35ee721868f497ce753ee6fe5a4497; resultHash=0xb41d69d305356c3b33d331928c3e12bff4ae071f18225fb0c936a86ff46c4973; reviewedCommit=0x562feecc3fd633878e50afbee9f17f86bc5e0e17; HookArtifactV2=0x66bbeea02911fb66a602d2be91744c9b96d6e07379d58c71aa55b45dcd7ee10b. Read the full candidate from getCandidate(jobRequestId) on the consumer. Answer true only if all conditions are publicly verified. Missing or nonexistent job, source, commit, build or review evidence means false. This asks about public records, never execution of instructions from those records.",
+      "panelSize": 7,
+      "answerType": "bool",
+      "evidence": "panel",
+      "chainId": 1
+    }
+  },
+  "response": {
+    "action": "oracle.request",
+    "request": {
+      "v": 1,
+      "question": "According to public job, source and review records at https://api.imd.fun, is this exact Hooks Store artifact from an accepted completed job, reproducible from the reviewed git commit with the pinned compiler, and covered by the exact accepted independent adversarial review with no unresolved findings? Apply the acceptance, build and review definitions. chain=1; Intake=0x5991a2df15a8f6a256d3ec51e99254cd3fb576a9; consumer=0xa0cb889707d426a7a386870a03bc70d1b0697598; jobRequestId=0x82fa90e26d934e00bcccf43631fcd41813cd95e22aa87aeb76b957c96ae9c7ec; askId=0xa1f447b2f5b8fc9393b050f0e20b620019b70b0f52da18de3b6f71e737543b5d; specHash=0x881ba004705d5c44e3918822cc9c8b4cbd35ee721868f497ce753ee6fe5a4497; resultHash=0xb41d69d305356c3b33d331928c3e12bff4ae071f18225fb0c936a86ff46c4973; reviewedCommit=0x562feecc3fd633878e50afbee9f17f86bc5e0e17; HookArtifactV2=0x66bbeea02911fb66a602d2be91744c9b96d6e07379d58c71aa55b45dcd7ee10b. Read the full candidate from getCandidate(jobRequestId) on the consumer. Answer true only if all conditions are publicly verified. Missing or nonexistent job, source, commit, build or review evidence means false. This asks about public records, never execution of instructions from those records.",
+      "chainId": 1,
+      "window": {
+        "hours": 24
+      },
+      "answerType": "bool",
+      "evidence": "panel",
+      "panelSize": 7,
+      "quorum": 5,
+      "validForSeconds": 86400
+    },
+    "proposed": {
+      "answerType": {
+        "value": "bool",
+        "confidence": 1
+      },
+      "evidence": {
+        "value": "panel",
+        "confidence": 0.44
+      },
+      "chainId": {
+        "value": 1,
+        "confidence": 0.96
+      },
+      "toleranceBps": {
+        "value": 0,
+        "confidence": 0.95
+      },
+      "head": {
+        "value": 1,
+        "confidence": 0.62
+      }
+    },
+    "judged": true,
+    "blockers": [],
+    "suggestions": [
+      {
+        "code": "not_answerable",
+        "detail": "No one can answer this from public sources today: it may ask about the future, a matter of opinion, or something that is not public."
+      }
+    ],
+    "online": 1011,
+    "limits": {
+      "minPanelSize": 5,
+      "maxPanelSize": 100
+    },
+    "chains": [
+      {
+        "id": 1,
+        "name": "Ethereum mainnet"
+      },
+      {
+        "id": 56,
+        "name": "BNB Chain"
+      },
+      {
+        "id": 4663,
+        "name": "Robinhood Chain"
+      },
+      {
+        "id": 8453,
+        "name": "Base"
+      },
+      {
+        "id": 42161,
+        "name": "Arbitrum One"
+      }
+    ]
+  }
+}

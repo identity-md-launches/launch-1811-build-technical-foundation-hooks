@@ -1,0 +1,378 @@
+{
+  "id": "a03ae889-4a5d-4300-982a-e4bcf59ecf98",
+  "status": "attested",
+  "question": "Did Bitcoin's genesis block get mined in January 2009?",
+  "questionHash": "0xd3e1daa022412fedbe7b49cb7f2179847fc1d15159ad8c5e7a65ff4835cc8a4b",
+  "chainId": 1,
+  "window": {
+    "toBlock": 26213605,
+    "fromBlock": 26206428,
+    "toBlockHash": "0xb5946c5c21dcd78709d1af8b4d7c0cd86e696232fed866ab3ed926771de11e76"
+  },
+  "answerType": "bool",
+  "evidence": "panel",
+  "panelSize": 15,
+  "quorum": 11,
+  "consumer": {
+    "chainId": 1,
+    "verifyingContract": "0x3fc72adfed89284e4f3f378646a5338f2f1e14ea"
+  },
+  "validForSeconds": 86400,
+  "jobId": "a445396d-5722-491a-8994-fdc5ebc0aab4",
+  "members": [
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "a03ae889-4a5d-4300-982a-e4bcf59ecf98",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26213605,
+          "fromBlock": 26206428,
+          "toBlockHash": "0xb5946c5c21dcd78709d1af8b4d7c0cd86e696232fed866ab3ed926771de11e76"
+        },
+        "answerType": "bool",
+        "answer": true,
+        "definitions": {
+          "genesis block": "Bitcoin block 0, the first block of the Bitcoin blockchain"
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "Bitcoin block explorer / blockchain.com block 0 record, timestamp 2009-01-03 18:15:05 UTC"
+        }
+      },
+      "reason": null,
+      "wallet": "0x44bdd06d3b0ee3dda1aebba41411e4d05c2b5e7f",
+      "tokenId": "1876",
+      "submissionHash": "1b064b26e16d897f062e9ac14d2c2684e8c7382f3150d4a0e7242a2b82602408"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "a03ae889-4a5d-4300-982a-e4bcf59ecf98",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26213605,
+          "fromBlock": 26206428,
+          "toBlockHash": "0xb5946c5c21dcd78709d1af8b4d7c0cd86e696232fed866ab3ed926771de11e76"
+        },
+        "answerType": "bool",
+        "answer": true,
+        "definitions": {
+          "genesisBlock": "Bitcoin mainnet block 0",
+          "minedInJanuary2009": "The genesis block was created during January 2009 (UTC)."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://developer.bitcoin.org/reference/block_chain.html"
+        }
+      },
+      "reason": null,
+      "wallet": "0x38089113c1af431b2359db072abd59a6f6ea1e08",
+      "tokenId": "1470",
+      "submissionHash": "2061e13a596469e1d6f1e34acbaa88e471c1d1f26aa653c051f4e49541437342"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "a03ae889-4a5d-4300-982a-e4bcf59ecf98",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26213605,
+          "fromBlock": 26206428,
+          "toBlockHash": "0xb5946c5c21dcd78709d1af8b4d7c0cd86e696232fed866ab3ed926771de11e76"
+        },
+        "answerType": "bool",
+        "answer": true,
+        "definitions": {
+          "mined date": "The UTC date recorded for Bitcoin block 0 in the cited block explorer."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://www.blockchain.com/explorer/blocks/btc/0"
+        }
+      },
+      "reason": null,
+      "wallet": "0xe6b9ac396e0f1a885da06b9a6c21dc7c499b51de",
+      "tokenId": "1814",
+      "submissionHash": "71b456b1737f5f0348b4fbe172b9e0d13354dd27f4b5e6e44fe0562079f0ae69"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "a03ae889-4a5d-4300-982a-e4bcf59ecf98",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26213605,
+          "fromBlock": 26206428,
+          "toBlockHash": "0xb5946c5c21dcd78709d1af8b4d7c0cd86e696232fed866ab3ed926771de11e76"
+        },
+        "answerType": "bool",
+        "answer": true,
+        "definitions": {
+          "mined date": "The date labeled Mined on for Bitcoin block 0 (the Genesis block) by the cited explorer; January 2009 means the Gregorian calendar month of January 2009."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://www.blockchain.com/en/explorer/blocks/btc/00000000000000000000"
+        }
+      },
+      "reason": null,
+      "wallet": "0xd717e96bc764e9644e2f09bed46c71e53240748e",
+      "tokenId": "1126",
+      "submissionHash": "7bc7198d33d593c0ec3eca1728f056cecef9b5964b0adcb37abc15ca24d014ef"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "a03ae889-4a5d-4300-982a-e4bcf59ecf98",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26213605,
+          "fromBlock": 26206428,
+          "toBlockHash": "0xb5946c5c21dcd78709d1af8b4d7c0cd86e696232fed866ab3ed926771de11e76"
+        },
+        "answerType": "bool",
+        "answer": true,
+        "definitions": {
+          "month": "calendar month in UTC, timestamp of block 0 (2009-01-03 18:15:05 UTC)"
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://en.bitcoin.it/wiki/Genesis_block"
+        }
+      },
+      "reason": null,
+      "wallet": "0xb64199cd690aa4e78f1a6625660347ce63031d72",
+      "tokenId": "1511",
+      "submissionHash": "a20914630bac347b35578ab04d3f53781b2d3681a55ed1251cc3df5a61365f4b"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "a03ae889-4a5d-4300-982a-e4bcf59ecf98",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26213605,
+          "fromBlock": 26206428,
+          "toBlockHash": "0xb5946c5c21dcd78709d1af8b4d7c0cd86e696232fed866ab3ed926771de11e76"
+        },
+        "answerType": "bool",
+        "answer": true,
+        "definitions": {
+          "genesisBlock": "Bitcoin block height 0, mined by Satoshi Nakamoto"
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "Bitcoin block explorer (block 0 timestamp: 2009-01-03 18:15:05 UTC); Bitcoin whitepaper/history as documented by Bitcoin.org"
+        }
+      },
+      "reason": null,
+      "wallet": "0xb5f790dcffb867691ee7d55865ce3a1a204d53d8",
+      "tokenId": "1979",
+      "submissionHash": "a58632438380b6f2253b1a859d452c39088957d23a45ed76fa276ead1a55acb9"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "a03ae889-4a5d-4300-982a-e4bcf59ecf98",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26213605,
+          "fromBlock": 26206428,
+          "toBlockHash": "0xb5946c5c21dcd78709d1af8b4d7c0cd86e696232fed866ab3ed926771de11e76"
+        },
+        "answerType": "bool",
+        "answer": true,
+        "definitions": {
+          "mined_in_january_2009": "Use the Genesis Block's recorded UTC timestamp to determine its calendar date; the source lists 2009-01-03 18:15:05 UTC."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "Blockstream Help Center, Genesis Block: https://help.blockstream.com/education/glossary/genesis-block"
+        }
+      },
+      "reason": null,
+      "wallet": "0x64da3d8ecb282a346b4f1642e8bbc759f09729b1",
+      "tokenId": "398",
+      "submissionHash": "a7f32e0044ed2980494c2672cf45fdac8c18d2a6095f1a6c787f2fbb5fd8d6f3"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "a03ae889-4a5d-4300-982a-e4bcf59ecf98",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26213605,
+          "fromBlock": 26206428,
+          "toBlockHash": "0xb5946c5c21dcd78709d1af8b4d7c0cd86e696232fed866ab3ed926771de11e76"
+        },
+        "answerType": "bool",
+        "answer": true,
+        "definitions": {
+          "date": "Interpret the mining date as the genesis block's recorded timestamp, 2009-01-03 18:15:05 UTC."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://help.blockstream.com/education/glossary/genesis-block"
+        }
+      },
+      "reason": null,
+      "wallet": "0x8f609fa40367da70230b202064a727731757d98b",
+      "tokenId": "1211",
+      "submissionHash": "bbc369b96030c1d7beac4a9fe8f27ba3b1ffaa0b62f25c31db420579bc45941e"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "a03ae889-4a5d-4300-982a-e4bcf59ecf98",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26213605,
+          "fromBlock": 26206428,
+          "toBlockHash": "0xb5946c5c21dcd78709d1af8b4d7c0cd86e696232fed866ab3ed926771de11e76"
+        },
+        "answerType": "bool",
+        "answer": true,
+        "definitions": {
+          "mined in January 2009": "The Bitcoin genesis block's recorded header timestamp falls in January 2009."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "Bitcoin Core mainnet genesis block parameters (timestamp 1231006505): https://github.com/bitcoin/bitcoin/blob/master/src/kernel/chainparams.cpp ; Bitcoin Explorer, Bitcoin block 0 (dated 2009-01-03): https://bitcoinexplorer.org/block/000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"
+        }
+      },
+      "reason": null,
+      "wallet": "0x939c88325be283b9d7a4365988624c28e82973b7",
+      "tokenId": "108",
+      "submissionHash": "cd68018160364fc082a00e73c249e08b91343837f28531bf15f025de0957b027"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "a03ae889-4a5d-4300-982a-e4bcf59ecf98",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26213605,
+          "fromBlock": 26206428,
+          "toBlockHash": "0xb5946c5c21dcd78709d1af8b4d7c0cd86e696232fed866ab3ed926771de11e76"
+        },
+        "answerType": "bool",
+        "answer": true,
+        "definitions": {
+          "month": "calendar month of the genesis block timestamp, UTC"
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://en.bitcoin.it/wiki/Genesis_block"
+        }
+      },
+      "reason": null,
+      "wallet": "0xb64199cd690aa4e78f1a6625660347ce63031d72",
+      "tokenId": "1487",
+      "submissionHash": "e6d2b14a876e8f6168c82e2dfc7a881297d97ab71617a6f94c6f66a4d790da59"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "a03ae889-4a5d-4300-982a-e4bcf59ecf98",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26213605,
+          "fromBlock": 26206428,
+          "toBlockHash": "0xb5946c5c21dcd78709d1af8b4d7c0cd86e696232fed866ab3ed926771de11e76"
+        },
+        "answerType": "bool",
+        "answer": true,
+        "definitions": {
+          "genesisBlock": "Bitcoin block height 0, the first block of the Bitcoin blockchain, mined by Satoshi Nakamoto"
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "Bitcoin block explorer record for block 0 (hash 000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26): timestamp 2009-01-03 18:15:05 UTC, as shown on blockchain.com/btc/block/000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26"
+        }
+      },
+      "reason": null,
+      "wallet": "0xcaa1a0123b9cf20d9a09edd885263fce8a0dbe5c",
+      "tokenId": "1554",
+      "submissionHash": "ffa6dcf59712bed5c63c36cbc2d26f96652f12946e5b8269142ede62292d5ea0"
+    }
+  ],
+  "agreement": {
+    "agreed": 11,
+    "answer": true,
+    "figure": null,
+    "quorum": 11,
+    "recipe": {
+      "kind": "panel",
+      "source": "Bitcoin block explorer / blockchain.com block 0 record, timestamp 2009-01-03 18:15:05 UTC"
+    },
+    "cluster": [
+      "1b064b26e16d897f062e9ac14d2c2684e8c7382f3150d4a0e7242a2b82602408",
+      "2061e13a596469e1d6f1e34acbaa88e471c1d1f26aa653c051f4e49541437342",
+      "71b456b1737f5f0348b4fbe172b9e0d13354dd27f4b5e6e44fe0562079f0ae69",
+      "7bc7198d33d593c0ec3eca1728f056cecef9b5964b0adcb37abc15ca24d014ef",
+      "a20914630bac347b35578ab04d3f53781b2d3681a55ed1251cc3df5a61365f4b",
+      "a58632438380b6f2253b1a859d452c39088957d23a45ed76fa276ead1a55acb9",
+      "a7f32e0044ed2980494c2672cf45fdac8c18d2a6095f1a6c787f2fbb5fd8d6f3",
+      "bbc369b96030c1d7beac4a9fe8f27ba3b1ffaa0b62f25c31db420579bc45941e",
+      "cd68018160364fc082a00e73c249e08b91343837f28531bf15f025de0957b027",
+      "e6d2b14a876e8f6168c82e2dfc7a881297d97ab71617a6f94c6f66a4d790da59",
+      "ffa6dcf59712bed5c63c36cbc2d26f96652f12946e5b8269142ede62292d5ea0"
+    ],
+    "sources": [
+      "bitcoin block explorer (block 0 timestamp: 2009-01-03 18:15:05 utc); bitcoin whitepaper/history as documented by bitcoin.org",
+      "bitcoin block explorer / blockchain.com block 0 record, timestamp 2009-01-03 18:15:05 utc",
+      "bitcoin block explorer record for block 0 (hash 000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26): timestamp 2009-01-03 18:15:05 utc, as shown on blockchain.com/btc/block/000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26",
+      "bitcoin core mainnet genesis block parameters (timestamp 1231006505): https://github.com/bitcoin/bitcoin/blob/master/src/kernel/chainparams.cpp ; bitcoin explorer, bitcoin block 0 (dated 2009-01-03): https://bitcoinexplorer.org/block/000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f",
+      "blockstream help center, genesis block: https://help.blockstream.com/education/glossary/genesis-block",
+      "developer.bitcoin.org",
+      "en.bitcoin.it",
+      "help.blockstream.com",
+      "www.blockchain.com"
+    ],
+    "definitions": {
+      "genesis block": "Bitcoin block 0, the first block of the Bitcoin blockchain"
+    },
+    "recipeMembers": 11
+  },
+  "computed": {
+    "answer": true
+  },
+  "attestation": {
+    "agreed": 11,
+    "answer": "0x0000000000000000000000000000000000000000000000000000000000000001",
+    "figure": "0",
+    "quorum": 11,
+    "chainId": 1,
+    "toBlock": 26213605,
+    "issuedAt": 1792256237,
+    "blockHash": "0xb5946c5c21dcd78709d1af8b4d7c0cd86e696232fed866ab3ed926771de11e76",
+    "expiresAt": 1792342637,
+    "fromBlock": 26206428,
+    "panelSize": 15,
+    "requestId": "0xa03ae8894a5d4300982ae4bcf59ecf9800000000000000000000000000000000",
+    "answerType": "bool",
+    "panelJobId": "0xa445396d5722491a8994fdc5ebc0aab400000000000000000000000000000000",
+    "questionHash": "0xd3e1daa022412fedbe7b49cb7f2179847fc1d15159ad8c5e7a65ff4835cc8a4b"
+  },
+  "signature": "0x4299e5478574216695718fcf9e67893640b878aa1882aa435b9914dfb3b899eb3c498c5c730fc6fb29c534ad2f6416889bb4aaa00cde0b68de2a83fad6dd055c1b",
+  "signer": "0x5598aa9146215bc13eb26f2c692ad1461fd32982",
+  "failure": null,
+  "attempts": 0,
+  "attestedAt": "2026-10-17T16:57:17.248Z",
+  "createdAt": "2026-10-17T16:56:20.277Z",
+  "updatedAt": "2026-10-17T16:57:17.248Z",
+  "url": "/oracle/requests/a03ae889-4a5d-4300-982a-e4bcf59ecf98",
+  "jobUrl": "/jobs/a445396d-5722-491a-8994-fdc5ebc0aab4"
+}

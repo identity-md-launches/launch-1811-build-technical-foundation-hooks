@@ -1,10 +1,14 @@
-# Oracle-gated generated-hook deployment
+# Legacy manual oracle-gated deployment
+
+> Historical legacy/manual integration. The current automatic successor, fixed canonical prefix,
+> prepaid verdict flow and exact signed artifact authorization are documented in
+> [AUTOMATIC_BINDING.md](AUTOMATIC_BINDING.md). Existing manual requesters keep their old behavior.
 
 This revision continues `cc847d8f35bc0b814d390eb76092eed6051c5ae3` and addresses audit
 [`ca404dfe`](https://api.imd.fun/jobs/ca404dfe-00d1-4682-83cb-fa1b28f9826c/report.md).
 It is locally tested source, not a deployed or independently audited release. The integration
 investigation and exact launch blockers are in [INTEGRATION_RESOLUTION.md](INTEGRATION_RESOLUTION.md).
-**Automatic binding remains disabled.** Existing owner binding is a trust assumption, not a
+**The legacy requester remains manual.** Its existing owner binding is a trust assumption, not a
 contract-verifiable proof of IMD's Intake-to-oracle mapping.
 
 ## Authorization and exact evidence

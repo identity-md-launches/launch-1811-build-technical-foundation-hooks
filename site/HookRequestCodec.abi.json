@@ -1,0 +1,733 @@
+[
+  {
+    "type": "function",
+    "name": "addr",
+    "inputs": [
+      {
+        "name": "value",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "stateMutability": "pure"
+  },
+  {
+    "type": "function",
+    "name": "document",
+    "inputs": [
+      {
+        "name": "p",
+        "type": "bytes",
+        "internalType": "bytes"
+      },
+      {
+        "name": "fromBlock",
+        "type": "uint64",
+        "internalType": "uint64"
+      },
+      {
+        "name": "toBlock",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "stateMutability": "pure"
+  },
+  {
+    "type": "function",
+    "name": "escape",
+    "inputs": [
+      {
+        "name": "raw",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "out",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "stateMutability": "pure"
+  },
+  {
+    "type": "function",
+    "name": "hashQuestion",
+    "inputs": [
+      {
+        "name": "pin",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "fromBlock",
+        "type": "uint64",
+        "internalType": "uint64"
+      },
+      {
+        "name": "toBlock",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "hexValue",
+    "inputs": [
+      {
+        "name": "value",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "stateMutability": "pure"
+  },
+  {
+    "type": "function",
+    "name": "jobBody",
+    "inputs": [
+      {
+        "name": "spec",
+        "type": "tuple",
+        "internalType": "struct HookSpec",
+        "components": [
+          {
+            "name": "schemaVersion",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "templateId",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "chainId",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "poolManager",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "poolManagerCodeHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "permissions",
+            "type": "uint160",
+            "internalType": "uint160"
+          },
+          {
+            "name": "maxSpecifiedAmount",
+            "type": "uint128",
+            "internalType": "uint128"
+          }
+        ]
+      },
+      {
+        "name": "specHash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "askId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "consumer",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "intake",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "deployer",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "brief",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "stateMutability": "pure"
+  },
+  {
+    "type": "function",
+    "name": "oracleBody",
+    "inputs": [
+      {
+        "name": "chainId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "consumer",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "q",
+        "type": "bytes",
+        "internalType": "bytes"
+      },
+      {
+        "name": "fromBlock",
+        "type": "uint64",
+        "internalType": "uint64"
+      },
+      {
+        "name": "toBlock",
+        "type": "uint64",
+        "internalType": "uint64"
+      },
+      {
+        "name": "panelSize",
+        "type": "uint16",
+        "internalType": "uint16"
+      },
+      {
+        "name": "quorum",
+        "type": "uint16",
+        "internalType": "uint16"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "stateMutability": "pure"
+  },
+  {
+    "type": "function",
+    "name": "prefix",
+    "inputs": [
+      {
+        "name": "chainId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "q",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "stateMutability": "pure"
+  },
+  {
+    "type": "function",
+    "name": "question",
+    "inputs": [
+      {
+        "name": "chainId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "intake",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "consumer",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "jobId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "askId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "specHash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "resultHash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "reviewedCommit",
+        "type": "bytes20",
+        "internalType": "bytes20"
+      },
+      {
+        "name": "artifactDigest",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "stateMutability": "pure"
+  },
+  {
+    "type": "function",
+    "name": "readPrefix",
+    "inputs": [
+      {
+        "name": "pin",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "out",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "specJSON",
+    "inputs": [
+      {
+        "name": "s",
+        "type": "tuple",
+        "internalType": "struct HookSpec",
+        "components": [
+          {
+            "name": "schemaVersion",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "templateId",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "chainId",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "poolManager",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "poolManagerCodeHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "permissions",
+            "type": "uint160",
+            "internalType": "uint160"
+          },
+          {
+            "name": "maxSpecifiedAmount",
+            "type": "uint128",
+            "internalType": "uint128"
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "stateMutability": "pure"
+  },
+  {
+    "type": "function",
+    "name": "validateBrief",
+    "inputs": [
+      {
+        "name": "b",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "pure"
+  },
+  {
+    "type": "function",
+    "name": "validateCandidate",
+    "inputs": [
+      {
+        "name": "a",
+        "type": "tuple",
+        "internalType": "struct GatedHookDeployer.Artifact",
+        "components": [
+          {
+            "name": "jobRequestId",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "sourceHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "sourceSubmissionHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "reviewSubmissionHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "evidenceHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "buildHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "creationCodeHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "constructorArgsHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "runtimeCodeHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "chainId",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "deployer",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "poolManager",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "poolManagerCodeHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "permissions",
+            "type": "uint160",
+            "internalType": "uint160"
+          }
+        ]
+      },
+      {
+        "name": "s",
+        "type": "tuple",
+        "internalType": "struct HookSpec",
+        "components": [
+          {
+            "name": "schemaVersion",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "templateId",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "chainId",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "poolManager",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "poolManagerCodeHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "permissions",
+            "type": "uint160",
+            "internalType": "uint160"
+          },
+          {
+            "name": "maxSpecifiedAmount",
+            "type": "uint128",
+            "internalType": "uint128"
+          }
+        ]
+      },
+      {
+        "name": "jobId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "deployer",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "reviewedCommit",
+        "type": "bytes20",
+        "internalType": "bytes20"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "digest",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "pure"
+  },
+  {
+    "type": "function",
+    "name": "validateSpec",
+    "inputs": [
+      {
+        "name": "spec",
+        "type": "tuple",
+        "internalType": "struct HookSpec",
+        "components": [
+          {
+            "name": "schemaVersion",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "templateId",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "chainId",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "poolManager",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "poolManagerCodeHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "permissions",
+            "type": "uint160",
+            "internalType": "uint160"
+          },
+          {
+            "name": "maxSpecifiedAmount",
+            "type": "uint128",
+            "internalType": "uint128"
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "view"
+  },
+  {
+    "type": "error",
+    "name": "BriefLength",
+    "inputs": [
+      {
+        "name": "length",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InvalidArtifact",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidBrief",
+    "inputs": [
+      {
+        "name": "index",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InvalidChainId",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidLimit",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidManager",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidManagerCodeHash",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidPermissions",
+    "inputs": [
+      {
+        "name": "permissions",
+        "type": "uint160",
+        "internalType": "uint160"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "StringsInsufficientHexLength",
+    "inputs": [
+      {
+        "name": "value",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "length",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "UnsupportedTemplate",
+    "inputs": [
+      {
+        "name": "templateId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "UnsupportedVersion",
+    "inputs": [
+      {
+        "name": "version",
+        "type": "uint32",
+        "internalType": "uint32"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "WrongChain",
+    "inputs": [
+      {
+        "name": "requested",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "actual",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  }
+]

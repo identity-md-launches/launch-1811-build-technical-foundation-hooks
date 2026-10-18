@@ -1,6 +1,15 @@
 # Integration decision, 2026-10-17
 
-**Automatic binding remains disabled. No founder-free or launch-ready flow is claimed.**
+> Historical legacy/manual integration. The current automatic successor, fixed canonical prefix,
+> prepaid verdict flow and exact signed artifact authorization are documented in
+> [AUTOMATIC_BINDING.md](AUTOMATIC_BINDING.md). Existing manual requesters keep their old behavior.
+
+**Historical conclusion for the legacy requester only.** The automatic successor now pins the
+canonical question prefix, names the unique onchain ask/job/artifact context inside that question,
+and verifies its reconstruction against the existing v2 signature. The reference canonicalizer
+supplies the previously unavailable preimage rule; a separate signed Intake-to-UUID mapping is
+not needed when that exact question itself authenticates the association. This supersedes the
+blocker below for the new consumer, without treating HTTP metadata as authentication.
 The fixes in this revision do not introduce a backend, hot wallet, new trusted signer, or routine
 founder transaction. The existing owner-binding functions remain available for compatibility and
 local/manual demonstrations; they are an explicit owner assertion, not the requested protocol proof.

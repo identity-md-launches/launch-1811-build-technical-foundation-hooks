@@ -1,0 +1,371 @@
+{
+  "id": "43a20eb4-f9ce-4751-8a62-9c8851b12565",
+  "status": "attested",
+  "question": "Did Argentina win the 2022 FIFA World Cup?",
+  "questionHash": "0x01647b9a756632a15dcd092560b07f9383e1b6b124718c95d7da74eb2bd9b13f",
+  "chainId": 1,
+  "window": {
+    "toBlock": 26213524,
+    "fromBlock": 26206347,
+    "toBlockHash": "0xe965bbc9c49f48e043dc571dda9f0b45176941a93b776eff8c2b0f833330bc09"
+  },
+  "answerType": "bool",
+  "evidence": "panel",
+  "panelSize": 15,
+  "quorum": 11,
+  "consumer": {
+    "chainId": 1,
+    "verifyingContract": "0x3fc72adfed89284e4f3f378646a5338f2f1e14ea"
+  },
+  "validForSeconds": 86400,
+  "jobId": "0c599580-f239-4ad6-9766-b23404013f3c",
+  "members": [
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "43a20eb4-f9ce-4751-8a62-9c8851b12565",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26213524,
+          "fromBlock": 26206347,
+          "toBlockHash": "0xe965bbc9c49f48e043dc571dda9f0b45176941a93b776eff8c2b0f833330bc09"
+        },
+        "answerType": "bool",
+        "answer": true,
+        "definitions": {
+          "win": "The tournament winner, including a final decided by a penalty shootout."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://www.fifa.com/en/articles/world-cup-2022-qatar-the-stats-behind-argentina-triumph"
+        }
+      },
+      "reason": null,
+      "wallet": "0x64da3d8ecb282a346b4f1642e8bbc759f09729b1",
+      "tokenId": "398",
+      "submissionHash": "16d9fc532780841692b84e69eb83409ca363585fde5d9b16568e53a39b766db8"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "43a20eb4-f9ce-4751-8a62-9c8851b12565",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26213524,
+          "fromBlock": 26206347,
+          "toBlockHash": "0xe965bbc9c49f48e043dc571dda9f0b45176941a93b776eff8c2b0f833330bc09"
+        },
+        "answerType": "bool",
+        "answer": true,
+        "definitions": {
+          "win": "won the final, 3-3 after extra time, 4-2 on penalties",
+          "event": "2022 FIFA World Cup (Qatar), final played 18 December 2022"
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://en.wikipedia.org/wiki/2022_FIFA_World_Cup_final"
+        }
+      },
+      "reason": null,
+      "wallet": "0xb64199cd690aa4e78f1a6625660347ce63031d72",
+      "tokenId": "1511",
+      "submissionHash": "2037a24b733ee94eb879fde863eba0c12cb7e0973c077247748abd2feddb63a7"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "43a20eb4-f9ce-4751-8a62-9c8851b12565",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26213524,
+          "fromBlock": 26206347,
+          "toBlockHash": "0xe965bbc9c49f48e043dc571dda9f0b45176941a93b776eff8c2b0f833330bc09"
+        },
+        "answerType": "bool",
+        "answer": true,
+        "definitions": {},
+        "recipe": {
+          "kind": "panel",
+          "source": "https://www.fifa.com/en/tournaments/mens/worldcup/articles/world-cup-champions-1982-2026-italy-argentina-germany-brazil-france-spain"
+        }
+      },
+      "reason": null,
+      "wallet": "0xd717e96bc764e9644e2f09bed46c71e53240748e",
+      "tokenId": "1126",
+      "submissionHash": "7e5ebd7f3daee82722d32cfb8e760e7e122ff1120c5705ee0256c7541a96dbf1"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "43a20eb4-f9ce-4751-8a62-9c8851b12565",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26213524,
+          "fromBlock": 26206347,
+          "toBlockHash": "0xe965bbc9c49f48e043dc571dda9f0b45176941a93b776eff8c2b0f833330bc09"
+        },
+        "answerType": "bool",
+        "answer": true,
+        "definitions": {
+          "win": "Finish the tournament as champion.",
+          "2022 FIFA World Cup": "The men's FIFA World Cup Qatar 2022 tournament."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://www.fifa.com/en/articles/world-cup-finals-that-made-history"
+        }
+      },
+      "reason": null,
+      "wallet": "0xe6b9ac396e0f1a885da06b9a6c21dc7c499b51de",
+      "tokenId": "1814",
+      "submissionHash": "88382541d082eeb72a4c5a0c2d1a7f019c0e59b1d7a57e2ea11b0133ddea4d7e"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "43a20eb4-f9ce-4751-8a62-9c8851b12565",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26213524,
+          "fromBlock": 26206347,
+          "toBlockHash": "0xe965bbc9c49f48e043dc571dda9f0b45176941a93b776eff8c2b0f833330bc09"
+        },
+        "answerType": "bool",
+        "answer": true,
+        "definitions": {
+          "win": "Argentina is the tournament winner if FIFA identifies it as champion; a final decided by a penalty shootout counts as a win."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://www.fifa.com/en/tournaments/mens/worldcup/articles/world-cup-champions-1982-2026-italy-argentina-germany-brazil-france-spain"
+        }
+      },
+      "reason": null,
+      "wallet": "0x939c88325be283b9d7a4365988624c28e82973b7",
+      "tokenId": "108",
+      "submissionHash": "b0240a235c299c675a9c46a626f37fc0892785f4e8e748f370de055ecce9b71c"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "43a20eb4-f9ce-4751-8a62-9c8851b12565",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26213524,
+          "fromBlock": 26206347,
+          "toBlockHash": "0xe965bbc9c49f48e043dc571dda9f0b45176941a93b776eff8c2b0f833330bc09"
+        },
+        "answerType": "bool",
+        "answer": true,
+        "definitions": {
+          "win the World Cup": "Be crowned champion of the 2022 FIFA World Cup tournament."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://www.fifa.com/en/tournaments/mens/worldcup/articles/world-cup-champions-1982-2026-italy-argentina-germany-brazil-france-spain"
+        }
+      },
+      "reason": null,
+      "wallet": "0x8f609fa40367da70230b202064a727731757d98b",
+      "tokenId": "1211",
+      "submissionHash": "b7250103e51baa14b10247cdc2da08d13dc39a5330c8eec7cbabde0abe9a7922"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "43a20eb4-f9ce-4751-8a62-9c8851b12565",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26213524,
+          "fromBlock": 26206347,
+          "toBlockHash": "0xe965bbc9c49f48e043dc571dda9f0b45176941a93b776eff8c2b0f833330bc09"
+        },
+        "answerType": "bool",
+        "answer": true,
+        "definitions": {},
+        "recipe": {
+          "kind": "panel",
+          "source": "https://inside.fifa.com/en/tournaments/mens/worldcup/qatar2022/news/triumphant-argentina-conclude-unprecedented-fifa-world-cup"
+        }
+      },
+      "reason": null,
+      "wallet": "0x38089113c1af431b2359db072abd59a6f6ea1e08",
+      "tokenId": "1470",
+      "submissionHash": "b7b38acaabc87c586f76da0960aa2c507a612609e8bf0e2b074a6d7a3ce71ea3"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "43a20eb4-f9ce-4751-8a62-9c8851b12565",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26213524,
+          "fromBlock": 26206347,
+          "toBlockHash": "0xe965bbc9c49f48e043dc571dda9f0b45176941a93b776eff8c2b0f833330bc09"
+        },
+        "answerType": "bool",
+        "answer": true,
+        "definitions": {
+          "win": "Argentina was declared champion of the 2022 FIFA World Cup, defeating France in the final on 2022-12-18 (3-3 after extra time, 4-2 on penalties)"
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "FIFA official World Cup 2022 results (fifa.com) and contemporaneous reporting (e.g. Reuters/BBC) confirming Argentina defeated France in the final on 18 December 2022 to win the tournament"
+        }
+      },
+      "reason": null,
+      "wallet": "0xcaa1a0123b9cf20d9a09edd885263fce8a0dbe5c",
+      "tokenId": "1554",
+      "submissionHash": "db7b6175ca902a6a8f7247fbe7430767524b8f9a47f857a1164e57fa49ad85a0"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "43a20eb4-f9ce-4751-8a62-9c8851b12565",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26213524,
+          "fromBlock": 26206347,
+          "toBlockHash": "0xe965bbc9c49f48e043dc571dda9f0b45176941a93b776eff8c2b0f833330bc09"
+        },
+        "answerType": "bool",
+        "answer": true,
+        "definitions": {
+          "win": "Argentina was the champion of the 2022 FIFA World Cup (Qatar), final on 2022-12-18, beating France 4-2 on penalties after a 3-3 draw"
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://en.wikipedia.org/wiki/2022_FIFA_World_Cup_final"
+        }
+      },
+      "reason": null,
+      "wallet": "0xb64199cd690aa4e78f1a6625660347ce63031d72",
+      "tokenId": "1487",
+      "submissionHash": "e7a25bb51e869159db07bacbd46dc377437220b7483803ccafb175ca816acbbb"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "43a20eb4-f9ce-4751-8a62-9c8851b12565",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26213524,
+          "fromBlock": 26206347,
+          "toBlockHash": "0xe965bbc9c49f48e043dc571dda9f0b45176941a93b776eff8c2b0f833330bc09"
+        },
+        "answerType": "bool",
+        "answer": true,
+        "definitions": {
+          "win": "Won the tournament by becoming champion; the final's penalty shootout counts toward the result."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "https://www.fifa.com/es/articles/argentina-le-gano-por-penales-a-francia-y-se-consagro-campeon-del-mundo"
+        }
+      },
+      "reason": null,
+      "wallet": "0xd8eac049e2894d2dc07d6b3a0f0e9bee6ae24065",
+      "tokenId": "485",
+      "submissionHash": "ed0d376d0ce311869e1056432a205aad2751e4377c41fb9df1dffeb9ff9d9fa6"
+    },
+    {
+      "ok": true,
+      "answer": {
+        "v": 1,
+        "requestId": "43a20eb4-f9ce-4751-8a62-9c8851b12565",
+        "chainId": 1,
+        "window": {
+          "toBlock": 26213524,
+          "fromBlock": 26206347,
+          "toBlockHash": "0xe965bbc9c49f48e043dc571dda9f0b45176941a93b776eff8c2b0f833330bc09"
+        },
+        "answerType": "bool",
+        "answer": true,
+        "definitions": {
+          "win": "Argentina was declared champion of the 2022 FIFA World Cup, having won the final against France on 18 December 2022 in Lusail, Qatar, after a 3-3 draw in extra time and a 4-2 win on penalties."
+        },
+        "recipe": {
+          "kind": "panel",
+          "source": "FIFA official World Cup 2022 results (fifa.com, Qatar 2022 final: Argentina 3-3 France, Argentina won 4-2 on penalties, 18 December 2022)"
+        }
+      },
+      "reason": null,
+      "wallet": "0xb5f790dcffb867691ee7d55865ce3a1a204d53d8",
+      "tokenId": "1979",
+      "submissionHash": "eda331dcf267d7c0a02426b96ecdbe59fdacd5bb3652183c2022730505d357e3"
+    }
+  ],
+  "agreement": {
+    "agreed": 11,
+    "answer": true,
+    "figure": null,
+    "quorum": 11,
+    "recipe": {
+      "kind": "panel",
+      "source": "https://www.fifa.com/en/articles/world-cup-2022-qatar-the-stats-behind-argentina-triumph"
+    },
+    "cluster": [
+      "16d9fc532780841692b84e69eb83409ca363585fde5d9b16568e53a39b766db8",
+      "2037a24b733ee94eb879fde863eba0c12cb7e0973c077247748abd2feddb63a7",
+      "7e5ebd7f3daee82722d32cfb8e760e7e122ff1120c5705ee0256c7541a96dbf1",
+      "88382541d082eeb72a4c5a0c2d1a7f019c0e59b1d7a57e2ea11b0133ddea4d7e",
+      "b0240a235c299c675a9c46a626f37fc0892785f4e8e748f370de055ecce9b71c",
+      "b7250103e51baa14b10247cdc2da08d13dc39a5330c8eec7cbabde0abe9a7922",
+      "b7b38acaabc87c586f76da0960aa2c507a612609e8bf0e2b074a6d7a3ce71ea3",
+      "db7b6175ca902a6a8f7247fbe7430767524b8f9a47f857a1164e57fa49ad85a0",
+      "e7a25bb51e869159db07bacbd46dc377437220b7483803ccafb175ca816acbbb",
+      "ed0d376d0ce311869e1056432a205aad2751e4377c41fb9df1dffeb9ff9d9fa6",
+      "eda331dcf267d7c0a02426b96ecdbe59fdacd5bb3652183c2022730505d357e3"
+    ],
+    "sources": [
+      "en.wikipedia.org",
+      "fifa official world cup 2022 results (fifa.com) and contemporaneous reporting (e.g. reuters/bbc) confirming argentina defeated france in the final on 18 december 2022 to win the tournament",
+      "fifa official world cup 2022 results (fifa.com, qatar 2022 final: argentina 3-3 france, argentina won 4-2 on penalties, 18 december 2022)",
+      "inside.fifa.com",
+      "www.fifa.com"
+    ],
+    "definitions": {
+      "win": "The tournament winner, including a final decided by a penalty shootout."
+    },
+    "recipeMembers": 11
+  },
+  "computed": {
+    "answer": true
+  },
+  "attestation": {
+    "agreed": 11,
+    "answer": "0x0000000000000000000000000000000000000000000000000000000000000001",
+    "figure": "0",
+    "quorum": 11,
+    "chainId": 1,
+    "toBlock": 26213524,
+    "issuedAt": 1792255273,
+    "blockHash": "0xe965bbc9c49f48e043dc571dda9f0b45176941a93b776eff8c2b0f833330bc09",
+    "expiresAt": 1792341673,
+    "fromBlock": 26206347,
+    "panelSize": 15,
+    "requestId": "0x43a20eb4f9ce47518a629c8851b1256500000000000000000000000000000000",
+    "answerType": "bool",
+    "panelJobId": "0x0c599580f2394ad69766b23404013f3c00000000000000000000000000000000",
+    "questionHash": "0x01647b9a756632a15dcd092560b07f9383e1b6b124718c95d7da74eb2bd9b13f"
+  },
+  "signature": "0xb300ec313bb1b7d8984c853a9654f61d1fef7150291a8492f79f298bbbe9a0bd6575422ece45c23d748e34b07cad9560bacbf1ae1e14edef90b06ca79926f4041c",
+  "signer": "0x5598aa9146215bc13eb26f2c692ad1461fd32982",
+  "failure": null,
+  "attempts": 0,
+  "attestedAt": "2026-10-17T16:41:13.419Z",
+  "createdAt": "2026-10-17T16:40:09.848Z",
+  "updatedAt": "2026-10-17T16:41:13.419Z",
+  "url": "/oracle/requests/43a20eb4-f9ce-4751-8a62-9c8851b12565",
+  "jobUrl": "/jobs/0c599580-f239-4ad6-9766-b23404013f3c"
+}
