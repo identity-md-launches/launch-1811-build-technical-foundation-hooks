@@ -49,7 +49,7 @@ contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
     HookRequestCodec public immutable codec;
     IIntake public intake;
     address public asset;
-    uint256 public maxPrice;
+    mapping(address => uint256) public maxPriceOf;
     bytes32 public jobAction = bytes32("job.open@job-1");
     bytes32 public reviewAction = bytes32("oracle.request@oracle-1");
     uint16 public minPanelSize = 7;
@@ -129,7 +129,7 @@ contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
         }
         intake = IIntake(intake_);
         asset = asset_;
-        maxPrice = cap_;
+        maxPriceOf[asset_] = cap_;
         codec = codec_;
         maxWindowAgeBlocks = codec_.minimumWindowAgeBlocks();
     }
@@ -143,6 +143,11 @@ contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
 
     function automaticBindingSupported() external pure returns (bool) {
         return true;
+    }
+
+    /// @notice Compatibility getter for the current protocol asset's live base-unit cap.
+    function maxPrice() public view returns (uint256) {
+        return maxPriceOf[asset];
     }
 
     /// @notice The same native chain clock used by every lifecycle transition.
@@ -161,10 +166,14 @@ contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
     ) external nonReentrant returns (bytes32 jobId, bytes32 askId) {
         if (address(codec).codehash != 0xfb28d0432fba1c6ee9e6ec8d3ae5896d1a36c708c7ee6eccc701eb07dc6611ea) revert NotConfigured();
         uint64 currentBlock = head();
-        if (verdictReserve > maxPrice) revert PriceExceeded(verdictReserve, maxPrice);
-        uint256 price = _quote(address(intake), jobAction, asset, maxBuildFee < maxPrice ? maxBuildFee : maxPrice);
+        uint256 price;
+        {
+            uint256 cap = maxPriceOf[asset];
+            if (verdictReserve > cap) revert PriceExceeded(verdictReserve, cap);
+            price = _quote(address(intake), jobAction, asset, maxBuildFee < cap ? maxBuildFee : cap);
+        }
         _quote(address(intake), reviewAction, asset, verdictReserve);
-        askId = keccak256(abi.encode(block.chainid, address(this), ++nonce));
+        askId = _nextAskId();
         (bytes32 specHash, bytes memory body) = codec.prepareJob(spec, askId, address(intake), deployer, brief);
         ExactStoreToken.pull(asset, msg.sender, price + verdictReserve);
         reserved[asset] += verdictReserve;
@@ -441,7 +450,7 @@ contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
         (Payment storage p,) = _unspentReserve(jobId);
         if (candidateDigest[jobId] == bytes32(0)) revert NotReady();
         uint256 total = p.reserve + amount;
-        if (amount == 0 || total > maxPrice) revert InvalidConfig();
+        if (amount == 0 || total > maxPriceOf[p.asset]) revert InvalidConfig();
         _refreshReserveWindow(p);
         p.reserve = total;
         reserved[p.asset] += amount;
@@ -488,7 +497,7 @@ contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
         HookJobRequester.Job storage j = _requesterJob(jobId);
         if (j.review != HookJobRequester.ReviewStatus.Unanswered) revert NotReady();
         Payment storage p = payments[jobId];
-        if (p.cancelled || reserve == 0 || reserve > maxPrice) revert InvalidConfig();
+        if (p.cancelled || reserve == 0 || reserve > maxPriceOf[p.asset]) revert InvalidConfig();
         uint64 currentBlock = head();
         _quote(p.intake, p.verdictAction, p.asset, reserve);
         ExactStoreToken.pull(p.asset, msg.sender, reserve);
@@ -496,7 +505,7 @@ contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
         reserved[p.asset] += reserve;
         p.windowStartBlock = currentBlock;
         p.reserveDeadline = uint64(block.timestamp) + REVIEW_TIMEOUT;
-        askId = keccak256(abi.encode(block.chainid, address(this), ++nonce));
+        askId = _nextAskId();
         jobAsk[jobId] = askId;
         asks[askId].jobId = jobId;
         j.review = HookJobRequester.ReviewStatus.None;
@@ -563,7 +572,7 @@ contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
     }
 
     // Protocol and panel settings are snapshotted per job. Window age is snapshotted at trigger.
-    // Signer and epoch are snapshotted at trigger; current maxPrice caps new prepayments.
+    // Signer and epoch are snapshotted at trigger; each asset's live cap bounds new prepayments.
     function setProtocol(address intake_, address asset_, uint256 cap_, bytes32 jobAction_, bytes32 reviewAction_)
         external
         onlyOwner
@@ -575,7 +584,7 @@ contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
         ) revert InvalidConfig();
         intake = IIntake(intake_);
         asset = asset_;
-        maxPrice = cap_;
+        maxPriceOf[asset_] = cap_;
         jobAction = jobAction_;
         reviewAction = reviewAction_;
         emit ProtocolSet(intake_, asset_, cap_, jobAction_, reviewAction_);
@@ -639,8 +648,8 @@ contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
     }
 
     function _quote(address at, bytes32 action, address token, uint256 cap) private view returns (uint256 price) {
-        // New prepayments/retries clamp cap to maxPrice at the caller. A previously funded
-        // verdict keeps its reserved cap even if the owner subsequently lowers maxPrice.
+        // New prepayments/retries clamp to maxPriceOf[token] at the caller. A funded verdict
+        // keeps its reserved cap even if the owner subsequently lowers that token's cap.
         price = IIntake(at).priceOf(action, token);
         if (price == 0) revert NotConfigured();
         if (price > cap) revert PriceExceeded(price, cap);
@@ -649,6 +658,10 @@ contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
     function _recordId(bytes32 id) private {
         if (id == bytes32(0) || usedIntakeRequestIds[id]) revert DuplicateId();
         usedIntakeRequestIds[id] = true;
+    }
+
+    function _nextAskId() private returns (bytes32) {
+        return keccak256(abi.encode(block.chainid, address(this), ++nonce));
     }
 
     function _request(

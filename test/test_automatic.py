@@ -36,11 +36,11 @@ class AutomaticSdkTest(unittest.TestCase):
         self.client = AutomaticClient(self.rpc, self.requester)
     def tearDown(self): self.assertTrue(self.local.request('evm_revert', [self.snapshot]))
 
-    def _open(self):
+    def _open(self, fee=FEE):
         out = self.client.open_job(sender=self.creator,spec=self.spec,deployer=self.gate,brief='Bounded hook',
-                                   max_build_fee=FEE,verdict_reserve=FEE)
+                                   max_build_fee=fee,verdict_reserve=fee)
         self.assertTrue(out['unsigned'])
-        self.assertEqual(out['prepayment'], FEE * 2)
+        self.assertEqual(out['prepayment'], fee * 2)
         approval_receipt = self.local.send(out['approvalTransaction']); receipt = self.local.send(out['transaction'])
         self.gas = {'approval':int(approval_receipt['gasUsed'],16),'openJob':int(receipt['gasUsed'],16)}
         topic = keccak_hex('JobOpened(bytes32,address,bytes32,uint256,bytes)')
@@ -49,8 +49,8 @@ class AutomaticSdkTest(unittest.TestCase):
         ask = self.rpc.call(self.requester,'jobAsk(bytes32)(bytes32)',job)
         return job, ask
 
-    def _candidate_asked(self, ask_verdict=True):
-        job, ask = self._open()
+    def _candidate_asked(self, ask_verdict=True, fee=FEE):
+        job, ask = self._open(fee)
         built = json.loads((ROOT/'out/BoundedSwapHook.sol/BoundedSwapHook.json').read_text())
         args = _cast('abi-encode','f('+TYPE+')',abi_tuple(self.spec))
         a = dict(jobRequestId=job,sourceHash=keccak_hex('local source'),sourceSubmissionHash=keccak_hex('local source submission'),
@@ -83,7 +83,7 @@ class AutomaticSdkTest(unittest.TestCase):
         self.gas['requestVerdict']=int(receipt['gasUsed'],16)
         print('LOCAL_MOCK_TRANSACTION_GAS '+json.dumps(self.gas,sort_keys=True))
         self.rpc = Rpc(self.local.url)
-        self.assertEqual(int(self.rpc.call(self.imd,'balanceOf(address)(uint256)',self.intake),16), FEE*2)
+        self.assertEqual(int(self.rpc.call(self.imd,'balanceOf(address)(uint256)',self.intake),16), fee*2)
         self.rpc = Rpc(self.local.url)
         candidate = self.rpc.call(self.requester,'candidateDigest(bytes32)(bytes32)',job)
         self.assertEqual(candidate,self.rpc.call(self.gate,'artifactDigest('+ARTIFACT+')(bytes32)',artifact_tuple(a)))
@@ -222,14 +222,19 @@ class AutomaticSdkTest(unittest.TestCase):
         self.assertEqual(out['windowPolicy']['minimumWindowAgeBlocks'], 173108)
 
     def test_unsigned_top_up_uses_original_asset_and_preserves_job_after_rotation(self):
+        rpc = Rpc(self.local.url)
+        self.local.call_transaction(self.requester, 'setProtocol(address,address,uint256,bytes32,bytes32)',
+                                    self.intake, self.imd, str(2*FEE),
+                                    rpc.call(self.requester, 'jobAction()(bytes32)'),
+                                    rpc.call(self.requester, 'reviewAction()(bytes32)'))
         job, ask = self._candidate_asked(ask_verdict=False)
         old = Rpc(self.local.url)
         candidate = old.call(self.requester, 'candidateDigest(bytes32)(bytes32)', job)
         old_action = old.call(self.requester, 'reviewAction()(bytes32)')
         new_intake = self.local.deploy('MockIntake')
-        new_token = self.local.deploy('TestToken', 'f(string,uint8)', 'Replacement local token', '18')
+        new_token = self.local.deploy('TestToken', 'f(string,uint8)', 'Replacement local token', '6')
         self.local.call_transaction(self.requester, 'setProtocol(address,address,uint256,bytes32,bytes32)',
-                                    new_intake, new_token, str(2*FEE), keccak_hex('new build'), keccak_hex('new verdict'))
+                                    new_intake, new_token, str(2*10**6), keccak_hex('new build'), keccak_hex('new verdict'))
         self.local.call_transaction(self.intake, 'setPrice(bytes32,address,uint256)', old_action, self.imd, str(3*FEE//2))
         self.local.request('anvil_mine', ['0x8'])
         client = AutomaticClient(Rpc(self.local.url), self.requester)
@@ -257,6 +262,36 @@ class AutomaticSdkTest(unittest.TestCase):
         self.assertEqual(int(rpc.call(self.imd,'balanceOf(address)(uint256)',self.intake),16),5*FEE//2)
         self.assertEqual(int(rpc.call(self.imd,'balanceOf(address)(uint256)',new_intake),16),0)
         self.assertEqual(int(rpc.call(self.requester,'refunds(address,address)(uint256)',self.imd,self.creator),16),FEE//2)
+
+    def test_real_six_to_eighteen_rotation_keeps_the_six_decimal_cap(self):
+        rpc = Rpc(self.local.url)
+        actions = [rpc.call(self.requester, name + '()(bytes32)') for name in ['jobAction','reviewAction']]
+        original = self.local.deploy('TestToken', 'f(string,uint8)', 'Original local six decimals', '6')
+        self.local.call_transaction(self.requester, 'setProtocol(address,address,uint256,bytes32,bytes32)',
+                                    self.intake, original, '1000000', *actions)
+        for action in actions:
+            self.local.call_transaction(self.intake, 'setPrice(bytes32,address,uint256)', action, original, '500000')
+        self.local.call_transaction(original, 'mint(address,uint256)', self.creator, '10000000')
+        self.client = AutomaticClient(Rpc(self.local.url), self.requester)
+        job, ask = self._candidate_asked(ask_verdict=False, fee=500000)
+        self.local.call_transaction(self.requester, 'setProtocol(address,address,uint256,bytes32,bytes32)',
+                                    self.intake, self.imd, str(2*10**18), *actions)
+        client = AutomaticClient(Rpc(self.local.url), self.requester)
+        with self.assertRaisesRegex(StoreError, 'maxPriceOf'):
+            client.top_up_reserve(sender=self.creator, job=job, amount=500001)
+        out = client.top_up_reserve(sender=self.creator, job=job, amount=500000)
+        self.assertEqual(out['approvalTransaction']['to'], original)
+        self.local.send(out['approvalTransaction'])
+        self.local.send(out['transaction'])
+        client = AutomaticClient(Rpc(self.local.url), self.requester)
+        self.assertEqual(client.reserve_status(job)['amount'], 1000000)
+        self.assertEqual(client.verdict_readiness(ask)['blocksRemaining'], 8)
+        self.local.request('anvil_mine', ['0x8'])
+        self.local.send(AutomaticClient(Rpc(self.local.url), self.requester).request_verdict(sender=self.outsider, ask=ask))
+        rpc = Rpc(self.local.url)
+        self.assertEqual(int(rpc.call(original, 'balanceOf(address)(uint256)', self.intake), 16), 1000000)
+        self.assertEqual(int(rpc.call(self.requester, 'refunds(address,address)(uint256)', original, self.creator), 16), 500000)
+        self.assertEqual(int(rpc.call(self.imd, 'balanceOf(address)(uint256)', self.intake), 16), 0)
 
     def test_unsigned_top_up_refuses_invalid_owner_phase_amount_or_current_cap(self):
         job, ask = self._candidate_asked(ask_verdict=False)

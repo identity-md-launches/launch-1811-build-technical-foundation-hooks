@@ -113,9 +113,10 @@ class AutomaticClient:
         context = _hex(self.rpc.call(self.requester, 'getAsk(bytes32)', ask), 288, 'ask response')
         if int(context[66:130], 16) != 0:
             raise StoreError('top-up requires an unspent ask')
-        cap = int(_hex(self.rpc.call(self.requester, 'maxPrice()(uint256)'), 32, 'maximum price'), 16)
+        cap = int(_hex(self.rpc.call(self.requester, 'maxPriceOf(address)(uint256)', reserve['token']),
+                       32, 'token maximum price'), 16)
         if reserve['amount'] + amount > cap:
-            raise StoreError('total reserve exceeds current maxPrice')
+            raise StoreError('total reserve exceeds current maxPriceOf for the reserve token')
         self.rpc.call(self.requester, 'head()(uint64)')
         approval = self.transaction(sender, 'approve(address,uint256)', self.requester, str(amount))
         approval['to'] = reserve['token']

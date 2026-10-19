@@ -1,6 +1,6 @@
 {
   "format": "hooks-store-automatic-infrastructure-draft/v1",
-  "baseCommit": "357201be804e18ab48567172fb6c8b07acb30a2c",
+  "baseCommit": "e69e04f63832b9fa1e84c7d58c685ce37924a490",
   "status": "Source and local tests only; no transactions authorized or executed. This is not launch.json.",
   "runbook": "docs/AUTOMATIC_BINDING.md",
   "contracts": [
@@ -55,6 +55,7 @@
         "oracleSigner()",
         "codec()",
         "maxPrice()",
+        "maxPriceOf($asset) == maxPrice() > 0",
         "automaticBindingSupported()",
         "head()",
         "WINDOW_DEPTH()",
@@ -89,9 +90,10 @@
         "constructor": "Reads minimumWindowAgeBlocks() from the already-deployed pinned codec; unsupported chains revert",
         "preflight": "Compare codec minimum with independent tooling policy and reject any configured age below it; this validates assumptions, not live cadence",
         "reviewExpiry": "Owner closure requires now > uint256(ask.deadline) + 300 + 86400",
-        "topUp": "Requester only; Delivered/None, committed, uncancelled, current ask intakeId == 0; positive original-asset exact pull; total reserve <= current maxPrice; ask/job/candidate unchanged"
+        "topUp": "Requester only; Delivered/None, committed, uncancelled, current ask intakeId == 0; positive original-asset exact pull; total reserve <= maxPriceOf(original job asset); ask/job/candidate unchanged"
       },
-      "signerPolicy": "Signer address and epoch recorded at trigger. Ordinary rotation preserves pending answers; explicit epoch revocation blocks pending and finalized verdicts."
+      "signerPolicy": "Signer address and epoch recorded at trigger. Ordinary rotation preserves pending answers; explicit epoch revocation blocks pending and finalized verdicts.",
+      "capPolicy": "Token base units: constructor/setProtocol write only maxPriceOf(selected asset). maxPrice() returns maxPriceOf(asset()). Other token caps persist across rotation; same-token reductions affect new funding/retries, never an already-funded trigger. SDK/UI top-up reads the reserve token cap without fallback."
     },
     {
       "contract": "GatedHookDeployer",
@@ -131,6 +133,7 @@
     "Ethereum and Robinhood sell both actions in the captured capabilities. Sepolia is oracle-only; Base has no supported Intake. Never guess support.",
     "The existing listing/ad fee and recipient configuration remain as in the historical Store runbook.",
     "Obtain independent adversarial review and separate authorization for any later live pilot or deployment.",
-    "Record the selected age policy and preflight output before accepting fees; increase it if measured native cadence or bursts invalidate the assumed floor. Changes apply to newly triggered asks only. Requalify ERC-1271 callback gas and registry policy changes. Monitor prices; creators can approve and top up an unspent committed ask without repaying the build."
+    "Record the selected age policy and preflight output before accepting fees; increase it if measured native cadence or bursts invalidate the assumed floor. Changes apply to newly triggered asks only. Requalify ERC-1271 callback gas and registry policy changes. Monitor prices; creators can approve and top up an unspent committed ask without repaying the build.",
+    "Read back per-token caps after every protocol rotation; configure a legacy-token cap by deliberately selecting that token with setProtocol. Retain its original Intake/action quotes for existing jobs. Reconnect UI after wallet/requester drift and inspect any returned transaction hash before resubmitting."
   ]
 }

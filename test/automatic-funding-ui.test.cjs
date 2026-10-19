@@ -10,61 +10,7 @@ const currentToken = '0x'+'45'.repeat(20), job = '0x'+'56'.repeat(32), ask = '0x
 const cast = (...args) => execFileSync('cast', args, {encoding:'utf8'}).trim().toLowerCase();
 const words = (...values) => '0x'+values.map(x => A.uint(x)).join('');
 
-function wallet(overrides = {}) {
-  const state = {price:501n, reserve:500n, cap:1000n, allowance:0n, status:2, review:0, cancelled:0,
-    committed:true, spent:false, phase:1, available:true, sender:creator, ...overrides};
-  const elements = new Map(), sent = [], calls = [];
-  const el = id => {
-    if (!elements.has(id)) elements.set(id, {value:'',textContent:'',addEventListener(e,fn){this.click=fn;}});
-    return elements.get(id);
-  };
-  el('requester').value = requester; el('job').value = job; el('ask').value = ask; el('topUpAmount').value = '1';
-  const provider = {async request({method,params}) {
-    calls.push({method,params});
-    if (method === 'eth_accounts' || method === 'eth_requestAccounts') return [state.sender];
-    if (method === 'eth_estimateGas') return '0x20000';
-    if (method === 'eth_sendTransaction') {
-      const tx = params[0]; sent.push(tx);
-      if (tx.to === token) state.allowance = BigInt('0x'+tx.data.slice(-64));
-      if (tx.data.startsWith('0x'+A.selectors.topUp)) {
-        const amount = BigInt('0x'+tx.data.slice(-64));
-        assert.ok(state.allowance >= amount);
-        state.reserve += amount; state.allowance -= amount; state.phase = 0;
-      }
-      return job;
-    }
-    if (method === 'eth_getTransactionReceipt') return {status:'0x1'};
-    assert.equal(method,'eth_call');
-    const {to,data} = params[0];
-    if (data.startsWith('0xdd62ed3e')) { assert.equal(to,token); return words(state.allowance); }
-    assert.equal(to,requester);
-    if (data === '0x'+A.selectors.automatic) return words(1);
-    if (data === '0x'+A.selectors.asset) return '0x'+A.address(currentToken);
-    if (data === '0x'+A.selectors.maxPrice) return words(state.cap);
-    if (data === '0x'+A.selectors.head) return words(900008);
-    if (data === '0x'+A.selectors.depth) return words(8);
-    if (data.startsWith('0x'+A.selectors.job)) {
-      const w = Array(15).fill(A.uint(0)); w[0] = A.address(creator); w[3] = A.uint(state.status); w[4] = A.uint(state.review);
-      return '0x'+w.join('');
-    }
-    if (data.startsWith('0x'+A.selectors.ask)) return ask;
-    if (data.startsWith('0x'+A.selectors.askContext)) return words(1,state.spent ? 1 : 0,0,0,0,0,0,0,0);
-    if (data.startsWith('0x'+A.selectors.candidate)) return words(state.committed ? 1 : 0);
-    if (data.startsWith('0x'+A.selectors.approved) || data.startsWith('0x'+A.selectors.epoch)) return words(0);
-    if (data.startsWith('0x'+A.selectors.reserveDeadline)) return words(1800086400);
-    if (data.startsWith('0x'+A.selectors.reserve)) return '0x'+A.address(token)+A.uint(state.reserve)+A.uint(state.cancelled);
-    if (data.startsWith('0x'+A.selectors.readiness)) return words(state.phase,900008,state.phase ? 900000 : 900008,900000);
-    if (data.startsWith('0x'+A.selectors.funding)) {
-      if (!state.available) throw Error('quote unavailable');
-      return words(state.price,state.reserve,BigInt(token));
-    }
-    throw Error('unexpected call '+data);
-  }};
-  vm.runInNewContext(readFileSync('site/automatic-ui.js','utf8'), {
-    AutoHooks:A,document:{getElementById:el},window:{ethereum:provider},setTimeout
-  });
-  return {state, el, sent, calls};
-}
+const {wallet} = require('./helpers/automatic-wallet.cjs');
 
 test('funding decoder and readiness fail closed on unavailable, zero, unaffordable or malformed quotes', () => {
   const phase = {ready:true};
@@ -78,9 +24,10 @@ test('funding decoder and readiness fail closed on unavailable, zero, unaffordab
 test('wallet does not estimate or send an underfunded or unavailable verdict', async () => {
   for (const options of [{price:501n},{price:0n},{available:false}]) {
     const w = wallet(options);
+    await w.el('connect').click();
     await w.el('verdict').click();
     assert.match(w.el('output').textContent,/not ready.*positive quote within reserve/);
-    assert.ok(w.calls.every(c => c.method === 'eth_call'));
+    assert.ok(!w.calls.some(c => c.method === 'eth_estimateGas'));
     assert.equal(w.sent.length,0);
   }
 });

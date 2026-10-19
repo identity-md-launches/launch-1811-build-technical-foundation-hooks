@@ -1,7 +1,7 @@
 # Automatic oracle authorization
 
-This revision continues `357201be804e18ab48567172fb6c8b07acb30a2c`, implementing findings 1–4 in
-[audit 7db42bb7](https://api.imd.fun/jobs/7db42bb7-5204-4805-894f-db1a2c11cd8e/report.md). It preserves confirmed native-chain
+This revision continues `e69e04f63832b9fa1e84c7d58c685ce37924a490`, fixing the token-cap and wallet-context findings in
+[audit dde20fdc](https://api.imd.fun/jobs/dde20fdc-3a82-44e1-bde7-143f6a6f28c5/report.md). It preserves confirmed native-chain
 windows, automatic binding and exact-artifact authorization. Use `AutoHookJobRequester`, its immutable `HookRequestCodec`, and `GatedHookDeployer`.
 The old `HookJobRequester` remains a legacy manual consumer for existing integrations and tests;
 its owner-binding methods are not part of the new flow. No live deployment, payment, wallet
@@ -64,8 +64,8 @@ requester may still cancel and withdraw the same unused funds.
 
 For an **unspent committed ask**, `topUpReserve(jobId, amount)` requires the original requester,
 Delivered, review None, a committed candidate, no cancellation, no current ask Intake ID, and
-`amount > 0`. The resulting total reserve must not exceed the **current** `maxPrice`, including
-after protocol rotation or a cap reduction. The exact transfer uses the job's **original asset**,
+`amount > 0`. The resulting total reserve must not exceed the **live original-token cap**
+`maxPriceOf(reserve.token)`. The exact transfer uses the job's **original asset**,
 credits both its reserve and protected escrow, and refreshes the same native window/deadline.
 It works before or after the reserve deadline and does not require a current quote. It cannot
 repay the build, replace the candidate, create an ask, revive NotPassed/cancelled work, or fund a
@@ -74,10 +74,28 @@ spent ask. Unanswered still requires `retryVerdict` first; that fresh unspent re
 remain pull-refunded exactly once; the owner cannot sweep them. Transfer failure, an inexact
 transfer or a reentrant funding attempt reverts atomically.
 
-If a price rise exceeds the configured ceiling, the owner must deliberately raise `maxPrice`
-through `setProtocol` before a sufficient top-up is possible. This changes a funding limit, not
-review authorization. A requester may instead wait, renew an expired window, or cancel after its
-deadline; a build fee is never charged again by top-up or renewal.
+`maxPriceOf(token)` is denominated in that token's base units. The constructor and
+`setProtocol(Intake, asset, cap, jobAction, reviewAction)` update only the selected asset's entry;
+rotating to another asset leaves all other caps intact. `maxPrice()` remains a compatibility view
+of `maxPriceOf(asset())` for new jobs. An unconfigured token has cap zero. Top-ups and retries
+always use their job's original token entry; there is no fallback to the current asset's cap and
+no automatic decimal conversion. For example, rotating from an 18-decimal token capped at `1e18`
+to a 6-decimal token capped at `2e6` does not block a `0.5e18 + 1` legacy reserve. Rotating the
+other way cannot permit a reserve above the 6-decimal token's own cap.
+
+Caps are live per token, not frozen per job. A same-token reduction limits later top-ups and
+retries, including after rotating away again. It does **not** prevent spending an already-funded
+reserve at its original snapshotted Intake/action/token: permissionless triggering still compares
+the quote only with that reserve. Fees, refund accounting, roles and existing pausing behavior
+are unchanged. Shared `_nextAskId()` retains `keccak256(abi.encode(chainId, requester, ++nonce))`
+for both opening and retrying; it does not reset a nonce on rotation.
+
+If a price rise exceeds the original token's ceiling, the owner must deliberately update that
+entry via `setProtocol` before sufficient top-up or retry is possible. There is no separate
+legacy-token setter: selecting a token also selects it for new jobs, so plan configuration changes
+and admission accordingly. A later rotation must retain the intended cap for its selected token.
+These changes affect funding limits, never review authorization. A requester may instead wait,
+renew an expired window, or cancel after its deadline; top-up and renewal never repay the build.
 
 Every wallet transaction needs the chain's native gas currency. The UI estimates gas before asking
 the wallet to send. Local Anvil transaction measurements using **MockIntake, which stores entire
@@ -285,8 +303,8 @@ can close an affected finalized verdict for recovery, preserving the old ask, UU
 and events. It is an explicit compromised-signer exception, not normal review shopping.
 
 Protocol, token and action settings and panel minimums are snapshotted per job. Window-age policy
-and signer address/epoch are snapshotted at trigger. Current maxPrice caps new
-prepayments/retries and total reserves after top-ups. Two-step ownership and cancelled handovers are preserved. The owner cannot
+and signer address/epoch are snapshotted at trigger. `maxPriceOf(token)` caps new
+prepayments/retries and total reserves after top-ups in that token's own base units. Two-step ownership and cancelled handovers are preserved. The owner cannot
 sweep reserves or refund credits. Job callbacks emit the full untrusted URI only up to 1,024 bytes; larger URIs emit JobResultURIOmitted
 with their length, so the result hash/status can still be recorded within the stipend (tested at 64 KiB).
 The callback transaction itself retains the original URI. No callback transfers funds or deploys; callback external calls
@@ -313,7 +331,7 @@ This assignment provides source and local tests only. No actual deployment addre
 | HookRequestCodec | Deploy the exact compiled no-argument codec first; check its runtime matches this build. It has no owner or settings. |
 | AutoHookJobRequester(owner, Intake, IMD, signer, maxPrice, codec) | The deployment operator supplies the real launch owner and protocol addresses for the selected chain. Deploy the codec first: this constructor reads its chain-specific minimum. It never assigns ownership to the factory. Existing protocol reference addresses are configuration inputs, not hardcoded recipients. |
 | GatedHookDeployer(owner, requester) | Deploy with the automatic requester as immutable verdict source. Never substitute the legacy requester when advertising automatic binding. |
-| `setProtocol(Intake, IMD, cap, jobAction, reviewAction)` | Launch owner, only when protocol configuration changes. Defaults use published padded action IDs job.open@job-1 and oracle.request@oracle-1; verify priceOf before opening. Existing jobs keep their original Intake/token/actions. |
+| `setProtocol(Intake, IMD, cap, jobAction, reviewAction)` | Launch owner, only when protocol configuration changes. Defaults use published padded action IDs job.open@job-1 and oracle.request@oracle-1; verify priceOf before opening. Existing jobs keep their original Intake/token/actions. Only the selected token's cap is updated; inspect all legacy token caps before changing configuration. |
 | `setPanel(panelSize, quorum, maxWindowAgeBlocks)` | Launch owner selects the deployment policy; defaults 7/5 with the chain-specific age minimum in the table above; undersizing reverts. Respect the paid door's current minimum/cap (captured minimum 5, maximum 100); test one-shot callback gas for any signer/policy change. |
 | `setManager(manager, codeHash, true)` on deployer | Launch owner performs initial manager-policy activation. Production pins are unchanged. Re-read manager code and check the appropriate chain; this is infrastructure setup, not a per-hook approval. |
 | Ad recipients and Store token configuration | Existing listing/featured-placement deployment runbook remains authoritative. This change does not alter ad fees, recipients, tokens or their settings. |
@@ -322,6 +340,7 @@ This assignment provides source and local tests only. No actual deployment addre
 
 Use `python3 script/preflight_automatic.py --rpc <RPC> --requester <actual address> --deployer
 <actual address> --spec <full spec file>` for code/configuration checks without signing/sending.
+Preflight also requires `maxPrice() == maxPriceOf(asset()) > 0`; missing or inconsistent getters fail closed.
 Automatic deployment CLI reads the exact stored candidate and reviewed commit. Supply only
 `--rpc`, `--deployer`, `--job`, `--creation-code` and `--constructor-args` to `python3 -m sdk.gated_deploy`;
 it needs no result JSON or manual artifact metadata. It checks the signed approval and final gate
@@ -332,11 +351,33 @@ transactions, `renew <jobId>` for a simulated unsigned renewal, `reserve <jobId>
 amount, cancellation flag and reserve deadline, and `status <askId>` for native-window readiness.
 Use `top-up <jobId> --amount <positive token base units>` to prepare an unsigned **bounded approval
 and separate top-up** using the original token. The SDK checks ownership, phase, candidate,
-current ask, cancellation and total cap before printing either transaction. Execute the approval
+current ask, cancellation and `maxPriceOf(reserve.token)` before printing either transaction. Execute the approval
 and top-up separately, then invoke `reserve` and `status` again for readback.
 The [wallet UI](../site/automatic.html) provides separate top-up approval and funding buttons.
-It reads allowance after approval, rechecks eligibility/cap before funding, then reads the job,
-ask, reserve, deadline and funding readiness after the receipt. An approval alone does not fund the ask.
+Both approval buttons require an **exact** allowance readback and never send the funding
+transaction themselves. Top-up reads the original token's `maxPriceOf(address)` (selector
+`0xc9638491`) with no compatibility fallback. It rechecks eligibility/cap before funding and
+requires unchanged job/ask/candidate/ask context, the exact reserve increase, a nondecreasing
+deadline and refreshed native maturity after the receipt. An approval alone does not fund the ask.
+
+Connect pins the provider object, its request function, account, chain ID and requester address.
+Every button, including Connect and Status, shares one busy lock. Each action freezes all raw
+form values before awaiting the wallet; all targets, calldata and readbacks use those snapshots.
+Every RPC operation checks local context and the wallet account/chain before and after the call.
+Input/change events advance a revision, so editing and restoring a field during an operation
+still aborts it. Requester edits and wallet account/chain/disconnect events invalidate the
+connection; detected provider, request-function or in-flight form drift also requires reconnecting.
+Ordinary edits to other fields between completed actions are captured by the next action.
+
+Send payloads explicitly contain `from`, `chainId`, `to`, `data` and `value: '0x0'`; estimation gets
+a separate copy. The UI records a returned transaction hash **before** post-send context checks.
+If context drifts after submission, it displays the hash and withholds success: reconnect, inspect
+that transaction on its original chain, and read fresh state before deciding whether to submit
+again. A rejected UI readback cannot cancel or roll back a submitted transaction. Receipt polling
+is bounded to 120 seconds and proves inclusion only; the operator/user still checks finality.
+No success is shown before final context and applicable readback checks pass. These checks trust
+the installed wallet to report its state and RPC results honestly; they do not make separate
+latest-state reads an atomic snapshot or prevent onchain changes after the last read.
 SDK and UI check Delivered before commitment. Each SDK invocation reads one pinned
 block; make a fresh invocation after any transaction. The UI displays the reserve deadline in Unix seconds, native head, closing block and blocks remaining, and reads readiness again before
 requesting a verdict. Both SDK and UI fail closed on unavailable or malformed clock/readiness/funding calls. They
@@ -347,7 +388,8 @@ The UI uses textContent and never fetches a worker URI or asks a backend to sign
 
 ## Evidence and limitations
 
-[Current audit-fix regressions and checks](checks/audit-7db42bb7/README.md) record this build.
+[Current audit-fix regressions and checks](checks/audit-dde20fdc/README.md) record this build.
+[Full-horizon policy regressions](checks/audit-7db42bb7/README.md) are historical evidence.
 [Earlier window regressions and free checks](checks/oracle-window/README.md) are historical evidence. [Earlier automatic-binding vectors and logs](checks/automatic-binding/README.md)
 remain historical evidence. Together they distinguish:
 

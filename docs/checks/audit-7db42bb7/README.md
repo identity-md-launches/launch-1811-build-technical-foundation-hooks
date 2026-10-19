@@ -73,6 +73,10 @@ the Python integrations use disposable Anvil instances, and Node tests use walle
 | `sh script/verify-vendored.sh` | Pass, `vendored.log`; reported format-only differences predate this change |
 | `git diff --check` | Pass, `diff-check.log` |
 
+Historical measurements below used Foundry 1.8.5. The successor's
+[Foundry 1.8.3 measurements](../audit-dde20fdc/README.md) supersede them for current release
+qualification; the Robinhood mock redirect has version-dependent cold-account accounting.
+
 Isolated minimum forwarded callback gas, including a cold codec/pin and the mock native clock:
 
 | Clock | EOA | 5-of-7 ERC-1271 | 22-cold-read ERC-1271 |

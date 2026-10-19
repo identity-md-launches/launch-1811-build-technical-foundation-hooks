@@ -1,0 +1,40 @@
+{
+  "offline": true,
+  "signedQuestionHashesMatch": [
+    {
+      "requestId": "76587543-d7e6-471e-a01f-63e9e0dfc6e7",
+      "evidence": "chain",
+      "answerType": "uint256",
+      "prefixBytes": 1622,
+      "questionHash": "0xf4df38bb41d635b3de83f4215612d83e25696f6a40fc040f9de053baba7029df"
+    },
+    {
+      "requestId": "a03ae889-4a5d-4300-982a-e4bcf59ecf98",
+      "evidence": "panel",
+      "answerType": "bool",
+      "prefixBytes": 148,
+      "questionHash": "0xd3e1daa022412fedbe7b49cb7f2179847fc1d15159ad8c5e7a65ff4835cc8a4b"
+    },
+    {
+      "requestId": "43a20eb4-f9ce-4751-8a62-9c8851b12565",
+      "evidence": "panel",
+      "answerType": "bool",
+      "prefixBytes": 136,
+      "questionHash": "0x01647b9a756632a15dcd092560b07f9383e1b6b124718c95d7da74eb2bd9b13f"
+    },
+    {
+      "requestId": "c65fecb5-2a13-4365-b6de-89f7a2c46bb2",
+      "evidence": "panel",
+      "answerType": "uint256",
+      "prefixBytes": 2231,
+      "questionHash": "0x2696c91a75998915c9ee1e31f8a6999c9b9ee68f9ecaed220d7470dadf8ba8af"
+    }
+  ],
+  "currentBody": {
+    "localOnly": true,
+    "prefixBytes": 2713,
+    "questionHash": "0x00b84e0470b8b5ce4f0d4bd5c9472756175563cb37c7ed1010b211e25b4e1069",
+    "codecRuntimeHash": "0xfb28d0432fba1c6ee9e6ec8d3ae5896d1a36c708c7ee6eccc701eb07dc6611ea",
+    "bodyBytes": 2877
+  }
+}

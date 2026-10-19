@@ -1,0 +1,8 @@
+................................................................................
+----------------------------------------------------------------------
+Ran 80 tests in 60.099s
+
+OK
+LOCAL_MOCK_TRANSACTION_GAS {"approval": 46152, "commitArtifact": 487520, "openJob": 3344968, "requestVerdict": 3177197}
+LOCAL_MOCK_TRANSACTION_GAS {"approval": 46152, "commitArtifact": 487520, "openJob": 3344968, "requestVerdict": 3177197}
+LOCAL_AUTOMATIC_DEPLOY_GAS 1090843

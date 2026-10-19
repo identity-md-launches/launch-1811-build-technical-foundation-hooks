@@ -10,7 +10,7 @@
     jobAction: '1079a365', candidate: '7868e9ab', epoch: '585ae49a', revoked: 'bc31fa7d',
     readiness: '123667dd', head: '8f7dcfa3', depth: '08d87b1f',
     renew: 'b65b7d6f', reserveDeadline: '364a74f5', reserve: 'd7b8c543',
-    topUp: 'ffc731fb', funding: '057500fa', askContext: 'd026830b', maxPrice: 'e38d6b5c'
+    topUp: 'ffc731fb', funding: '057500fa', askContext: 'd026830b', maxPrice: 'e38d6b5c', maxPriceOf: 'c9638491'
   };
   const fields = ['jobRequestId', 'sourceHash', 'sourceSubmissionHash', 'reviewSubmissionHash', 'evidenceHash',
     'buildHash', 'creationCodeHash', 'constructorArgsHash', 'runtimeCodeHash', 'chainId', 'deployer',

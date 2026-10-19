@@ -1,0 +1,13 @@
+✔ original-token cap across rotation 500000000000000000 (12.751255ms)
+✔ original-token cap across rotation 500000 (2.936261ms)
+✔ approveTopUp must refuse requester drift before sending (3.150199ms)
+✔ topUp must refuse requester drift before sending (9.040616ms)
+✔ transaction must carry the chain pinned at connect (3.653199ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 40.448169

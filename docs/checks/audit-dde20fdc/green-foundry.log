@@ -1,0 +1,15 @@
+Compiling 3 files with Solc 0.8.26
+Solc 0.8.26 finished in 9.63s
+Compiler run successful!
+
+Ran 7 tests for test/AuditDde20fdc.t.sol:AuditDde20fdcTest
+[PASS] testConstructorAndRotationsOnlyWriteSelectedTokenCap() (gas: 972771)
+[PASS] testNewJobsUseCurrentAssetCapAndAskNonceIsShared() (gas: 12166071)
+[PASS] testRotation18To6RetryKeepsOriginalUnits() (gas: 12034857)
+[PASS] testRotation18To6TopUpKeepsOriginalUnits() (gas: 8953926)
+[PASS] testRotation6To18RetryKeepsOriginalUnits() (gas: 12886163)
+[PASS] testRotation6To18TopUpKeepsOriginalUnits() (gas: 9805309)
+[PASS] testSameTokenReductionSurvivesRotationAndFundedTriggerStillWorks() (gas: 8799021)
+Suite result: ok. 7 passed; 0 failed; 0 skipped; finished in 17.10ms (63.36ms CPU time)
+
+Ran 1 test suite in 17.89ms (17.10ms CPU time): 7 tests passed, 0 failed, 0 skipped (7 total tests)

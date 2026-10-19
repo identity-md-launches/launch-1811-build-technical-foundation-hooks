@@ -99,3 +99,90 @@ class WindowPolicyPreflightTest(unittest.TestCase):
     def test_unsupported_chain_rejected_without_guessing(self, _runtime):
         rpc = PolicyRpc(999001, 4000000, 14433)
         with self.assertRaises(StoreError): preflight(rpc, REQUESTER, TOKEN, rpc.spec)
+
+
+class TokenCapRpc:
+    """No maxPrice compatibility fallback is permitted for a legacy reserve."""
+    block = 'latest'
+
+    def __init__(self, reserve, cap, current_cap):
+        self.reserve, self.cap, self.current_cap = reserve, cap, current_cap
+        self.seen = []
+        self.bad_cap = None
+
+    def request(self, method, params):
+        assert method == 'eth_chainId'
+        return hex(31337)
+
+    def call(self, address, signature, *args):
+        self.seen.append((address, signature, args))
+        if signature == 'automaticBindingSupported()(bool)': return words(1)
+        if signature == 'getJob(bytes32)': return words(int(TOKEN, 16), 0, 0, 2, *([0] * 11))
+        if signature.startswith('reserveOf('): return words(int(TOKEN, 16), self.reserve, 0)
+        if signature.startswith('reserveDeadline('): return words(1800086400)
+        if signature.startswith('candidateDigest('): return words(1)
+        if signature.startswith('jobAsk('): return ASK
+        if signature.startswith('getAsk('): return words(1, *([0] * 8))
+        if signature == 'maxPrice()(uint256)': return words(self.current_cap)
+        if signature == 'maxPriceOf(address)(uint256)':
+            assert args == (TOKEN,)
+            if self.bad_cap == 'unavailable': raise StoreError('cap unavailable')
+            return self.bad_cap if self.bad_cap is not None else words(self.cap)
+        if signature == 'head()(uint64)': return words(900008)
+        raise AssertionError(signature)
+
+
+class TokenCapSdkTest(unittest.TestCase):
+    def test_top_up_18_to_6_uses_unchanged_original_cap(self):
+        rpc = TokenCapRpc(5 * 10**17, 10**18, 2 * 10**6)
+        result = AutomaticClient(rpc, REQUESTER).top_up_reserve(sender=TOKEN, job=ASK, amount=1)
+        self.assertEqual(result['reserveAfter'], 5 * 10**17 + 1)
+        self.assertEqual(result['approvalTransaction']['to'], TOKEN)
+        self.assertNotIn('maxPrice()(uint256)', [s for _, s, _ in rpc.seen])
+
+    def test_top_up_6_to_18_cannot_exceed_original_cap(self):
+        rpc = TokenCapRpc(500000, 1000000, 2 * 10**18)
+        client = AutomaticClient(rpc, REQUESTER)
+        with self.assertRaisesRegex(StoreError, 'maxPriceOf'):
+            client.top_up_reserve(sender=TOKEN, job=ASK, amount=500001)
+        result = client.top_up_reserve(sender=TOKEN, job=ASK, amount=500000)
+        self.assertEqual(result['reserveAfter'], 1000000)
+        self.assertNotIn('maxPrice()(uint256)', [s for _, s, _ in rpc.seen])
+
+    def test_unavailable_malformed_zero_or_lowered_token_cap_has_no_fallback(self):
+        for cap in ['unavailable', '0x', words(0), words(499)]:
+            rpc = TokenCapRpc(500, 1000, 2 * 10**18)
+            rpc.bad_cap = cap
+            with self.subTest(cap=cap), self.assertRaises(StoreError):
+                AutomaticClient(rpc, REQUESTER).top_up_reserve(sender=TOKEN, job=ASK, amount=1)
+            self.assertNotIn('maxPrice()(uint256)', [s for _, s, _ in rpc.seen])
+
+
+class TokenCapPreflightTest(unittest.TestCase):
+    @patch('script.preflight_automatic.runtime_matches', return_value=True)
+    def test_matching_positive_cap_and_token_argument_required(self, _runtime):
+        rpc = PolicyRpc(31337, 173108, 173108)
+        original = rpc.call
+        def call(address, signature, *args):
+            if signature == 'maxPriceOf(address)(uint256)':
+                self.assertEqual(address, REQUESTER)
+                self.assertEqual(args, (TOKEN,))
+            return original(address, signature, *args)
+        rpc.call = call
+        result = preflight(rpc, REQUESTER, TOKEN, rpc.spec)
+        self.assertIn({'check':'current asset cap agrees with compatibility getter','ok':True}, result['checks'])
+
+    @patch('script.preflight_automatic.runtime_matches', return_value=True)
+    def test_mismatch_zero_and_unavailable_caps_rejected(self, _runtime):
+        for cap, token_cap in [(0,0),(1000,1),(1,1000),(1,None)]:
+            rpc = PolicyRpc(31337, 173108, 173108)
+            original = rpc.call
+            def call(address, signature, *args):
+                if signature == 'maxPrice()(uint256)': return words(cap)
+                if signature == 'maxPriceOf(address)(uint256)':
+                    if token_cap is None: raise StoreError('cap unavailable')
+                    return words(token_cap)
+                return original(address, signature, *args)
+            rpc.call = call
+            with self.subTest(cap=cap,token_cap=token_cap), self.assertRaises(StoreError):
+                preflight(rpc, REQUESTER, TOKEN, rpc.spec)

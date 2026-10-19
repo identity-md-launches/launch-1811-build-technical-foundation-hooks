@@ -1,0 +1,31 @@
+{
+  "baseCommit": "e69e04f63832b9fa1e84c7d58c685ce37924a490",
+  "report": "https://api.imd.fun/jobs/dde20fdc-3a82-44e1-bde7-143f6a6f28c5/report.md",
+  "scope": "Source and local tests only; no public deployment or payment",
+  "compiler": {
+    "version": "0.8.26",
+    "evmVersion": "cancun",
+    "optimizerRuns": 200,
+    "viaIR": false
+  },
+  "foundryVersion": "1.8.3 (cae51ad458f6abb64852b7709eb784352429825d)",
+  "checks": {
+    "forgeBuild": true,
+    "forgeFmtCheck": true,
+    "forgeTests": 667,
+    "assignmentSeedTests": 667,
+    "isolatedGasTests": 27,
+    "pythonTests": 80,
+    "nodeTests": 167,
+    "signedVectors": 4,
+    "vendoredFiles": 96
+  },
+  "fuzzSeeds": {
+    "repository": "0x936d89b088020ddf36122a88c4c9aed7130c7a410f5c44680a7d121950c99345",
+    "assignment": "0x570e3760c7b3cd25a809ed002933b826699ace6868976bebf2a57dafff68df81"
+  },
+  "requesterRuntimeBytes": 24529,
+  "largestMeasuredColdCallbackGas": 195154,
+  "productionCallbackGasQualified": false,
+  "independentlyAudited": false
+}

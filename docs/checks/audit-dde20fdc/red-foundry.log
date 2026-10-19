@@ -1,0 +1,28 @@
+Compiling 114 files with Solc 0.8.26
+Solc 0.8.26 finished in 11.78s
+Compiler run successful!
+
+Ran 7 tests for test/AuditDde20fdc.t.sol:AuditDde20fdcTest
+[FAIL: EvmError: Revert] testConstructorAndRotationsOnlyWriteSelectedTokenCap() (gas: 7481)
+[PASS] testNewJobsUseCurrentAssetCapAndAskNonceIsShared() (gas: 12146401)
+[FAIL: InvalidConfig()] testRotation18To6RetryKeepsOriginalUnits() (gas: 8509862)
+[FAIL: InvalidConfig()] testRotation18To6TopUpKeepsOriginalUnits() (gas: 5286120)
+[FAIL: next call did not revert as expected] testRotation6To18RetryKeepsOriginalUnits() (gas: 9459319)
+[FAIL: next call did not revert as expected] testRotation6To18TopUpKeepsOriginalUnits() (gas: 6371383)
+[PASS] testSameTokenReductionSurvivesRotationAndFundedTriggerStillWorks() (gas: 8777048)
+Suite result: FAILED. 2 passed; 5 failed; 0 skipped; finished in 31.89ms (54.09ms CPU time)
+
+Ran 1 test suite in 35.03ms (31.89ms CPU time): 2 tests passed, 5 failed, 0 skipped (7 total tests)
+
+Failing tests:
+Encountered 5 failing tests in test/AuditDde20fdc.t.sol:AuditDde20fdcTest
+[FAIL: EvmError: Revert] testConstructorAndRotationsOnlyWriteSelectedTokenCap() (gas: 7481)
+[FAIL: InvalidConfig()] testRotation18To6RetryKeepsOriginalUnits() (gas: 8509862)
+[FAIL: InvalidConfig()] testRotation18To6TopUpKeepsOriginalUnits() (gas: 5286120)
+[FAIL: next call did not revert as expected] testRotation6To18RetryKeepsOriginalUnits() (gas: 9459319)
+[FAIL: next call did not revert as expected] testRotation6To18TopUpKeepsOriginalUnits() (gas: 6371383)
+
+Encountered a total of 5 failing tests, 2 tests succeeded
+
+Tip: Run `forge test --rerun` to retry only the 5 failed tests
+Tip: Run `forge test --debug --match-test <TEST_NAME>` to inspect one failing test in the debugger

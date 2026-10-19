@@ -45,10 +45,10 @@
       "note": "Compiler runtime template; constructor fills immutables, so live code hashes differ."
     },
     "AutoHookJobRequester": {
-      "creationCodeBytes": 26298,
-      "creationCodeHash": "0x6e211df7cea9626b0eb0dcb078e25f3c35cc211a2e85ece90dd860ea23c99c80",
-      "runtimeCodeBytes": 24468,
-      "runtimeCodeHash": "0x6e860d0135a45b875edc387c30a0efb2491a72eecbc7d026c1a7c56e478fca41",
+      "creationCodeBytes": 26368,
+      "creationCodeHash": "0x237493ad45c03371ac2e45a3655440a37b8bdc1cef37ea2455fc8fb5b0d62099",
+      "runtimeCodeBytes": 24529,
+      "runtimeCodeHash": "0xafa9ee920fdb0f14ce3d1b6785ff8ffc96f2cfaa2d3dfb7d0a23743084fbe25b",
       "note": "Compiler runtime template; constructor fills immutables, so live code hashes differ."
     },
     "HookRequestCodec": {

@@ -1,0 +1,108 @@
+✖ original-token cap across rotation 500000000000000000 (6.743875ms)
+✖ original-token cap across rotation 500000 (2.525357ms)
+✖ approveTopUp must refuse requester drift before sending (6.844557ms)
+✖ topUp must refuse requester drift before sending (3.398834ms)
+✖ transaction must carry the chain pinned at connect (2.150422ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 0
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 30.275113
+
+✖ failing tests:
+
+test at docs/checks/audit-dde20fdc/red-ui-proof.cjs:11:4
+✖ original-token cap across rotation 500000000000000000 (6.743875ms)
+  AssertionError [ERR_ASSERTION]: Total reserve exceeds current maxPrice.
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (<repo>/docs/checks/audit-dde20fdc/red-ui-proof.cjs:14:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at docs/checks/audit-dde20fdc/red-ui-proof.cjs:11:4
+✖ original-token cap across rotation 500000 (2.525357ms)
+  AssertionError [ERR_ASSERTION]: {
+    "job": "0x5656565656565656565656565656565656565656565656565656565656565656",
+    "token": "0x3434343434343434343434343434343434343434",
+    "approvedTopUp": "500001",
+    "allowanceReadback": "500001",
+    "next": "Approval confirmed. Submit the separate top-up transaction, then wait eight native blocks."
+  }
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (<repo>/docs/checks/audit-dde20fdc/red-ui-proof.cjs:14:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at docs/checks/audit-dde20fdc/red-ui-proof.cjs:17:47
+✖ approveTopUp must refuse requester drift before sending (6.844557ms)
+  AssertionError [ERR_ASSERTION]: sent an unvalidated target/spender: [{"from":"0x2323232323232323232323232323232323232323","to":"0x3434343434343434343434343434343434343434","data":"0x095ea7b300000000000000000000000099999999999999999999999999999999999999990000000000000000000000000000000000000000000000000000000000000001","value":"0x0","gas":"0x20000"}]
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (<repo>/docs/checks/audit-dde20fdc/red-ui-proof.cjs:22:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at docs/checks/audit-dde20fdc/red-ui-proof.cjs:17:47
+✖ topUp must refuse requester drift before sending (3.398834ms)
+  AssertionError [ERR_ASSERTION]: sent an unvalidated target/spender: [{"from":"0x2323232323232323232323232323232323232323","to":"0x9999999999999999999999999999999999999999","data":"0xffc731fb56565656565656565656565656565656565656565656565656565656565656560000000000000000000000000000000000000000000000000000000000000001","value":"0x0","gas":"0x20000"}]
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (<repo>/docs/checks/audit-dde20fdc/red-ui-proof.cjs:22:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at docs/checks/audit-dde20fdc/red-ui-proof.cjs:24:1
+✖ transaction must carry the chain pinned at connect (2.150422ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + undefined
+  - '0x7a69'
+  
+      at TestContext.<anonymous> (<repo>/docs/checks/audit-dde20fdc/red-ui-proof.cjs:26:40)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: '0x7a69',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

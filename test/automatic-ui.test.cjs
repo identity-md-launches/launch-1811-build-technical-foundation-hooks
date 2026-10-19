@@ -21,7 +21,7 @@ test('published automatic ABI equals compiler output and selectors are pinned', 
     job:'getJob(bytes32)',ask:'jobAsk(bytes32)',approved:'approvedArtifact(bytes32)',automatic:'automaticBindingSupported()',asset:'asset()',
     intake:'intake()',jobAction:'jobAction()',candidate:'candidateDigest(bytes32)',epoch:'reviewReceiptSignerEpoch(bytes32)',revoked:'revokedSignerEpochs(uint32)',readiness:'verdictReadiness(bytes32)',head:'head()',depth:'WINDOW_DEPTH()',
     renew:'renewVerdict(bytes32)',reserveDeadline:'reserveDeadline(bytes32)',reserve:'reserveOf(bytes32)',
-    topUp:'topUpReserve(bytes32,uint256)',funding:'verdictFunding(bytes32)',askContext:'getAsk(bytes32)',maxPrice:'maxPrice()'};
+    topUp:'topUpReserve(bytes32,uint256)',funding:'verdictFunding(bytes32)',askContext:'getAsk(bytes32)',maxPrice:'maxPrice()',maxPriceOf:'maxPriceOf(address)'};
   for (const [name,sig] of Object.entries(signatures)) assert.equal(A.selectors[name],artifact.methodIdentifiers[sig]);
   const ui = readFileSync('site/automatic-ui.js','utf8');
   assert.ok(ui.includes(cast('sig','requester()').slice(2)));
@@ -65,80 +65,27 @@ test('reserve and job decoders expose lifecycle state and reject malformed respo
 });
 
 test('wallet refuses commitment before delivery and after cancellation before estimating or sending', async () => {
-  const vm = require('node:vm');
+  const {wallet} = require('./helpers/automatic-wallet.cjs');
   for (const [status,cancelled,expected] of [[1,0,/Wait for Delivered/],[3,0,/Wait for Delivered/],
     [4,0,/Wait for Delivered/],[2,1,/Cancelled reserve/]]) {
-    const elements = new Map();
-    const element = id => {
-      if (!elements.has(id)) elements.set(id,{value:'',textContent:'',addEventListener(event,fn){this.click=fn;}});
-      return elements.get(id);
-    };
-    element('requester').value = address; element('job').value = hash;
-    const seen = [];
-    const provider = {async request({method,params}) {
-      seen.push(method); assert.equal(method,'eth_call');
-      const data = params[0].data;
-      if (data.startsWith('0x'+A.selectors.job)) {
-        const words = Array(15).fill(A.uint(0)); words[0] = A.address(address); words[3] = A.uint(status);
-        return '0x'+words.join('');
-      }
-      if (data.startsWith('0x'+A.selectors.reserveDeadline)) return '0x'+A.uint(1800000000);
-      if (data.startsWith('0x'+A.selectors.reserve)) return '0x'+A.address(address)+A.uint(0)+A.uint(cancelled);
-      throw Error('unexpected call');
-    }};
-    vm.runInNewContext(readFileSync('site/automatic-ui.js','utf8'),{
-      AutoHooks:A,document:{getElementById:element},window:{ethereum:provider},setTimeout
-    });
-    await element('commitArtifact').click();
-    assert.match(element('output').textContent,expected);
-    assert.ok(seen.every(m => m === 'eth_call'));
+    const w = wallet({status,cancelled});
+    await w.el('connect').click(); await w.el('commitArtifact').click();
+    assert.match(w.el('output').textContent,expected);
+    assert.ok(!w.calls.some(c => c.method === 'eth_estimateGas' || c.method === 'eth_sendTransaction'));
   }
 });
 
 test('wallet renewal sends only requester calldata and refreshes the reserve deadline', async () => {
-  const vm = require('node:vm');
-  const elements = new Map();
-  const element = id => {
-    if (!elements.has(id)) elements.set(id,{value:'',textContent:'',addEventListener(event,fn){this.click=fn;}});
-    return elements.get(id);
-  };
-  element('requester').value = address; element('job').value = hash;
-  const sent = [], methods = [];
-  const provider = {async request({method,params}) {
-    methods.push(method);
-    if (method === 'eth_requestAccounts' || method === 'eth_accounts') return [address];
-    if (method === 'eth_estimateGas') return '0x10000';
-    if (method === 'eth_sendTransaction') { sent.push(params[0]); return hash; }
-    if (method === 'eth_getTransactionReceipt') return {status:'0x1'};
-    assert.equal(method,'eth_call');
-    const data = params[0].data;
-    if (data === '0x'+A.selectors.automatic) return '0x'+A.uint(1);
-    if (data === '0x'+A.selectors.asset) return '0x'+A.address(address);
-    if (data === '0x'+A.selectors.depth) return '0x'+A.uint(8);
-    if (data.startsWith('0x'+A.selectors.job)) {
-      const words = Array(15).fill(A.uint(0)); words[0] = A.address(address); words[3] = A.uint(2);
-      return '0x'+words.join('');
-    }
-    if (data.startsWith('0x'+A.selectors.ask)) return hash;
-    if (data.startsWith('0x'+A.selectors.approved) || data.startsWith('0x'+A.selectors.epoch)) return '0x'+A.uint(0);
-    if (data.startsWith('0x'+A.selectors.readiness)) return '0x'+[0,900000,900000,899992].map(n => A.uint(n)).join('');
-    if (data.startsWith('0x'+A.selectors.funding)) return '0x'+A.uint(500)+A.uint(500)+A.address(address);
-    if (data.startsWith('0x'+A.selectors.reserveDeadline)) return '0x'+A.uint(1800086400);
-    if (data.startsWith('0x'+A.selectors.reserve)) return '0x'+A.address(address)+A.uint(500)+A.uint(0);
-    throw Error('unexpected call');
-  }};
-  vm.runInNewContext(readFileSync('site/automatic-ui.js','utf8'),{
-    AutoHooks:A,document:{getElementById:element},window:{ethereum:provider},setTimeout
-  });
-  await element('connect').click();
-  await element('renew').click();
-  assert.equal(sent.length,1);
-  assert.equal(sent[0].data,cast('calldata','renewVerdict(bytes32)',hash));
-  assert.equal(sent[0].value,'0x0'); assert.equal(sent[0].to,address);
-  const status = JSON.parse(element('output').textContent);
+  const {wallet,requester,job} = require('./helpers/automatic-wallet.cjs');
+  const w = wallet();
+  await w.el('connect').click(); await w.el('renew').click();
+  assert.equal(w.sent.length,1);
+  assert.equal(w.sent[0].data,cast('calldata','renewVerdict(bytes32)',job));
+  assert.equal(w.sent[0].value,'0x0'); assert.equal(w.sent[0].to,requester);
+  const status = JSON.parse(w.el('output').textContent);
   assert.equal(status.reserve.reserveDeadline,'1800086400');
   assert.equal(status.verdictReadiness.blocksRemaining,'8');
-  assert.ok(!methods.some(m => /sign/i.test(m)));
+  assert.ok(!w.calls.some(c => /sign/i.test(c.method)));
 });
 
 test('browser rejects injection, invalid UTF-8, unsafe integers and a mismatched candidate', () => {
@@ -171,29 +118,9 @@ test('native readiness decodes boundaries including Robinhood and rejects malfor
 });
 
 test('wallet refuses an early native-window trigger before gas estimation or sending', async () => {
-  const vm = require('node:vm');
-  const elements = new Map();
-  const element = id => {
-    if (!elements.has(id)) elements.set(id,{value:'',textContent:'',addEventListener(event,fn){this.click=fn;}});
-    return elements.get(id);
-  };
-  element('requester').value = address;
-  element('ask').value = hash;
-  const seen = [];
-  const provider = {async request({method,params}) {
-    seen.push(method);
-    assert.equal(method,'eth_call');
-    if (params[0].data.startsWith('0x'+A.selectors.readiness)) {
-      return '0x'+[0,900007,900000,899999].map(n => A.uint(n)).join('');
-    }
-    if (params[0].data === '0x'+A.selectors.depth) return '0x'+A.uint(8);
-    if (params[0].data.startsWith('0x'+A.selectors.funding)) return '0x'+A.uint(500)+A.uint(500)+A.address(address);
-    throw Error('unexpected call');
-  }};
-  vm.runInNewContext(readFileSync('site/automatic-ui.js','utf8'),{
-    AutoHooks:A,document:{getElementById:element},window:{ethereum:provider},setTimeout
-  });
-  await element('verdict').click();
-  assert.match(element('output').textContent,/not ready: 1 native blocks remaining/);
-  assert.deepEqual(seen,['eth_call','eth_call','eth_call']);
+  const {wallet} = require('./helpers/automatic-wallet.cjs');
+  const w = wallet({head:900007n,phase:0,price:500n});
+  await w.el('connect').click(); await w.el('verdict').click();
+  assert.match(w.el('output').textContent,/not ready: 1 native blocks remaining/);
+  assert.ok(!w.calls.some(c => c.method === 'eth_estimateGas' || c.method === 'eth_sendTransaction'));
 });

@@ -1,0 +1,100 @@
+No files changed, compilation skipped
+
+Ran 1 test for test/JobProtocolTuple.t.sol:JobProtocolGasTest
+[PASS] testColdTupleWithLongURIFits200kAndRuntimeLimit() (gas: 961386)
+Logs:
+  Cold job tuple with 4096-byte URI minimum forwarded gas: 67030
+  Requester deployed runtime bytes: 24559
+
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 6.41ms (1.26ms CPU time)
+
+Ran 6 tests for test/AutomaticBinding.t.sol:AutomaticGasTest
+[PASS] testColdEOACallbackUnder200k() (gas: 2551743)
+Logs:
+  Automatic EOA minimum forwarded callback gas: 127100
+
+[PASS] testColdFiveOfSevenCallbackUnder200k() (gas: 10005427)
+Logs:
+  Automatic cold 5-of-7 ERC1271 minimum forwarded callback gas: 172160
+
+[PASS] testColdJobAndOracleFailureCallbacksFit200k() (gas: 156419)
+[PASS] testColdJobResultAndOversizedUriFit200k() (gas: 574000)
+[PASS] testColdRealisticERC1271CallbackUnder200k() (gas: 10192901)
+Logs:
+  Automatic 22-cold-read ERC1271 minimum forwarded callback gas: 189242
+
+[PASS] testProductionRuntimeSizes() (gas: 41061)
+Suite result: ok. 6 passed; 0 failed; 0 skipped; finished in 68.03ms (60.31ms CPU time)
+
+Ran 6 tests for test/OracleWindowRegression.t.sol:RobinhoodAutomaticGasTest
+[PASS] testColdEOACallbackUnder200k() (gas: 1810957)
+Logs:
+  Automatic EOA minimum forwarded callback gas: 133011
+
+[PASS] testColdFiveOfSevenCallbackUnder200k() (gas: 9724335)
+Logs:
+  Automatic cold 5-of-7 ERC1271 minimum forwarded callback gas: 178072
+
+[PASS] testColdJobAndOracleFailureCallbacksFit200k() (gas: 156419)
+[PASS] testColdJobResultAndOversizedUriFit200k() (gas: 579355)
+[PASS] testColdRealisticERC1271CallbackUnder200k() (gas: 10107544)
+Logs:
+  Automatic 22-cold-read ERC1271 minimum forwarded callback gas: 195154
+
+[PASS] testProductionRuntimeSizes() (gas: 41061)
+Suite result: ok. 6 passed; 0 failed; 0 skipped; finished in 123.61ms (43.48ms CPU time)
+
+Ran 8 tests for test/ReviewReceiptGas.t.sol:ReviewReceiptGasTest
+[PASS] testAudit22ColdReadsNowRetainsOneShotReceiptAndBoundVerdict() (gas: 3610289)
+Logs:
+  Cold audit registry +22 reads receipt minimum forwarded gas: 187209
+  Cold audit registry +22 reads bound minimum forwarded gas: 157006
+
+[PASS] testColdEoaReceiptGasAndExactStipend() (gas: 1707977)
+Logs:
+  Cold EOA receipt minimum forwarded gas: 124962
+
+[PASS] testColdFiveOfSevenReceiptAfterExpiryRequestFitsStipend() (gas: 2897936)
+Logs:
+  Cold 5-of-7 receipt after expiry request minimum forwarded gas: 170055
+
+[PASS] testColdFiveOfSevenReceiptAndBoundCallbacksFitStipend() (gas: 4850809)
+Logs:
+  Cold 5-of-7 receipt minimum forwarded gas: 170055
+  Cold 5-of-7 bound minimum forwarded gas: 140113
+
+[PASS] testColdFiveOfSevenRetryReceiptBeforeReservationReleaseFitsStipend() (gas: 2999837)
+Logs:
+  Cold 5-of-7 reserved retry receipt minimum forwarded gas: 170055
+
+[PASS] testColdWrongPrebindingRetainsReceiptWithFiveOfSevenAndAuditSigner() (gas: 4636431)
+Logs:
+  Cold 5-of-7 mismatched pre-binding minimum forwarded gas: 175101
+  Cold audit +22 reads mismatched pre-binding minimum forwarded gas: 192264
+
+[PASS] testFuzzMultisignerRefusesWrongKeyDuplicateRevokedExpiredOrInsufficientSignatures(uint8) (runs: 256, μ: 444285, ~: 446707)
+Logs:
+  Bound result 4
+
+[PASS] testOverBudgetSignerStillFailsClosedAndLosesSingleAttemptWithoutPartialReceipt() (gas: 833901)
+Suite result: ok. 8 passed; 0 failed; 0 skipped; finished in 123.80ms (213.73ms CPU time)
+
+Ran 6 tests for test/OracleWindowRegression.t.sol:EthereumAutomaticGasTest
+[PASS] testColdEOACallbackUnder200k() (gas: 2026003)
+Logs:
+  Automatic EOA minimum forwarded callback gas: 127303
+
+[PASS] testColdFiveOfSevenCallbackUnder200k() (gas: 9825419)
+Logs:
+  Automatic cold 5-of-7 ERC1271 minimum forwarded callback gas: 172364
+
+[PASS] testColdJobAndOracleFailureCallbacksFit200k() (gas: 156419)
+[PASS] testColdJobResultAndOversizedUriFit200k() (gas: 573926)
+[PASS] testColdRealisticERC1271CallbackUnder200k() (gas: 10190369)
+Logs:
+  Automatic 22-cold-read ERC1271 minimum forwarded callback gas: 189446
+
+[PASS] testProductionRuntimeSizes() (gas: 41061)
+Suite result: ok. 6 passed; 0 failed; 0 skipped; finished in 123.81ms (43.53ms CPU time)
+
+Ran 5 test suites in 125.30ms (445.65ms CPU time): 27 tests passed, 0 failed, 0 skipped (27 total tests)

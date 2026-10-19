@@ -68,6 +68,8 @@ def preflight(rpc, requester, deployer, spec):
     asset = '0x' + rpc.call(requester,'asset()(address)')[-40:]
     require('Intake and IMD code',rpc.code(intake) != '0x' and rpc.code(asset) != '0x')
     cap = int(rpc.call(requester,'maxPrice()(uint256)'),16)
+    token_cap = int(rpc.call(requester,'maxPriceOf(address)(uint256)',asset),16)
+    require('current asset cap agrees with compatibility getter',cap == token_cap and cap > 0)
     prices = {}
     for action in ['jobAction','reviewAction']:
         action_id = rpc.call(requester,action+'()(bytes32)')
