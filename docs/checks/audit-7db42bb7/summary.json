@@ -1,0 +1,72 @@
+{
+  "baseCommit": "357201be804e18ab48567172fb6c8b07acb30a2c",
+  "findingsImplemented": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "sourceOnly": true,
+  "publicTransactions": false,
+  "compiler": "0.8.26",
+  "compilerConfigurationAndDependenciesUnchanged": true,
+  "repositorySeed": "0x936d89b088020ddf36122a88c4c9aed7130c7a410f5c44680a7d121950c99345",
+  "assignmentSeed": "0x496abaac78906e29834a9e8c6092ebc83fe50f2785c67161be04f9cee38e1ef2",
+  "passed": {
+    "foundryRepositorySeed": 660,
+    "foundryAssignmentSeed": 660,
+    "isolatedCallbacksAndSizes": 27,
+    "python": 74,
+    "node": 37
+  },
+  "checks": {
+    "forgeBuild": true,
+    "forgeFmtCheck": true,
+    "forgeBuildSizes": true,
+    "capturedVectorsAndCodecPin": true,
+    "vendoredFiles": true
+  },
+  "minimumWindowAgeBlocks": {
+    "1": 14433,
+    "11155111": 14433,
+    "4663": 3462008,
+    "31337": 173108
+  },
+  "deliveryHorizonSeconds": 173100,
+  "assumedCadenceFloorMilliseconds": {
+    "1": 12000,
+    "11155111": 12000,
+    "4663": 50,
+    "31337": 1000
+  },
+  "maximumMeasuredAutomaticCallbackGas": 192652,
+  "runtimeBytes": {
+    "AutoHookJobRequester": 24468,
+    "HookRequestCodec": 16966,
+    "GatedHookDeployer": 20967
+  },
+  "codecRuntimeHash": "0xfb28d0432fba1c6ee9e6ec8d3ae5896d1a36c708c7ee6eccc701eb07dc6611ea",
+  "limitations": [
+    "Cadence assumptions are not live guarantees.",
+    "Mocked native clock and ERC-1271 gas need production qualification.",
+    "No live end-to-end pilot or independent security audit."
+  ],
+  "logs": {
+    "assignment-seed.log": "445780d47325d462cc9a76ed5da768e7fc98edbb8f376be81856fe1fe38d0f7e",
+    "build.log": "367800cc2e37f6448ca50fff38ca81d578c7740a37f2c2e27cad9dda68d84c74",
+    "cold-gas.log": "83eebb1e7a1c7bcaa8e8bb8479bc9ab49a492f0151df9f2805d1d2c0538a9d9c",
+    "diff-check.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "fmt-check.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "fmt.log": "43d1e582772a445a6edae2d70021c9c43cf6fb1ec0023fee88efacf48cec103c",
+    "foundry.log": "00912e0f8542efefc3dc8ccf9a2acd0ac377d125deec3c5e9b260d96da8bee39",
+    "full-horizon-red.log": "00a2b1b00f5e01aa4c5f8c13026e29049d27b1d1bebc8adc5a768e2132e05043",
+    "green.log": "2c580518115e9c2ec757740f237e14ccf87f552524945b7c90a6d016601ef871",
+    "red.log": "e6f0345f997b9989bbc95a83a33b7927757045b80310d7137ea15fa66e4d8aa9",
+    "sdk.log": "c4d5db1ef1eb32d7f752bdc45289286785fa14659a5657e1b797e957f897bdc2",
+    "sizes.log": "27e3d32e53a71394f9963b657c66afb440e7795256b253b646f12ac6fdd1e7a2",
+    "tooling-red.log": "27565cd72d922e87b1fba70394c65ed8b0381fa82e225b229b88dafb27adea56",
+    "ui.log": "4c085195c148cd01d58c8279dc8c3768a504a950c4ef5776396430e1d33d2ab2",
+    "vectors.log": "5b5f1bea04111e4f2186191cda24a26bc6220da367ddfd7ee083ebdb9beda39b",
+    "vendored.log": "314f049fbaba85a684faf26dc22dad2c8a9edacb1093666066b2c1c885d6d2f7"
+  }
+}

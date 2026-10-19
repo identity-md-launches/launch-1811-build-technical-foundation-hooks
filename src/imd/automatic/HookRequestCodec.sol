@@ -5,6 +5,7 @@ import {GatedHookDeployer} from "../../deployment/GatedHookDeployer.sol";
 import {AcceptedArtifact} from "../../deployment/AcceptedArtifact.sol";
 import {HookSpec, HookSpecLib} from "../../HookSpec.sol";
 import {Strings} from "../../vendor/openzeppelin/utils/Strings.sol";
+import {OracleAttestation} from "../OracleAttestation.sol";
 
 /// @notice Deterministic protocol JSON. No caller text is ever used in an oracle question.
 /// Canonical document: answerType, chainId, definitions, evidence, question, v, window.
@@ -23,6 +24,19 @@ contract HookRequestCodec {
         uint64 toBlock;
         uint16 panelSize;
         uint16 quorum;
+    }
+
+    struct ReviewContext {
+        address pin;
+        // ABI words intentionally use uint256: the requester supplies its bounded storage
+        // fields, and widened arithmetic/encoding avoids redundant narrowing checks there.
+        uint256 fromBlock;
+        uint256 toBlock;
+        uint256 askedAt;
+        uint256 deadline;
+        uint256 maxWindowAgeBlocks;
+        uint256 panelSize;
+        uint256 quorum;
     }
 
     /// @notice Compose the existing validation and exact job encoding in the pinned codec.
@@ -58,10 +72,30 @@ contract HookRequestCodec {
     error UnsupportedClock(uint256 chainId);
     error InvalidClock();
     error InvalidConfig();
+    error WrongQuestion();
+    error InvalidWindow();
+    error WeakPanel();
+    error WrongAnswerType(uint8 expected, uint8 got);
+
+    /// @notice Minimum native block age covering 173100 seconds plus eight admission blocks.
+    /// Assumed cadence floors: Ethereum/Sepolia 12s, Robinhood 50ms, local fixtures 1s.
+    /// These are policy assumptions, not live cadence or callback-delivery guarantees.
+    function minimumWindowAgeBlocks() public view returns (uint64) {
+        if (block.chainid == 1 || block.chainid == 11155111) return 14_433;
+        if (block.chainid == 4663) return 3_462_008;
+        if (block.chainid == 31337) return 173_108;
+        revert UnsupportedClock(block.chainid);
+    }
+
+    /// @notice Validate policy before reading the native clock or allowing payment/lifecycle work.
+    function paymentHead(uint64 ageBlocks) public view returns (uint64) {
+        if (ageBlocks < minimumWindowAgeBlocks()) revert InvalidConfig();
+        return head();
+    }
 
     /// @notice Native block height of the question chain, never the L1 height on Robinhood.
     /// 31337 is local testing only. Clock support does not imply that Intake sells both actions.
-    function head() external view returns (uint64) {
+    function head() public view returns (uint64) {
         uint256 height;
         if (block.chainid == 4663) {
             (bool ok, bytes memory data) = address(100).staticcall(abi.encodeWithSignature("arbBlockNumber()"));
@@ -75,6 +109,40 @@ contract HookRequestCodec {
         // OracleQuestion's JSON integer limit also prevents narrowing/truncation of the clock.
         if (height > 9007199254740991) revert InvalidClock();
         return uint64(height);
+    }
+
+    /// @notice Deterministic checks only. The requester retains signature verification in its
+    /// own EIP-712 domain/ERC-1271 caller context, epoch revocation, replay and settlement.
+    function validateReview(OracleAttestation.Attestation calldata att, ReviewContext calldata r)
+        external
+        view
+        returns (bool passed)
+    {
+        if (
+            att.chainId != block.chainid
+                || att.questionHash != keccak256(document(readPrefix(r.pin), att.fromBlock, att.toBlock))
+        ) revert WrongQuestion();
+        if (r.maxWindowAgeBlocks < minimumWindowAgeBlocks()) revert InvalidConfig();
+        uint64 currentBlock = head();
+        if (
+            att.fromBlock != r.fromBlock || att.toBlock != r.toBlock || att.fromBlock > att.toBlock
+                || att.toBlock >= currentBlock || currentBlock - att.toBlock > r.maxWindowAgeBlocks
+                || att.issuedAt < r.askedAt || att.issuedAt > uint256(r.deadline) + 300
+                || att.issuedAt > block.timestamp + 300 || att.issuedAt > att.expiresAt
+                || att.expiresAt > uint256(att.issuedAt) + 1 days || block.timestamp > att.expiresAt
+        ) revert InvalidWindow();
+        if (
+            att.panelSize < r.panelSize || att.quorum == 0 || att.quorum > att.panelSize || att.agreed < att.quorum
+                || att.agreed < r.quorum || att.agreed > att.panelSize
+        ) revert WeakPanel();
+        if (att.requestId == bytes32(0) || att.panelJobId == bytes32(0) || att.answer.length != 32) {
+            revert InvalidArtifact();
+        }
+        if (att.answerType != OracleAttestation.ANSWER_BOOL) {
+            revert WrongAnswerType(OracleAttestation.ANSWER_BOOL, att.answerType);
+        }
+        // Solidity rejects noncanonical ABI bool words as well as the wrong byte length above.
+        passed = abi.decode(att.answer, (bool));
     }
 
     bytes internal constant DEFINITIONS = '{"acceptance":"Resolve the originating job from the exact chain, Intake address and Intake request ID using its Requested log and public IMD records. Require an accepted completed job and the exact completion snapshot committed by resultHash. The candidate sourceSubmissionHash and sourceHash must match the source bundle accepted for that job. Verify its full HookSpec hash against the onchain job; missing or unverifiable evidence means false.",'

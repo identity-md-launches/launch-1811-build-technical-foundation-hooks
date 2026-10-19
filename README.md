@@ -1,6 +1,6 @@
 # Hooks Store foundation
 
-Current revision: fixes for audit `2218802d`, continuing `205fa11271ab17a26630154815fae4c390aac624`. Commitment requires Delivered; delivery and commitment extend the reserve deadline; expired unspent asks can renew without another payment; signed validity tolerates bounded skew/delay; each ask keeps its trigger-time signer and epoch across rotation. The [automatic workflow and runbook](docs/AUTOMATIC_BINDING.md) covers funding, renewal, per-chain block-age policy, exact-artifact authorization and operator responsibilities. Use `AutoHookJobRequester` with its immutable `HookRequestCodec`; the legacy requester remains available for compatibility. [RED/GREEN regressions, vectors and check results](docs/checks/audit-2218802d/README.md) are local evidence, not a live end-to-end proof. No public deployment, payment, backend or new trust root was introduced.
+Current revision: findings 1–4 of audit `7db42bb7`, continuing `357201be804e18ab48567172fb6c8b07acb30a2c`. Chain-specific window minima cover the full signed delivery horizon under explicit cadence assumptions; owner expiry waits until that horizon ends. Requesters can top up an unspent committed verdict using its original token, and SDK/UI readiness requires a positive live quote within reserve. The [automatic workflow and runbook](docs/AUTOMATIC_BINDING.md) covers funding, exact-artifact authorization, deployment parameters and operator responsibilities. Use `AutoHookJobRequester` with its immutable `HookRequestCodec`; the legacy requester remains available. [RED/GREEN regressions and checks](docs/checks/audit-7db42bb7/README.md) are local evidence, not a live end-to-end proof. No deployment, payment, backend or new trust root was introduced.
 
 Deployment preparation from `b157921` is in the [executable runbook](docs/DEPLOYMENT_PREPARATION.md) and
 [manifest](deployment/manifest.json). Owner and ad-recipient approvals remain open; no public deployment
@@ -45,8 +45,8 @@ node --test test/*.test.cjs
 The repository fuzz seed is pinned in `foundry.toml`:
 `0x936d89b088020ddf36122a88c4c9aed7130c7a410f5c44680a7d121950c99345`.
 This audit-fix revision also runs the assignment seed
-`0xe1cee08ccc29120111028768a3aec176c1fef4b508e16a2c358555bd62e98669`.
-[Current results](docs/checks/audit-2218802d/README.md) include the complete Foundry, Python SDK and
+`0x496abaac78906e29834a9e8c6092ebc83fe50f2785c67161be04f9cee38e1ef2`.
+[Current results](docs/checks/audit-7db42bb7/README.md) include the complete Foundry, Python SDK and
 Node site suites. Tests do not read or mutate environment variables. Python integration tests start
 and stop disposable Anvil instances on loopback; they never use a public RPC or a funded wallet.
 

@@ -3,6 +3,7 @@
 Approval + openJob prepay both fees. After Delivered, the requester commits one reviewed candidate.
 Anyone can then trigger requestVerdict(askId), paying gas only. Deployment uses sdk.gated_deploy.
 An expired unspent verdict window can be renewed without transferring tokens or creating an ask.
+Top-ups produce separate bounded approval and funding transactions using the job's original asset.
 """
 import argparse
 import json
@@ -93,6 +94,50 @@ class AutomaticClient:
         self.rpc.request('eth_call', [{k: tx[k] for k in ('from', 'to', 'data', 'value')}, self.rpc.block])
         return tx
 
+    def top_up_reserve(self, *, sender, job, amount):
+        job = _hex(job, 32, 'job')
+        amount = positive(amount, 'top-up amount')
+        raw = _hex(self.rpc.call(self.requester, 'getJob(bytes32)', job), 480, 'job response')
+        fields = [raw[2+i*64:2+(i+1)*64] for i in range(15)]
+        if fields[0] != _hex(sender, 20, 'sender')[2:].rjust(64, '0'):
+            raise StoreError('only the job requester can top up')
+        if int(fields[3], 16) != 2 or int(fields[4], 16) != 0:
+            raise StoreError('top-up requires Delivered with review None')
+        reserve = self.reserve_status(job)
+        if reserve['cancelled']:
+            raise StoreError('cancelled reserve cannot be revived')
+        digest = _hex(self.rpc.call(self.requester, 'candidateDigest(bytes32)(bytes32)', job), 32, 'candidate digest')
+        if int(digest, 16) == 0:
+            raise StoreError('commit an artifact before topping up')
+        ask = _hex(self.rpc.call(self.requester, 'jobAsk(bytes32)(bytes32)', job), 32, 'ask')
+        context = _hex(self.rpc.call(self.requester, 'getAsk(bytes32)', ask), 288, 'ask response')
+        if int(context[66:130], 16) != 0:
+            raise StoreError('top-up requires an unspent ask')
+        cap = int(_hex(self.rpc.call(self.requester, 'maxPrice()(uint256)'), 32, 'maximum price'), 16)
+        if reserve['amount'] + amount > cap:
+            raise StoreError('total reserve exceeds current maxPrice')
+        self.rpc.call(self.requester, 'head()(uint64)')
+        approval = self.transaction(sender, 'approve(address,uint256)', self.requester, str(amount))
+        approval['to'] = reserve['token']
+        return {'unsigned': True, 'approvalTransaction': approval,
+                'transaction': self.transaction(sender, 'topUpReserve(bytes32,uint256)', job, str(amount)),
+                'job': job, 'ask': ask, 'token': reserve['token'], 'amount': amount,
+                'reserveBefore': reserve['amount'], 'reserveAfter': reserve['amount'] + amount,
+                'next': 'Submit approval and top-up separately, then refresh reserve/status. Wait eight native blocks.'}
+
+    def verdict_funding(self, ask):
+        ask = _hex(ask, 32, 'ask')
+        try:
+            raw = _hex(self.rpc.call(self.requester, 'verdictFunding(bytes32)(uint256,uint256,address)', ask),
+                       96, 'verdict funding')
+            price, reserve, token = [int(raw[2+i*64:2+(i+1)*64], 16) for i in range(3)]
+            if token == 0 or token >= 1 << 160:
+                raise StoreError('malformed funding token')
+            return {'available': True, 'funded': 0 < price <= reserve, 'price': price,
+                    'reserve': reserve, 'token': '0x' + f'{token:040x}'}
+        except (StoreError, OSError, ValueError) as exc:
+            return {'available': False, 'funded': False, 'error': str(exc)}
+
     def verdict_readiness(self, ask):
         ask = _hex(ask, 32, 'ask')
         raw = self.rpc.call(self.requester, 'verdictReadiness(bytes32)(bool,uint64,uint64,uint64)', ask)
@@ -101,16 +146,18 @@ class AutomaticClient:
         if ready not in (0, 1) or max(head, start, end) >= 1 << 64:
             raise StoreError('malformed verdict readiness')
         depth = int(self.rpc.call(self.requester, 'WINDOW_DEPTH()(uint64)'), 16)
-        return {'ready': bool(ready), 'nativeHead': head, 'fromBlock': start, 'toBlock': end,
+        funding = self.verdict_funding(ask)
+        return {'ready': bool(ready) and funding['funded'], 'phaseReady': bool(ready), 'funding': funding,
+                'nativeHead': head, 'fromBlock': start, 'toBlock': end,
                 'windowDepth': depth, 'blocksRemaining': max(0, start + depth - head),
-                'note': 'Snapshot only; refresh after transactions. A fee change can still prevent a ready ask.'}
+                'note': 'Snapshot only; refresh after transactions. A positive live quote within reserve is required; prices can change before inclusion.'}
 
     def request_verdict(self, *, sender, ask):
         # Deliberately no artifact, question, prefix, fee or recipient argument.
         readiness = self.verdict_readiness(ask)
         if not readiness['ready']:
             raise StoreError('verdict not ready; native blocks remaining: ' + str(readiness['blocksRemaining']) +
-                             '; delivery, candidate, active reserve and deadline are also required')
+                             '; delivery, candidate, active reserve, deadline and an affordable positive quote are required')
         return self.transaction(sender, 'requestVerdict(bytes32)', _hex(ask, 32, 'ask'))
 
     def retry_verdict(self, *, sender, job, reserve):
@@ -132,6 +179,7 @@ def main():
     s = sub.add_parser('status'); s.add_argument('ask')
     r = sub.add_parser('retry'); r.add_argument('job'); r.add_argument('--reserve', type=int, required=True)
     n = sub.add_parser('renew'); n.add_argument('job')
+    t = sub.add_parser('top-up'); t.add_argument('job'); t.add_argument('--amount', type=int, required=True)
     d = sub.add_parser('reserve'); d.add_argument('job')
     w = sub.add_parser('withdraw'); w.add_argument('token')
     args = p.parse_args()
@@ -145,6 +193,7 @@ def main():
         elif args.command == 'status': out = client.verdict_readiness(args.ask)
         elif args.command == 'retry': out = client.retry_verdict(sender=args.sender, job=args.job, reserve=args.reserve)
         elif args.command == 'renew': out = client.renew_verdict(sender=args.sender, job=args.job)
+        elif args.command == 'top-up': out = client.top_up_reserve(sender=args.sender, job=args.job, amount=args.amount)
         elif args.command == 'reserve': out = client.reserve_status(args.job)
         else: out = client.withdraw_refund(sender=args.sender, token=args.token)
         print(json.dumps(out, indent=2))

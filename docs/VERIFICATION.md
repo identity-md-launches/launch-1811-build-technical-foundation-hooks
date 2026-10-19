@@ -1,6 +1,6 @@
 # Local verification
 
-For the current audit-2218802d fixes use [checks/audit-2218802d/README.md](checks/audit-2218802d/README.md) and `bash script/check_automatic.sh`. Earlier logs below are historical. Current tests include Delivered-only commitment, reserve renewal/refunds, signed timing boundaries, recorded EOA/ERC-1271 signer epochs, captured public signature vectors, exact artifact binding, incident recovery, SDK/UI parity, and isolated 200k callback checks on both clocks.
+For the current audit-7db42bb7 fixes use [checks/audit-7db42bb7/README.md](checks/audit-7db42bb7/README.md) and `bash script/check_automatic.sh`. Earlier logs below are historical. Current tests include full-horizon true/false delivery on both clocks, strict expiry closure, top-up caps/refunds/rotation, quote-aware SDK/UI readiness, per-chain preflight, and the preserved signature, replay, artifact, listing/ad and recovery regressions. Isolated callback checks cover both clocks and the 200k stipend.
 
 Historical results below describe successive revisions and do not describe the current build.
 

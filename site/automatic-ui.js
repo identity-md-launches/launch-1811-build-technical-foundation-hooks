@@ -90,7 +90,11 @@
   async function readReadiness(ask) {
     const raw = await call(requester(), A.idCalldata('readiness', ask));
     const depth = await call(requester(), '0x' + A.selectors.depth);
-    return A.decodeReadiness(raw, depth);
+    const phase = A.decodeReadiness(raw, depth);
+    let funding;
+    try { funding = A.decodeFunding(await call(requester(), A.idCalldata('funding', ask))); }
+    catch (err) { funding = {available: false, funded: false, error: err.message}; }
+    return A.fundedReadiness(phase, funding);
   }
   bind('status', readStatus);
   bind('commitArtifact', async () => {
@@ -106,10 +110,40 @@
   bind('verdict', async () => {
     const readiness = await readReadiness(value('ask'));
     if (!readiness.ready) throw Error('Verdict not ready: ' + readiness.blocksRemaining +
-      ' native blocks remaining. Delivery, candidate, active reserve and deadline are also required. Refresh status.');
+      ' native blocks remaining. Delivery, candidate, active reserve, deadline and a positive quote within reserve are required. Refresh status; top up if needed.');
     await send(requester(), A.idCalldata('verdict', value('ask'))); await readStatus();
   });
   bind('cancel', async () => { await send(requester(), A.idCalldata('cancel', value('job'))); await readStatus(); });
   bind('renew', async () => { await send(requester(), A.idCalldata('renew', value('job'))); await readStatus(); });
+  async function topUpParameters() {
+    const sender = await connected(), job = value('job'), amount = value('topUpAmount');
+    const data = A.topUpCalldata(job, amount);
+    const state = A.decodeJob(await call(requester(), A.idCalldata('job', job)));
+    if (state.requester !== sender.toLowerCase()) throw Error('Only the job requester can top up.');
+    if (state.status !== 2 || state.review !== 0) throw Error('Top-up requires Delivered with no pending or finalized verdict.');
+    const reserve = await readReserve(job);
+    if (reserve.cancelled) throw Error('Cancelled reserve cannot be revived.');
+    if (BigInt(await call(requester(), A.idCalldata('candidate', job))) === 0n) throw Error('Commit an artifact before topping up.');
+    const ask = await call(requester(), A.idCalldata('ask', job));
+    const ctx = A.hex(await call(requester(), A.idCalldata('askContext', ask)), 288);
+    if (BigInt('0x' + ctx.slice(64, 128)) !== 0n) throw Error('Top-up requires an unspent ask.');
+    const cap = BigInt(await call(requester(), '0x' + A.selectors.maxPrice));
+    if (BigInt(reserve.amount) + BigInt(amount) > cap) throw Error('Total reserve exceeds current maxPrice.');
+    await call(requester(), '0x' + A.selectors.head);
+    return {job, ask, amount, token: reserve.token, data};
+  }
+  bind('approveTopUp', async () => {
+    const p = await topUpParameters();
+    await send(p.token, '0x095ea7b3' + A.address(requester()) + A.uint(p.amount));
+    const allowance = BigInt(await call(p.token, '0xdd62ed3e' + A.address(account) + A.address(requester())));
+    if (allowance !== BigInt(p.amount)) throw Error('Top-up approval readback differs from the bounded amount. Refresh before continuing.');
+    show({job: p.job, token: p.token, approvedTopUp: p.amount, allowanceReadback: allowance.toString(),
+      next: 'Approval confirmed. Submit the separate top-up transaction, then wait eight native blocks.'});
+  });
+  bind('topUp', async () => {
+    const p = await topUpParameters();
+    await send(requester(), p.data);
+    await readStatus();
+  });
   bind('withdraw', async () => { await send(requester(), '0x' + A.selectors.withdraw + A.address(value('token'))); });
 })();

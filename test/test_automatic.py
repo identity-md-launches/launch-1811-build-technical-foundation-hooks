@@ -219,6 +219,57 @@ class AutomaticSdkTest(unittest.TestCase):
         out=preflight(Rpc(self.local.url),self.requester,self.gate,self.spec)
         self.assertTrue(out['readOnly'])
         self.assertTrue(all(check['ok'] for check in out['checks']))
+        self.assertEqual(out['windowPolicy']['minimumWindowAgeBlocks'], 173108)
+
+    def test_unsigned_top_up_uses_original_asset_and_preserves_job_after_rotation(self):
+        job, ask = self._candidate_asked(ask_verdict=False)
+        old = Rpc(self.local.url)
+        candidate = old.call(self.requester, 'candidateDigest(bytes32)(bytes32)', job)
+        old_action = old.call(self.requester, 'reviewAction()(bytes32)')
+        new_intake = self.local.deploy('MockIntake')
+        new_token = self.local.deploy('TestToken', 'f(string,uint8)', 'Replacement local token', '18')
+        self.local.call_transaction(self.requester, 'setProtocol(address,address,uint256,bytes32,bytes32)',
+                                    new_intake, new_token, str(2*FEE), keccak_hex('new build'), keccak_hex('new verdict'))
+        self.local.call_transaction(self.intake, 'setPrice(bytes32,address,uint256)', old_action, self.imd, str(3*FEE//2))
+        self.local.request('anvil_mine', ['0x8'])
+        client = AutomaticClient(Rpc(self.local.url), self.requester)
+        self.assertTrue(client.verdict_readiness(ask)['phaseReady'])
+        self.assertFalse(client.verdict_readiness(ask)['ready'])
+        out = client.top_up_reserve(sender=self.creator, job=job, amount=FEE)
+        self.assertTrue(out['unsigned'])
+        self.assertEqual(out['approvalTransaction']['to'].lower(), self.imd.lower())
+        self.assertEqual(out['approvalTransaction']['data'], _cast('calldata','approve(address,uint256)',self.requester,str(FEE)))
+        self.assertEqual(out['transaction']['data'], _cast('calldata','topUpReserve(bytes32,uint256)',job,str(FEE)))
+        # Preparing both transactions signs/sends nothing. Approval and top-up remain separate.
+        self.assertEqual(client.reserve_status(job)['amount'],FEE)
+        self.local.send(out['approvalTransaction'])
+        self.local.send(out['transaction'])
+        client = AutomaticClient(Rpc(self.local.url), self.requester)
+        self.assertEqual(client.reserve_status(job)['amount'],2*FEE)
+        self.assertEqual(client.verdict_readiness(ask)['funding']['price'],3*FEE//2)
+        self.assertFalse(client.verdict_readiness(ask)['ready'])
+        self.local.request('anvil_mine', ['0x8'])
+        client = AutomaticClient(Rpc(self.local.url), self.requester)
+        self.local.send(client.request_verdict(sender=self.outsider,ask=ask))
+        rpc = Rpc(self.local.url)
+        self.assertEqual(rpc.call(self.requester,'jobAsk(bytes32)(bytes32)',job),ask)
+        self.assertEqual(rpc.call(self.requester,'candidateDigest(bytes32)(bytes32)',job),candidate)
+        self.assertEqual(int(rpc.call(self.imd,'balanceOf(address)(uint256)',self.intake),16),5*FEE//2)
+        self.assertEqual(int(rpc.call(self.imd,'balanceOf(address)(uint256)',new_intake),16),0)
+        self.assertEqual(int(rpc.call(self.requester,'refunds(address,address)(uint256)',self.imd,self.creator),16),FEE//2)
+
+    def test_unsigned_top_up_refuses_invalid_owner_phase_amount_or_current_cap(self):
+        job, ask = self._candidate_asked(ask_verdict=False)
+        client = AutomaticClient(Rpc(self.local.url), self.requester)
+        for sender, amount, error in [(self.outsider,1,'only the job requester'),(self.creator,0,'positive'),
+                                      (self.creator,-1,'positive'),(self.creator,1,'maxPrice')]:
+            with self.assertRaisesRegex(StoreError,error): client.top_up_reserve(sender=sender,job=job,amount=amount)
+        self.local.request('anvil_mine', ['0x8'])
+        client = AutomaticClient(Rpc(self.local.url), self.requester)
+        self.local.send(client.request_verdict(sender=self.outsider,ask=ask))
+        client = AutomaticClient(Rpc(self.local.url), self.requester)
+        with self.assertRaisesRegex(StoreError,'review None'):
+            client.top_up_reserve(sender=self.creator,job=job,amount=1)
 
     def test_zero_commit_and_injection_brief_rejected(self):
         with self.assertRaises(StoreError):
@@ -232,6 +283,8 @@ class AutomaticReadinessUnitTest(unittest.TestCase):
                 if signature == 'WINDOW_DEPTH()(uint64)': return '0x' + f'{8:064x}'
                 if signature.startswith('verdictReadiness('):
                     return '0x' + ''.join(f'{n:064x}' for n in [1, 900008, 900000, 900000])
+                if signature.startswith('verdictFunding('):
+                    return '0x' + ''.join(f'{n:064x}' for n in [500, 500, int('12'*20,16)])
                 raise AssertionError('unexpected call: ' + signature)
             def request(self, method, params):
                 self.asserted_method = method

@@ -12,6 +12,17 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from sdk.hooks_store import ROOT, Rpc, StoreError, _hex, load_json, normalize_spec, keccak_hex
 
 
+def window_policy(chain):
+    # Independent tooling policy must agree with the pinned codec on the selected chain.
+    floors_ms = {1: 12000, 11155111: 12000, 4663: 50, 31337: 1000}
+    if chain not in floors_ms:
+        raise StoreError('unsupported automatic window-policy chain')
+    floor = floors_ms[chain]
+    return {'minimumWindowAgeBlocks': 8 + (173100000 + floor - 1) // floor,
+            'deliveryHorizonSeconds': 173100, 'assumedCadenceFloorMilliseconds': floor,
+            'assumption': 'Cadence floor is policy, not a measured live guarantee. Monitor native cadence and callback latency.'}
+
+
 def runtime_matches(rpc, address, name):
     built = load_json(ROOT / 'out' / (name + '.sol') / (name + '.json'))['deployedBytecode']
     actual = bytearray.fromhex(rpc.code(address)[2:])
@@ -41,11 +52,14 @@ def preflight(rpc, requester, deployer, spec):
     require('automatic binding enabled',int(rpc.call(deployer,'automaticBindingSupported()(bool)'),16) == 1)
     codec = '0x' + rpc.call(requester,'codec()(address)')[-40:]
     require('exact deterministic codec runtime',runtime_matches(rpc,codec,'HookRequestCodec'))
-    native_head = int(rpc.call(requester,'head()(uint64)'),16)
+    policy_window = window_policy(chain)
+    codec_minimum = int(rpc.call(codec,'minimumWindowAgeBlocks()(uint64)'),16)
+    require('codec and tooling window policy agree',codec_minimum == policy_window['minimumWindowAgeBlocks'])
     depth = int(rpc.call(requester,'WINDOW_DEPTH()(uint64)'),16)
     require('native question clock and confirmed window depth',depth == 8)
     age_blocks = int(rpc.call(requester,'maxWindowAgeBlocks()(uint64)'),16)
-    require('native window age permits confirmed depth',age_blocks >= depth)
+    require('native window age covers full delivery horizon',codec_minimum <= age_blocks < 1 << 64)
+    native_head = int(rpc.call(requester,'head()(uint64)'),16)
     code = rpc.code(spec['poolManager'])
     require('PoolManager code hash',code != '0x' and keccak_hex(code) == spec['poolManagerCodeHash'])
     policy = rpc.call(deployer,'managers(address)(bool,bytes32)',spec['poolManager'])
@@ -63,6 +77,7 @@ def preflight(rpc, requester, deployer, spec):
     return {'readOnly':True,'readBlock':rpc.block,'chainId':chain,'requester':requester,'deployer':deployer,
             'codec':codec,'intake':intake,'asset':asset,'prices':prices,'checks':checks,
             'nativeHead':native_head,'windowDepth':depth,'maxWindowAgeBlocks':age_blocks,
+            'windowPolicy':policy_window,
             'limitation':'Code/configuration preflight only. No live Hooks Store oracle verdict, accepted build, finality or operational handoff is proven.'}
 
 

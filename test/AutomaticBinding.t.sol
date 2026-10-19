@@ -5,6 +5,7 @@ import {Fixture} from "./helpers/Fixture.sol";
 import {TestToken} from "./helpers/TestToken.sol";
 import {StoreTokenMock} from "./helpers/StoreTokenMock.sol";
 import {MockIntake} from "./helpers/MockIntake.sol";
+import {WindowArbSysMock} from "./helpers/WindowArbSysMock.sol";
 import {ColdReadReceiptSigner, ThresholdReceiptSigner} from "./helpers/ReceiptSigners.sol";
 import {PoolRouter} from "./helpers/PoolRouter.sol";
 import {AutoHookJobRequester} from "../src/imd/automatic/AutoHookJobRequester.sol";
@@ -36,6 +37,16 @@ abstract contract AutomaticFixture is Fixture {
     bytes32 internal askId;
     bytes32 internal verdictId;
     GatedHookDeployer.Artifact internal artifact;
+    address internal nativeClock;
+
+    function _installNativeClock() internal {
+        nativeClock = address(new WindowArbSysMock());
+        vm.etch(address(100), type(WindowArbSysMock).runtimeCode);
+        // Recent Foundry emulates ArbSys at address(100). Redirect to an actual storage-reading
+        // contract so the L2 clock stays independent of vm.roll, including in isolated gas tests.
+        vm.mockFunction(address(100), nativeClock, abi.encodeWithSignature("arbBlockNumber()"));
+        vm.mockFunction(address(100), nativeClock, abi.encodeWithSignature("setHead(uint256)"));
+    }
 
     function setUp() public virtual override {
         super.setUp();
@@ -348,7 +359,7 @@ contract AutomaticBindingTest is AutomaticFixture {
         OracleAttestation.Attestation memory a = _att(askId, true);
         bytes memory sig = _sign(a);
         uint256 snap = vm.snapshotState();
-        vm.roll(vm.getBlockNumber() + 7201);
+        vm.roll(uint256(a.toBlock) + automatic.maxWindowAgeBlocks() + 1);
         assertFalse(intake.complete(verdictId, abi.encode(verdictId, a, sig)));
         vm.revertToStateAndDelete(snap);
         snap = vm.snapshotState();
@@ -568,10 +579,11 @@ contract AutomaticBindingTest is AutomaticFixture {
         vm.expectRevert(AutoHookJobRequester.NotReady.selector);
         automatic.retryVerdict(jobId, FEE);
         vm.revertToStateAndDelete(snap);
-        // Exceptional owner closure can lose a later callback; it is an explicit trust power.
+        // Owner closure cannot preempt a still-admissible answer in the opposite ordering.
+        vm.expectRevert(AutoHookJobRequester.DeadlineNotReached.selector);
         automatic.confirmReviewExpiry(verdictId);
-        assertFalse(intake.complete(verdictId, abi.encode(verdictId, a, signature)));
-        assertEq(uint8(_review(jobId)), uint8(HookJobRequester.ReviewStatus.Unanswered));
+        assertTrue(intake.complete(verdictId, abi.encode(verdictId, a, signature)));
+        assertEq(uint8(_review(jobId)), uint8(HookJobRequester.ReviewStatus.NotPassed));
     }
 
     function testDuplicateIntakeIdRollsBackPaymentAndReservation() public {
@@ -630,6 +642,7 @@ contract AutomaticGasTest is AutomaticFixture {
             vm.cool(address(automatic));
             vm.cool(address(codec));
             vm.cool(address(100)); // Robinhood system clock must also be cold.
+            if (nativeClock != address(0)) vm.cool(nativeClock);
             vm.cool(signer);
             vm.cool(automatic.getAsk(askId).pin);
             // getAsk warms automatic again; cool it after retrieving the pin.

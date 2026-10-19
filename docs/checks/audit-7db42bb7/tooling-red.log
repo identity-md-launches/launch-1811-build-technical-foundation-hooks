@@ -1,0 +1,103 @@
+test_positive_affordable_quote_also_requires_phase_readiness (test.test_automatic_funding.FundingReadinessTest) ... ERROR
+test_price_increase_zero_or_unavailable_quote_is_not_ready (test.test_automatic_funding.FundingReadinessTest) ... test_codec_and_tooling_policy_must_agree (test.test_automatic_funding.WindowPolicyPreflightTest) ... FAIL
+test_exact_minima_and_larger_policies_report_assumptions (test.test_automatic_funding.WindowPolicyPreflightTest) ... ERROR
+test_old_default_cannot_pass_on_any_supported_chain (test.test_automatic_funding.WindowPolicyPreflightTest) ... test_unsupported_chain_rejected_without_guessing (test.test_automatic_funding.WindowPolicyPreflightTest) ... FAIL
+
+======================================================================
+ERROR: test_positive_affordable_quote_also_requires_phase_readiness (test.test_automatic_funding.FundingReadinessTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/imd539/.identitymd/work/5aecaddc-e223-4f19-9630-5516ef639a82/26987f70-7a42-4e89-8a4a-9ad9dea97259/test/test_automatic_funding.py", line 45, in test_positive_affordable_quote_also_requires_phase_readiness
+    self.assertEqual(result['phaseReady'], bool(phase))
+KeyError: 'phaseReady'
+
+======================================================================
+ERROR: test_exact_minima_and_larger_policies_report_assumptions (test.test_automatic_funding.WindowPolicyPreflightTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/unittest/mock.py", line 1379, in patched
+    return func(*newargs, **newkeywargs)
+  File "/home/imd539/.identitymd/work/5aecaddc-e223-4f19-9630-5516ef639a82/26987f70-7a42-4e89-8a4a-9ad9dea97259/test/test_automatic_funding.py", line 94, in test_exact_minima_and_larger_policies_report_assumptions
+    self.assertEqual(result['windowPolicy']['minimumWindowAgeBlocks'], minimum)
+KeyError: 'windowPolicy'
+
+======================================================================
+FAIL: test_price_increase_zero_or_unavailable_quote_is_not_ready (test.test_automatic_funding.FundingReadinessTest) (rpc=<test.test_automatic_funding.FundingRpc object at 0x7401c139d120>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/imd539/.identitymd/work/5aecaddc-e223-4f19-9630-5516ef639a82/26987f70-7a42-4e89-8a4a-9ad9dea97259/test/test_automatic_funding.py", line 36, in test_price_increase_zero_or_unavailable_quote_is_not_ready
+    self.assertFalse(client.verdict_readiness(ASK)['ready'])
+AssertionError: True is not false
+
+======================================================================
+FAIL: test_price_increase_zero_or_unavailable_quote_is_not_ready (test.test_automatic_funding.FundingReadinessTest) (rpc=<test.test_automatic_funding.FundingRpc object at 0x7401c139d0c0>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/imd539/.identitymd/work/5aecaddc-e223-4f19-9630-5516ef639a82/26987f70-7a42-4e89-8a4a-9ad9dea97259/test/test_automatic_funding.py", line 36, in test_price_increase_zero_or_unavailable_quote_is_not_ready
+    self.assertFalse(client.verdict_readiness(ASK)['ready'])
+AssertionError: True is not false
+
+======================================================================
+FAIL: test_price_increase_zero_or_unavailable_quote_is_not_ready (test.test_automatic_funding.FundingReadinessTest) (rpc=<test.test_automatic_funding.FundingRpc object at 0x7401c139cac0>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/imd539/.identitymd/work/5aecaddc-e223-4f19-9630-5516ef639a82/26987f70-7a42-4e89-8a4a-9ad9dea97259/test/test_automatic_funding.py", line 36, in test_price_increase_zero_or_unavailable_quote_is_not_ready
+    self.assertFalse(client.verdict_readiness(ASK)['ready'])
+AssertionError: True is not false
+
+======================================================================
+FAIL: test_codec_and_tooling_policy_must_agree (test.test_automatic_funding.WindowPolicyPreflightTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/unittest/mock.py", line 1379, in patched
+    return func(*newargs, **newkeywargs)
+  File "/home/imd539/.identitymd/work/5aecaddc-e223-4f19-9630-5516ef639a82/26987f70-7a42-4e89-8a4a-9ad9dea97259/test/test_automatic_funding.py", line 86, in test_codec_and_tooling_policy_must_agree
+    with self.assertRaises(StoreError): preflight(rpc, REQUESTER, TOKEN, rpc.spec)
+AssertionError: StoreError not raised
+
+======================================================================
+FAIL: test_old_default_cannot_pass_on_any_supported_chain (test.test_automatic_funding.WindowPolicyPreflightTest) (chain=1)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/imd539/.identitymd/work/5aecaddc-e223-4f19-9630-5516ef639a82/26987f70-7a42-4e89-8a4a-9ad9dea97259/test/test_automatic_funding.py", line 80, in test_old_default_cannot_pass_on_any_supported_chain
+    with self.subTest(chain=chain), self.assertRaises(StoreError):
+AssertionError: StoreError not raised
+
+======================================================================
+FAIL: test_old_default_cannot_pass_on_any_supported_chain (test.test_automatic_funding.WindowPolicyPreflightTest) (chain=11155111)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/imd539/.identitymd/work/5aecaddc-e223-4f19-9630-5516ef639a82/26987f70-7a42-4e89-8a4a-9ad9dea97259/test/test_automatic_funding.py", line 80, in test_old_default_cannot_pass_on_any_supported_chain
+    with self.subTest(chain=chain), self.assertRaises(StoreError):
+AssertionError: StoreError not raised
+
+======================================================================
+FAIL: test_old_default_cannot_pass_on_any_supported_chain (test.test_automatic_funding.WindowPolicyPreflightTest) (chain=4663)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/imd539/.identitymd/work/5aecaddc-e223-4f19-9630-5516ef639a82/26987f70-7a42-4e89-8a4a-9ad9dea97259/test/test_automatic_funding.py", line 80, in test_old_default_cannot_pass_on_any_supported_chain
+    with self.subTest(chain=chain), self.assertRaises(StoreError):
+AssertionError: StoreError not raised
+
+======================================================================
+FAIL: test_old_default_cannot_pass_on_any_supported_chain (test.test_automatic_funding.WindowPolicyPreflightTest) (chain=31337)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/imd539/.identitymd/work/5aecaddc-e223-4f19-9630-5516ef639a82/26987f70-7a42-4e89-8a4a-9ad9dea97259/test/test_automatic_funding.py", line 80, in test_old_default_cannot_pass_on_any_supported_chain
+    with self.subTest(chain=chain), self.assertRaises(StoreError):
+AssertionError: StoreError not raised
+
+======================================================================
+FAIL: test_unsupported_chain_rejected_without_guessing (test.test_automatic_funding.WindowPolicyPreflightTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/unittest/mock.py", line 1379, in patched
+    return func(*newargs, **newkeywargs)
+  File "/home/imd539/.identitymd/work/5aecaddc-e223-4f19-9630-5516ef639a82/26987f70-7a42-4e89-8a4a-9ad9dea97259/test/test_automatic_funding.py", line 101, in test_unsupported_chain_rejected_without_guessing
+    with self.assertRaises(StoreError): preflight(rpc, REQUESTER, TOKEN, rpc.spec)
+AssertionError: StoreError not raised
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.331s
+
+FAILED (failures=9, errors=2)

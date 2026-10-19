@@ -14,12 +14,14 @@ const artifactType = '(bytes32,bytes32,bytes32,bytes32,bytes32,bytes32,bytes32,b
 
 test('published automatic ABI equals compiler output and selectors are pinned', () => {
   assert.deepEqual(JSON.parse(readFileSync('site/AutoHookJobRequester.abi.json')),artifact.abi);
+  assert.deepEqual(JSON.parse(readFileSync('site/HookRequestCodec.abi.json')),JSON.parse(readFileSync('out/HookRequestCodec.sol/HookRequestCodec.json')).abi);
   assert.deepEqual(JSON.parse(readFileSync('site/GatedHookDeployer.abi.json')),JSON.parse(readFileSync('out/GatedHookDeployer.sol/GatedHookDeployer.json')).abi);
   const signatures = {open:'openJob('+type+',address,bytes,uint256,uint256)',commit:'commitArtifact(bytes32,'+artifactType+',bytes20)',
     verdict:'requestVerdict(bytes32)',retry:'retryVerdict(bytes32,uint256)',withdraw:'withdrawRefund(address)',cancel:'cancelReserve(bytes32)',
     job:'getJob(bytes32)',ask:'jobAsk(bytes32)',approved:'approvedArtifact(bytes32)',automatic:'automaticBindingSupported()',asset:'asset()',
     intake:'intake()',jobAction:'jobAction()',candidate:'candidateDigest(bytes32)',epoch:'reviewReceiptSignerEpoch(bytes32)',revoked:'revokedSignerEpochs(uint32)',readiness:'verdictReadiness(bytes32)',head:'head()',depth:'WINDOW_DEPTH()',
-    renew:'renewVerdict(bytes32)',reserveDeadline:'reserveDeadline(bytes32)',reserve:'reserveOf(bytes32)'};
+    renew:'renewVerdict(bytes32)',reserveDeadline:'reserveDeadline(bytes32)',reserve:'reserveOf(bytes32)',
+    topUp:'topUpReserve(bytes32,uint256)',funding:'verdictFunding(bytes32)',askContext:'getAsk(bytes32)',maxPrice:'maxPrice()'};
   for (const [name,sig] of Object.entries(signatures)) assert.equal(A.selectors[name],artifact.methodIdentifiers[sig]);
   const ui = readFileSync('site/automatic-ui.js','utf8');
   assert.ok(ui.includes(cast('sig','requester()').slice(2)));
@@ -120,6 +122,7 @@ test('wallet renewal sends only requester calldata and refreshes the reserve dea
     if (data.startsWith('0x'+A.selectors.ask)) return hash;
     if (data.startsWith('0x'+A.selectors.approved) || data.startsWith('0x'+A.selectors.epoch)) return '0x'+A.uint(0);
     if (data.startsWith('0x'+A.selectors.readiness)) return '0x'+[0,900000,900000,899992].map(n => A.uint(n)).join('');
+    if (data.startsWith('0x'+A.selectors.funding)) return '0x'+A.uint(500)+A.uint(500)+A.address(address);
     if (data.startsWith('0x'+A.selectors.reserveDeadline)) return '0x'+A.uint(1800086400);
     if (data.startsWith('0x'+A.selectors.reserve)) return '0x'+A.address(address)+A.uint(500)+A.uint(0);
     throw Error('unexpected call');
@@ -184,6 +187,7 @@ test('wallet refuses an early native-window trigger before gas estimation or sen
       return '0x'+[0,900007,900000,899999].map(n => A.uint(n)).join('');
     }
     if (params[0].data === '0x'+A.selectors.depth) return '0x'+A.uint(8);
+    if (params[0].data.startsWith('0x'+A.selectors.funding)) return '0x'+A.uint(500)+A.uint(500)+A.address(address);
     throw Error('unexpected call');
   }};
   vm.runInNewContext(readFileSync('site/automatic-ui.js','utf8'),{
@@ -191,5 +195,5 @@ test('wallet refuses an early native-window trigger before gas estimation or sen
   });
   await element('verdict').click();
   assert.match(element('output').textContent,/not ready: 1 native blocks remaining/);
-  assert.deepEqual(seen,['eth_call','eth_call']);
+  assert.deepEqual(seen,['eth_call','eth_call','eth_call']);
 });

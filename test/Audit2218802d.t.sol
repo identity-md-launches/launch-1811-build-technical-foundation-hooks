@@ -122,7 +122,8 @@ contract AuditReserveWindowTest is AutomaticFixture {
         if (robinhood) {
             vm.chainId(4663);
             spec.chainId = 4663;
-            vm.etch(address(100), type(WindowArbSysMock).runtimeCode);
+            automatic.setPanel(7, 5, codec.minimumWindowAgeBlocks());
+            _installNativeClock();
             WindowArbSysMock(address(100)).setHead(900_000);
         }
     }
@@ -496,7 +497,7 @@ contract AuditSignerEpochTest is AutomaticFixture {
         automatic.closeRevokedVerdict(jobId);
         vm.expectRevert(AutoHookJobRequester.DeadlineNotReached.selector);
         automatic.confirmReviewExpiry(verdictId);
-        vm.warp(automatic.getAsk(askId).deadline + 1);
+        vm.warp(uint256(automatic.getAsk(askId).deadline) + 300 + 1 days + 1);
         vm.prank(creator);
         vm.expectRevert();
         automatic.confirmReviewExpiry(verdictId);

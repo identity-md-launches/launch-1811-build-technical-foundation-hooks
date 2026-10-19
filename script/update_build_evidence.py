@@ -10,7 +10,7 @@ from pathlib import Path
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
-BASE = '205fa11271ab17a26630154815fae4c390aac624'
+BASE = '357201be804e18ab48567172fb6c8b07acb30a2c'
 
 
 def write(path, value):
@@ -22,7 +22,7 @@ def main():
     paths = set(historical['files']) | {str(p.relative_to(ROOT)) for p in (ROOT / 'src/deployment').glob('*.sol')}
     paths |= {str(p.relative_to(ROOT)) for p in (ROOT / 'src/imd/automatic').glob('*.sol')}
     current = {'sourceCommit': None, 'baseCommit': BASE,
-               'description': 'Local fixes for audit 2218802d: Delivered-only commitment, renewable reserves, bounded signed validity, trigger-time signer epochs and composed codec. Not independently audited; historical audited-build.json is unchanged.',
+               'description': 'Local fixes for audit 7db42bb7 findings 1-4: full-horizon chain window policy, delayed expiry recovery, original-asset reserve top-ups, funded SDK/UI readiness and deterministic codec review validation. Not independently audited; historical audited-build.json is unchanged.',
                'algorithm': 'sha256', 'files': {}, 'contracts': {}}
     for path in sorted(paths):
         current['files'][path] = hashlib.sha256((ROOT / path).read_bytes()).hexdigest()

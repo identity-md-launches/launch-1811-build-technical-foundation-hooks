@@ -1,0 +1,34 @@
+Compiling 118 files with Solc 0.8.26
+Solc 0.8.26 finished in 16.49s
+Compiler run successful with warnings:
+Warning (2018): Function state mutability can be restricted to view
+   --> test/OracleWindowRegression.t.sol:431:5:
+    |
+431 |     function testOfficialOracleQuestionVectorAndExistingPrefixAgree() public {
+    |     ^ (Relevant source part starts here and spans across multiple lines).
+
+
+Ran 6 tests for test/scratch/BaselineHorizon.t.sol:BaselineHorizonTest
+[FAIL: full-horizon valid answer lost] testFullHorizonEthereumFalse() (gas: 16904688)
+[FAIL: full-horizon valid answer lost] testFullHorizonEthereumTrue() (gas: 16904691)
+[FAIL: full-horizon valid answer lost] testFullHorizonLocal() (gas: 16906570)
+[FAIL: full-horizon valid answer lost] testFullHorizonRobinhoodFalse() (gas: 17188030)
+[FAIL: full-horizon valid answer lost] testFullHorizonRobinhoodTrue() (gas: 17188057)
+[FAIL: full-horizon valid answer lost] testFullHorizonSepolia() (gas: 16935591)
+Suite result: FAILED. 0 passed; 6 failed; 0 skipped; finished in 36.18ms (79.99ms CPU time)
+
+Ran 1 test suite in 38.63ms (36.18ms CPU time): 0 tests passed, 6 failed, 0 skipped (6 total tests)
+
+Failing tests:
+Encountered 6 failing tests in test/scratch/BaselineHorizon.t.sol:BaselineHorizonTest
+[FAIL: full-horizon valid answer lost] testFullHorizonEthereumFalse() (gas: 16904688)
+[FAIL: full-horizon valid answer lost] testFullHorizonEthereumTrue() (gas: 16904691)
+[FAIL: full-horizon valid answer lost] testFullHorizonLocal() (gas: 16906570)
+[FAIL: full-horizon valid answer lost] testFullHorizonRobinhoodFalse() (gas: 17188030)
+[FAIL: full-horizon valid answer lost] testFullHorizonRobinhoodTrue() (gas: 17188057)
+[FAIL: full-horizon valid answer lost] testFullHorizonSepolia() (gas: 16935591)
+
+Encountered a total of 6 failing tests, 0 tests succeeded
+
+Tip: Run `forge test --rerun` to retry only the 6 failed tests
+Tip: Run `forge test --debug --match-test <TEST_NAME>` to inspect one failing test in the debugger

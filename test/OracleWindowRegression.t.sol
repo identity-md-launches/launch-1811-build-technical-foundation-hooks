@@ -7,16 +7,10 @@ import {HookJobRequester} from "../src/imd/HookJobRequester.sol";
 import {OracleAttestation} from "../src/imd/OracleAttestation.sol";
 import {OracleQuestion} from "./helpers/OracleQuestion.sol";
 import {HookRequestCodec} from "../src/imd/automatic/HookRequestCodec.sol";
+import {WindowArbSysMock} from "./helpers/WindowArbSysMock.sol";
 
 /// @dev Distinct clocks are deliberate: vm.roll models the EVM's L1 height on Robinhood,
 /// while this system-contract mock supplies the question chain's native L2 height.
-contract WindowArbSysMock {
-    uint256 public arbBlockNumber;
-
-    function setHead(uint256 value) external {
-        arbBlockNumber = value;
-    }
-}
 
 contract OracleWindowRegressionTest is AutomaticFixture {
     function _prepared() internal {
@@ -71,7 +65,8 @@ contract OracleWindowRegressionTest is AutomaticFixture {
     function testRobinhoodUsesNativeClockForWindowAndCallback() public {
         vm.chainId(4663);
         spec.chainId = 4663;
-        vm.etch(address(100), type(WindowArbSysMock).runtimeCode);
+        automatic.setPanel(7, 5, codec.minimumWindowAgeBlocks());
+        _installNativeClock();
         WindowArbSysMock arb = WindowArbSysMock(address(100));
         arb.setHead(900_000);
         (jobId, askId) = _open();
@@ -99,8 +94,10 @@ contract OracleWindowRegressionTest is AutomaticFixture {
     }
 
     function testMissingRobinhoodSystemClockFailsBeforeBuildPayment() public {
+        vm.mockCall(address(100), abi.encodeWithSignature("arbBlockNumber()"), bytes(""));
         vm.chainId(4663);
         spec.chainId = 4663;
+        automatic.setPanel(7, 5, codec.minimumWindowAgeBlocks());
         vm.prank(creator);
         vm.expectRevert();
         automatic.openJob(spec, address(gated), "A bounded swap hook", FEE, FEE);
@@ -144,7 +141,8 @@ contract OracleWindowPolicyTest is AutomaticFixture {
     function _robinhood(uint256 height) private {
         vm.chainId(4663);
         spec.chainId = 4663;
-        vm.etch(address(100), type(WindowArbSysMock).runtimeCode);
+        automatic.setPanel(7, 5, codec.minimumWindowAgeBlocks());
+        _installNativeClock();
         _native(height);
     }
 
@@ -231,7 +229,7 @@ contract OracleWindowPolicyTest is AutomaticFixture {
         OracleAttestation.Attestation memory a = _att(askId, true);
         bytes memory sig = _sign(a);
         uint256 snapshot = vm.snapshotState();
-        _native(907_201);
+        _native(900_000 + automatic.maxWindowAgeBlocks() + 1);
         assertFalse(intake.complete(verdictId, abi.encode(verdictId, a, sig)));
         assertFalse(automatic.consumed(a.requestId));
         assertTrue(vm.revertToStateAndDelete(snapshot));
@@ -243,7 +241,7 @@ contract OracleWindowPolicyTest is AutomaticFixture {
         _native(899_999);
         assertFalse(intake.complete(verdictId, abi.encode(verdictId, a, sig)));
         assertTrue(vm.revertToStateAndDelete(snapshot));
-        _native(907_200);
+        _native(900_000 + automatic.maxWindowAgeBlocks());
         assertTrue(intake.complete(verdictId, abi.encode(verdictId, a, sig)));
     }
 
@@ -332,9 +330,9 @@ contract OracleWindowPolicyTest is AutomaticFixture {
         _robinhood(1000);
         for (uint256 i; i < 3; ++i) {
             uint256 snap = vm.snapshotState();
-            if (i == 0) vm.etch(address(100), hex"60006000fd"); // revert
-            if (i == 1) vm.etch(address(100), hex"60016000f3"); // short return
-            if (i == 2) vm.etch(address(100), hex"60406000f3"); // oversized return
+            if (i == 0) vm.etch(nativeClock, hex"60006000fd"); // revert
+            if (i == 1) vm.etch(nativeClock, hex"60016000f3"); // short return
+            if (i == 2) vm.etch(nativeClock, hex"60406000f3"); // oversized return
             vm.prank(creator);
             vm.expectRevert();
             automatic.openJob(spec, address(gated), "bounded hook", FEE, FEE);
@@ -425,9 +423,9 @@ contract OracleWindowPolicyTest is AutomaticFixture {
     function testWindowAgePolicyCannotMakeFreshestWindowUnusable() public {
         vm.expectRevert(AutoHookJobRequester.InvalidConfig.selector);
         automatic.setPanel(7, 5, 7);
-        automatic.setPanel(7, 5, 8);
+        automatic.setPanel(7, 5, codec.minimumWindowAgeBlocks());
         _ready();
-        _answer(true); // age == depth is the minimum valid policy, with no delivery slack
+        _answer(true); // chain-specific minimum also permits immediate delivery
     }
 
     function testOfficialOracleQuestionVectorAndExistingPrefixAgree() public {
@@ -502,7 +500,8 @@ contract RobinhoodAutomaticGasTest is AutomaticGasTest {
     function _ready() internal override {
         vm.chainId(4663);
         spec.chainId = 4663;
-        vm.etch(address(100), type(WindowArbSysMock).runtimeCode);
+        automatic.setPanel(7, 5, codec.minimumWindowAgeBlocks());
+        _installNativeClock();
         WindowArbSysMock arb = WindowArbSysMock(address(100));
         arb.setHead(900_000);
         (jobId, askId) = _open();

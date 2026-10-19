@@ -1,6 +1,6 @@
 {
   "format": "hooks-store-automatic-infrastructure-draft/v1",
-  "baseCommit": "205fa11271ab17a26630154815fae4c390aac624",
+  "baseCommit": "357201be804e18ab48567172fb6c8b07acb30a2c",
   "status": "Source and local tests only; no transactions authorized or executed. This is not launch.json.",
   "runbook": "docs/AUTOMATIC_BINDING.md",
   "contracts": [
@@ -9,7 +9,10 @@
       "source": "src/imd/automatic/HookRequestCodec.sol",
       "constructorTypes": [],
       "constructorArgs": [],
-      "ownerCalls": []
+      "ownerCalls": [],
+      "readback": [
+        "minimumWindowAgeBlocks()"
+      ]
     },
     {
       "contract": "AutoHookJobRequester",
@@ -37,7 +40,12 @@
       "defaultPanel": {
         "panelSize": 7,
         "quorum": 5,
-        "maxWindowAgeBlocks": 7200
+        "maxWindowAgeBlocksByChain": {
+          "1": 14433,
+          "11155111": 14433,
+          "4663": 3462008,
+          "31337": 173108
+        }
       },
       "ownerCalls": [],
       "readback": [
@@ -59,8 +67,8 @@
       ],
       "windowPolicy": {
         "depth": 8,
-        "start": "Delivered-before-commit; native start refreshed by delivery, commitment, retry creation or renewal",
-        "ready": "nativeHead >= start + 8; active delivered job, candidate and reserve; within deadline",
+        "start": "Native start refreshed by delivery, commitment, retry, renewal or top-up; commitment requires Delivered",
+        "ready": "nativeHead >= start + 8; active Delivered/None job, committed candidate, unspent reserve within deadline; SDK/UI additionally require an available positive live quote <= reserve",
         "clockChains": {
           "1": "block.number",
           "11155111": "block.number; job.open unavailable",
@@ -68,8 +76,20 @@
           "31337": "local block.number only"
         },
         "otherChains": "revert before payment",
-        "reserveDeadline": "max(existing, now + 1 day) on delivery/commit; requester can renew an expired unspent None ask without transferring funds or creating an ask",
-        "agePolicyRunbook": "docs/AUTOMATIC_BINDING.md#per-chain-maxwindowageblocks-policy"
+        "reserveDeadline": "max(existing, now + 1 day) on delivery/commit/renew/top-up; renewal only after expiry; top-up allowed before or after expiry",
+        "agePolicyRunbook": "docs/AUTOMATIC_BINDING.md#per-chain-maxwindowageblocks-policy",
+        "deliveryHorizonSeconds": 173100,
+        "assumedCadenceFloorMilliseconds": {
+          "1": 12000,
+          "11155111": 12000,
+          "4663": 50,
+          "31337": 1000
+        },
+        "minimumFormula": "8 + ceil(173100000 / assumedCadenceFloorMilliseconds)",
+        "constructor": "Reads minimumWindowAgeBlocks() from the already-deployed pinned codec; unsupported chains revert",
+        "preflight": "Compare codec minimum with independent tooling policy and reject any configured age below it; this validates assumptions, not live cadence",
+        "reviewExpiry": "Owner closure requires now > uint256(ask.deadline) + 300 + 86400",
+        "topUp": "Requester only; Delivered/None, committed, uncancelled, current ask intakeId == 0; positive original-asset exact pull; total reserve <= current maxPrice; ask/job/candidate unchanged"
       },
       "signerPolicy": "Signer address and epoch recorded at trigger. Ordinary rotation preserves pending answers; explicit epoch revocation blocks pending and finalized verdicts."
     },
@@ -107,10 +127,10 @@
   "responsibilities": [
     "Infrastructure setup only; no per-hook owner binding call.",
     "Check runtime sizes, codec code hash, protocol quotes, owner handoff and enabled manager before admitting user fees.",
-    "Compare requester head() with the same-block native question-chain RPC height. On Robinhood, never use Solidity block.number for oracle windows. Monitor eight-block depth separately from finality and choose maxWindowAgeBlocks for native cadence and callback latency (minimum eight, default 7200).",
+    "Compare requester head() with the same-block native question-chain RPC height. On Robinhood use ArbSys, never L1 block.number. The minimum policies assume cadence floors of 12s / 50ms / 1s and cover 173100 seconds plus eight blocks; they are not live guarantees.",
     "Ethereum and Robinhood sell both actions in the captured capabilities. Sepolia is oracle-only; Base has no supported Intake. Never guess support.",
     "The existing listing/ad fee and recipient configuration remain as in the historical Store runbook.",
     "Obtain independent adversarial review and separate authorization for any later live pilot or deployment.",
-    "Set and record maxWindowAgeBlocks per deployment using native cadence and intended issuance/delivery budget; the unchanged 7200 default is not a per-chain latency guarantee. Requalify production ERC-1271 gas and registry policy changes before use."
+    "Record the selected age policy and preflight output before accepting fees; increase it if measured native cadence or bursts invalidate the assumed floor. Changes apply to newly triggered asks only. Requalify ERC-1271 callback gas and registry policy changes. Monitor prices; creators can approve and top up an unspent committed ask without repaying the build."
   ]
 }

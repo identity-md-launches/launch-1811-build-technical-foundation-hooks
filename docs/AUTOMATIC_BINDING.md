@@ -1,7 +1,7 @@
 # Automatic oracle authorization
 
-This revision continues `205fa11271ab17a26630154815fae4c390aac624`, fixing the four actionable
-findings in audit `2218802d-0828-4f00-81cf-487b51c12aac`. It preserves confirmed native-chain
+This revision continues `357201be804e18ab48567172fb6c8b07acb30a2c`, implementing findings 1–4 in
+[audit 7db42bb7](https://api.imd.fun/jobs/7db42bb7-5204-4805-894f-db1a2c11cd8e/report.md). It preserves confirmed native-chain
 windows, automatic binding and exact-artifact authorization. Use `AutoHookJobRequester`, its immutable `HookRequestCodec`, and `GatedHookDeployer`.
 The old `HookJobRequester` remains a legacy manual consumer for existing integrations and tests;
 its owner-binding methods are not part of the new flow. No live deployment, payment, wallet
@@ -20,7 +20,8 @@ HookSpec v1, ArtifactV2, and the official deployment policy. Both requesters exp
 2. Call `openJob(fullHookSpec, gatedDeployer, brief, maxBuildFee, verdictReserve)`. It validates the
    full spec, chain, deterministic codec and deployer/requester relationship. It pulls exactly
    the build price plus reserve, spends only the build price, and records the full spec/context.
-   Defaults are 0.5 IMD per action, so the usual prepayment is **1 IMD**. The current Intake price
+   The draft retains a 0.5 IMD cap; historical captured quotes were 0.5 IMD per action (**1 IMD**
+   total). Always read the current quotes before approving. The current Intake price
    must be nonzero and within the caller's caps and the configured per-action ceiling. No native
    currency is accepted as the fee asset.
 3. Wait for **Delivered**, then obtain the accepted build and independent review from the job's public records. Inspect their
@@ -30,12 +31,14 @@ HookSpec v1, ArtifactV2, and the official deployment policy. Both requesters exp
    only if the reserve has not been cancelled. Commitment is a candidate selection, not approval.
 4. Once the job is Delivered and the candidate committed, **any wallet** may call
    `requestVerdict(askId)`. The native head must be at least eight blocks beyond candidate
-   commitment (or beyond retry creation or renewal), with an active reserve.
-   `verdictReadiness(askId)` reports readiness, native head, start and closing block. Early calls
+   commitment (or beyond retry creation, renewal or top-up), with an active reserve.
+   `verdictReadiness(askId)` reports phase/window readiness, native head, start and closing block.
+   `verdictFunding(askId)` returns the live price, reserve and token using the job's snapshotted Intake,
+   action and asset. SDK/UI require both phase readiness and an available positive quote <= reserve. Early calls
    revert before quoting, pin creation or payment, and cannot spend reserves.
    The trigger pays native transaction gas only; the contract spends its reserved IMD once.
    The caller supplies no question, prefix, artifact, recipient or price. A lower verdict price
-   credits the unused reserve to the original requester. A higher price reverts without spending.
+   credits the unused reserve to the original requester. A higher price reverts without spending; the requester can top up the existing unspent ask.
 5. The asynchronous oracle callback verifies and records true or false. A genuine false is
    terminal. After Passed, the requester uses `sdk.gated_deploy` in automatic mode, mines a salt
    through `eth_call`, then sends the generated deployment transaction. Deployment is a separate
@@ -58,6 +61,23 @@ no token transfer, quote, new ask, new candidate, pin or oracle request. The sam
 mature for eight native blocks. This also repairs an expired untriggered retry. It cannot revive
 Pending, Passed, NotPassed, Unanswered or cancelled attempts. After the renewed deadline the
 requester may still cancel and withdraw the same unused funds.
+
+For an **unspent committed ask**, `topUpReserve(jobId, amount)` requires the original requester,
+Delivered, review None, a committed candidate, no cancellation, no current ask Intake ID, and
+`amount > 0`. The resulting total reserve must not exceed the **current** `maxPrice`, including
+after protocol rotation or a cap reduction. The exact transfer uses the job's **original asset**,
+credits both its reserve and protected escrow, and refreshes the same native window/deadline.
+It works before or after the reserve deadline and does not require a current quote. It cannot
+repay the build, replace the candidate, create an ask, revive NotPassed/cancelled work, or fund a
+spent ask. Unanswered still requires `retryVerdict` first; that fresh unspent retry may be topped up.
+`ReserveToppedUp(jobId, amount, reserve)` records funding. Surplus at trigger and cancellations
+remain pull-refunded exactly once; the owner cannot sweep them. Transfer failure, an inexact
+transfer or a reentrant funding attempt reverts atomically.
+
+If a price rise exceeds the configured ceiling, the owner must deliberately raise `maxPrice`
+through `setProtocol` before a sufficient top-up is possible. This changes a funding limit, not
+review authorization. A requester may instead wait, renew an expired window, or cancel after its
+deadline; a build fee is never charged again by top-up or renewal.
 
 Every wallet transaction needs the chain's native gas currency. The UI estimates gas before asking
 the wallet to send. Local Anvil transaction measurements using **MockIntake, which stores entire
@@ -91,8 +111,8 @@ the absolute window requested. There is no owner-supplied question mapping or UU
 A writer may mispair Intake and oracle IDs, but a different ask's signed question cannot pass.
 Even a separately bought answer to this identical question only approves this identical candidate.
 
-The absolute window starts at candidate commitment following delivery (or at retry creation or
-renewal), and closes at **native head minus eight** (`WINDOW_DEPTH = 8`).
+The absolute window starts at candidate commitment following delivery (or at retry creation,
+renewal or top-up), and closes at **native head minus eight** (`WINDOW_DEPTH = 8`).
 The start must be less than or equal to that closing block before payment. A one-block window
 is valid at the first eligible head: for a latest input at native block S, head S+7 is too early;
 head S+8 requests [S,S]. This is already eight blocks deep at the trigger, satisfying IMD's
@@ -101,7 +121,7 @@ Ethereum Intake setting is only three confirmations; Robinhood's is two. Neither
 consumer's depth. The fixed window intentionally ends **before** the oracle trigger; only the
 signed issuance time must be at or after that trigger.
 
-Every recorded height uses the same `head()` function: open, commitment, job delivery, retry, renewal,
+Every recorded height uses the same `head()` function: open, commitment, job delivery, retry, renewal, top-up,
 trigger and callback freshness. Its implementation is in the immutable, runtime-pinned codec:
 
 | Question chain | Clock |
@@ -120,7 +140,7 @@ capabilities. Adding a chain requires a reviewed codec/requester revision, not a
 
 At callback, the signed window must equal the requested window exactly. The closing block must
 be strictly behind the native head and no more than the snapshotted block-age bound behind it
-(default 7,200). Timestamp checks use widened arithmetic and inclusive bounds:
+(chain-specific minima below). Timestamp checks use widened arithmetic and inclusive bounds:
 
 ```text
 askedAt <= issuedAt <= ask.deadline + 300 seconds
@@ -134,9 +154,9 @@ accepted, including after the local ask deadline, subject to the exact question/
 block-age, domain, panel, signer and replay checks. The receipt time is `min(issuedAt, now)` so
 permitted future skew cannot create a future deployment timestamp. The deployment gate retains
 its separate approval freshness policy; acceptance of an old answer does not extend that policy.
-`setPanel` rejects an age bound below eight, which could never accept even an immediate
-answer. Eight leaves no delivery slack; the operator must select a larger bound suited to native
-block cadence and observed oracle latency. Delayed delivery can still fail the chosen policy.
+`setPanel` rejects any age below the codec's chain-specific minimum. The constructor initializes
+that minimum; requester `head()` calls `codec.paymentHead(age)` to validate policy **before**
+reading the native head. Delayed delivery can still fail if actual cadence violates the assumed floor.
 The eight-block margin is admission depth, not a finality or reorg guarantee.
 
 Protocol canonicalization drift fails closed. Updating the prefix algorithm requires a reviewed
@@ -145,40 +165,44 @@ exact runtime hash is checked before a build can take payment. Its prefix, quest
 and body encoding retain the previous semantics; composition moves their assembly out of the requester.
 `prepareJob` composes the existing `validateOpen`, `validateBrief`, HookSpec hash and jobBody.
 `prepareOracle` composes the existing question, prefix, immutable pin creation and oracleBody.
+`validateReview` checks the deterministic question, exact window, timestamp bounds, snapshotted
+panel policy and canonical 32-byte bool. Its widened context words come from bounded requester
+storage; they confer no authority when the helper is called directly. It never verifies signatures,
+consumes UUIDs, changes epochs, settles a review or transfers funds.
 Both derive the consumer from `msg.sender`; the codec's address never substitutes for the
 requester in the body or signed question. Signature verification remains in the requester,
 including its EIP-712 domain and ERC-1271 caller context. This retains the 24,576-byte runtime cap.
-New prepayments/retries still obey
+New prepayments/retries and the total reserve after each top-up still obey
 the current maxPrice; a funded verdict still obeys its original reserve cap. Compiler changes require an
 explicit code/hash update; the project still pins solc 0.8.26, Cancun, optimizer 200, without IR,
 metadata hash, FFI or filesystem access.
 
 ## Per-chain maxWindowAgeBlocks policy
 
-This deployment setting is a **native block count**, independent of the signed timestamp bounds.
-The unchanged default is 7,200 on every supported chain. It is not a promised delivery duration.
-The launch owner must choose and record a policy for each deployment with
-`setPanel(panelSize, quorum, maxWindowAgeBlocks)` before admitting fees. Changes only affect asks
-triggered afterward; an existing ask retains its age bound.
+This deployment setting is a **native block count** with a minimum that covers the full allowed
+trigger-to-delivery horizon: `86400 + 300 + 86400 = 173100` seconds. The codec exposes
+`minimumWindowAgeBlocks()`; the constructor sets that value and `setPanel` cannot undersize it.
+Changes affect asks triggered afterward; an existing ask retains its age bound.
 
-| Chain | Configured default | Operator sizing responsibility |
+| Chain | Minimum / constructor default | Assumed fastest cadence |
 |---|---|---|
-| Ethereum (1) | 7,200 EVM blocks | At an assumed 12 seconds/block, about 24 hours less the eight-block depth; size for the intended issue and delivery delay. |
-| Sepolia (11155111) | 7,200 EVM blocks | Size from this chain's measured cadence and oracle latency if job.open becomes available; clock support alone does not enable paid builds. |
-| Robinhood (4663) | 7,200 ArbSys native blocks | Measure the native counter, never L1 block.number. Sub-second cadence makes this default minutes; select a larger value if the intended delivery budget needs it. No cadence was measured in this assignment. |
-| Local (31337) | 7,200 test blocks | Deterministic test policy only, no wall-clock implication. |
-| Other chains, including 46630 and 84532 | Unsupported | There is no fallback clock or configured automatic workflow. |
+| Ethereum (1) | 14,433 EVM blocks | 12 seconds/block |
+| Sepolia (11155111) | 14,433 EVM blocks | 12 seconds/block; clock support alone does not enable paid builds |
+| Robinhood (4663) | 3,462,008 ArbSys native blocks | 50 milliseconds/block; never use L1 block.number |
+| Local (31337) | 173,108 test blocks | 1 second/block, local testing only |
+| Any other chain | Revert | No fallback policy or clock |
 
-For a chosen maximum trigger-to-delivery budget `D` seconds and conservative fastest native
-cadence `b` seconds/block, a sizing lower bound is `8 + ceil(D / b)`, plus an operator-selected
-margin for burstiness and observation uncertainty. Covering the entire permitted timestamp
-interval needs up to `D = 86400 + 300 + 86400 = 173100` seconds. At an **assumed** 12 seconds/block
-that lower bound is 14,433; at an **assumed** 0.1 seconds/block it is 1,731,008. These are arithmetic
-examples, not verified chain settings or launch defaults. A shorter selected age policy can
-still reject an otherwise valid delayed true or false callback. Monitor cadence and latency;
-there is no onchain guarantee that an arbitrary registry, clock or callback will fit its stipend.
-The read-only preflight reports `maxWindowAgeBlocks`, depth and native head, but does not certify
-cadence, finality, oracle delivery or the operator's selected policy.
+The formula is `8 + ceil(173100 seconds / cadenceFloor)`. The eight-block addition accounts for
+the already-confirmed closing block at the trigger. These floors are **assumptions**, not measured
+live guarantees, finality promises or limits enforced on a sequencer. Faster production cadence
+or bursts can exhaust the age allowance before a timestamp-valid answer arrives. Operators must
+monitor the native counter and callback latency, record the policy, and choose a larger bound
+when warranted. Raising the setting cannot change an already-triggered ask's snapshot.
+
+The read-only preflight independently computes this table, compares it to the deployed codec's
+minimum, and rejects undersized settings and unsupported chains. Its output records the chosen
+age, minimum, horizon and assumed cadence floor. It still does not prove live cadence, finality,
+Intake action availability in the future, or delivery within the 200,000-gas stipend.
 
 ## What the panel must establish
 
@@ -235,9 +259,12 @@ A failed callback can be lost: Intake attempts it once with 200,000 gas.
 A signed true or false is finalized atomically; there is no routine bind-first/receipt-first owner
 race in this successor. The legacy suite still tests both old callback/binding orders. A requester
 cannot expire a Pending verdict or erase NotPassed. Fresh valid callbacks remain eligible past
-the local review deadline. After one day, the owner may exceptionally `confirmReviewExpiry` only
-if no verified answer exists; the owner must independently establish non-delivery. Closing before
-an in-flight callback can lose it: this remains an explicit incident/recovery trust power.
+the local review deadline. The owner may exceptionally `confirmReviewExpiry` only when
+`now > uint256(ask.deadline) + 300 + 1 days` and no verified answer exists. Equality is still a
+valid delivery instant, so closure reverts there. This prevents owner expiry from preempting a
+still-valid true or false answer. After that boundary, even the latest-issued conforming answer
+has expired. The owner still handles incidents and independently checks non-delivery; ordinary
+users cannot close Pending or erase NotPassed.
 
 `retryVerdict(jobId, reserve)` is requester-funded and only permitted after Unanswered. It keeps
 the same immutable candidate, creates a fresh unique ask and a one-day reserve deadline, and
@@ -259,7 +286,7 @@ and events. It is an explicit compromised-signer exception, not normal review sh
 
 Protocol, token and action settings and panel minimums are snapshotted per job. Window-age policy
 and signer address/epoch are snapshotted at trigger. Current maxPrice caps new
-prepayments/retries. Two-step ownership and cancelled handovers are preserved. The owner cannot
+prepayments/retries and total reserves after top-ups. Two-step ownership and cancelled handovers are preserved. The owner cannot
 sweep reserves or refund credits. Job callbacks emit the full untrusted URI only up to 1,024 bytes; larger URIs emit JobResultURIOmitted
 with their length, so the result hash/status can still be recorded within the stipend (tested at 64 KiB).
 The callback transaction itself retains the original URI. No callback transfers funds or deploys; callback external calls
@@ -284,10 +311,10 @@ This assignment provides source and local tests only. No actual deployment addre
 | Contract / input | Who supplies or checks it |
 |---|---|
 | HookRequestCodec | Deploy the exact compiled no-argument codec first; check its runtime matches this build. It has no owner or settings. |
-| AutoHookJobRequester(owner, Intake, IMD, signer, maxPrice, codec) | The deployment operator supplies the real launch owner and protocol addresses for the selected chain. Constructor makes no external calls and never assigns ownership to the factory. Existing protocol reference addresses are configuration inputs, not hardcoded recipients. |
+| AutoHookJobRequester(owner, Intake, IMD, signer, maxPrice, codec) | The deployment operator supplies the real launch owner and protocol addresses for the selected chain. Deploy the codec first: this constructor reads its chain-specific minimum. It never assigns ownership to the factory. Existing protocol reference addresses are configuration inputs, not hardcoded recipients. |
 | GatedHookDeployer(owner, requester) | Deploy with the automatic requester as immutable verdict source. Never substitute the legacy requester when advertising automatic binding. |
 | `setProtocol(Intake, IMD, cap, jobAction, reviewAction)` | Launch owner, only when protocol configuration changes. Defaults use published padded action IDs job.open@job-1 and oracle.request@oracle-1; verify priceOf before opening. Existing jobs keep their original Intake/token/actions. |
-| `setPanel(panelSize, quorum, maxWindowAgeBlocks)` | Launch owner selects the deployment policy; defaults 7/5 and 7,200 native blocks; minimum age bound eight. Respect the paid door's current minimum/cap (captured minimum 5, maximum 100); test one-shot callback gas for any signer/policy change. |
+| `setPanel(panelSize, quorum, maxWindowAgeBlocks)` | Launch owner selects the deployment policy; defaults 7/5 with the chain-specific age minimum in the table above; undersizing reverts. Respect the paid door's current minimum/cap (captured minimum 5, maximum 100); test one-shot callback gas for any signer/policy change. |
 | `setManager(manager, codeHash, true)` on deployer | Launch owner performs initial manager-policy activation. Production pins are unchanged. Re-read manager code and check the appropriate chain; this is infrastructure setup, not a per-hook approval. |
 | Ad recipients and Store token configuration | Existing listing/featured-placement deployment runbook remains authoritative. This change does not alter ad fees, recipients, tokens or their settings. |
 | Worker source/build/review records | IMD workers and independent reviewers must preserve public reproducible source, exact commits and accepted submission identities. The creator submits the one candidate; the panel independently checks it. |
@@ -303,16 +330,24 @@ through eth_call before printing unsigned calldata.
 Use `python3 -m sdk.automatic --help` for unsigned approve/open/commit/verdict/retry/refund
 transactions, `renew <jobId>` for a simulated unsigned renewal, `reserve <jobId>` for the token,
 amount, cancellation flag and reserve deadline, and `status <askId>` for native-window readiness.
-The [wallet UI](../site/automatic.html) provides renewal as a requester wallet transaction.
+Use `top-up <jobId> --amount <positive token base units>` to prepare an unsigned **bounded approval
+and separate top-up** using the original token. The SDK checks ownership, phase, candidate,
+current ask, cancellation and total cap before printing either transaction. Execute the approval
+and top-up separately, then invoke `reserve` and `status` again for readback.
+The [wallet UI](../site/automatic.html) provides separate top-up approval and funding buttons.
+It reads allowance after approval, rechecks eligibility/cap before funding, then reads the job,
+ask, reserve, deadline and funding readiness after the receipt. An approval alone does not fund the ask.
 SDK and UI check Delivered before commitment. Each SDK invocation reads one pinned
 block; make a fresh invocation after any transaction. The UI displays the reserve deadline in Unix seconds, native head, closing block and blocks remaining, and reads readiness again before
-requesting a verdict. Both SDK and UI fail closed on unavailable clock/readiness calls, without
-substituting an RPC or L1 height. Readiness is a snapshot; price changes can still prevent an ask.
+requesting a verdict. Both SDK and UI fail closed on unavailable or malformed clock/readiness/funding calls. They
+require a positive live quote within reserve and never substitute a current-protocol quote for
+the snapshotted context or an RPC/L1 height for the native clock. Readiness is a snapshot; prices
+can still change before inclusion, in which case the contract reverts without spending.
 The UI uses textContent and never fetches a worker URI or asks a backend to sign.
 
 ## Evidence and limitations
 
-[Current audit-fix regressions and checks](checks/audit-2218802d/README.md) record this build.
+[Current audit-fix regressions and checks](checks/audit-7db42bb7/README.md) record this build.
 [Earlier window regressions and free checks](checks/oracle-window/README.md) are historical evidence. [Earlier automatic-binding vectors and logs](checks/automatic-binding/README.md)
 remain historical evidence. Together they distinguish:
 

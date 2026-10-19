@@ -9,7 +9,8 @@
     approved: '1648eac4', automatic: '0ff82b3a', asset: '38d52e0f', intake: '86d1508f',
     jobAction: '1079a365', candidate: '7868e9ab', epoch: '585ae49a', revoked: 'bc31fa7d',
     readiness: '123667dd', head: '8f7dcfa3', depth: '08d87b1f',
-    renew: 'b65b7d6f', reserveDeadline: '364a74f5', reserve: 'd7b8c543'
+    renew: 'b65b7d6f', reserveDeadline: '364a74f5', reserve: 'd7b8c543',
+    topUp: 'ffc731fb', funding: '057500fa', askContext: 'd026830b', maxPrice: 'e38d6b5c'
   };
   const fields = ['jobRequestId', 'sourceHash', 'sourceSubmissionHash', 'reviewSubmissionHash', 'evidenceHash',
     'buildHash', 'creationCodeHash', 'constructorArgsHash', 'runtimeCodeHash', 'chainId', 'deployer',
@@ -51,7 +52,7 @@
     return '0x' + selectors.commit + hex(job, 32) + artifactWords(artifact).join('') + hex(reviewedCommit, 20).padEnd(64, '0');
   }
   function idCalldata(kind, id) {
-    if (!['verdict', 'cancel', 'job', 'ask', 'approved', 'candidate', 'readiness', 'renew', 'reserveDeadline', 'reserve'].includes(kind)) throw Error('Unsupported ID call');
+    if (!['verdict', 'cancel', 'job', 'ask', 'approved', 'candidate', 'readiness', 'renew', 'reserveDeadline', 'reserve', 'funding', 'askContext'].includes(kind)) throw Error('Unsupported ID call');
     return '0x' + selectors[kind] + hex(id, 32);
   }
   function decodeReadiness(raw, depth) {
@@ -77,5 +78,20 @@
     return {token: '0x' + words[0].toString(16).padStart(40, '0'), amount: words[1].toString(),
       cancelled: words[2] === 1n, reserveDeadline: end.toString()};
   }
-  return {selectors, fields, hex, uint, address, openCalldata, commitCalldata, idCalldata, decodeReadiness, decodeJob, decodeReserve};
+  function topUpCalldata(job, amount) {
+    const word = uint(amount);
+    if (BigInt(amount) === 0n) throw Error('Top-up amount must be positive');
+    return '0x' + selectors.topUp + hex(job, 32) + word;
+  }
+  function decodeFunding(raw) {
+    const [price, reserve, token] = hex(raw, 96).match(/.{64}/g).map(w => BigInt('0x' + w));
+    if (token === 0n || token >= 1n << 160n) throw Error('Malformed funding token');
+    return {available: true, funded: price > 0n && price <= reserve, price: price.toString(),
+      reserve: reserve.toString(), token: '0x' + token.toString(16).padStart(40, '0')};
+  }
+  function fundedReadiness(phase, funding) {
+    return {...phase, phaseReady: phase.ready, ready: phase.ready && funding.available === true && funding.funded === true, funding};
+  }
+  return {selectors, fields, hex, uint, address, openCalldata, commitCalldata, idCalldata, decodeReadiness, decodeJob, decodeReserve,
+    topUpCalldata, decodeFunding, fundedReadiness};
 });

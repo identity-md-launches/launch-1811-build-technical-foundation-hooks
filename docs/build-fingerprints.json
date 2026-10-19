@@ -45,17 +45,17 @@
       "note": "Compiler runtime template; constructor fills immutables, so live code hashes differ."
     },
     "AutoHookJobRequester": {
-      "creationCodeBytes": 25885,
-      "creationCodeHash": "0x61b1cef99cdb80584fdbf181a200f89200fd8ef78d0c9b422683a9effc2bd56b",
-      "runtimeCodeBytes": 24258,
-      "runtimeCodeHash": "0x5b44db89a7029161ecf1d2ef8e1855aa5152a9688d3aa6b12692599464d71dc4",
+      "creationCodeBytes": 26298,
+      "creationCodeHash": "0x6e211df7cea9626b0eb0dcb078e25f3c35cc211a2e85ece90dd860ea23c99c80",
+      "runtimeCodeBytes": 24468,
+      "runtimeCodeHash": "0x6e860d0135a45b875edc387c30a0efb2491a72eecbc7d026c1a7c56e478fca41",
       "note": "Compiler runtime template; constructor fills immutables, so live code hashes differ."
     },
     "HookRequestCodec": {
-      "creationCodeBytes": 15320,
-      "creationCodeHash": "0x7f5291a3a437856d0811eb455eadfc0846bfd3869892e0572e9fda88e18c3b4f",
-      "runtimeCodeBytes": 15292,
-      "runtimeCodeHash": "0x859f399b399577f66ec08206409147fbab279c93545cd77f9aaa447e4faddcc5"
+      "creationCodeBytes": 16994,
+      "creationCodeHash": "0x153a7966fe0d626b2958b85469a8a98271f51088d1cf3ffe61604856d060c514",
+      "runtimeCodeBytes": 16966,
+      "runtimeCodeHash": "0xfb28d0432fba1c6ee9e6ec8d3ae5896d1a36c708c7ee6eccc701eb07dc6611ea"
     }
   }
 }

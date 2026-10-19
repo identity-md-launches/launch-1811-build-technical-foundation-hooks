@@ -1,0 +1,10 @@
+{
+  "AutoHookJobRequester": {
+    "url": "https://raw.githubusercontent.com/identity-md-launches/launch-1811-build-technical-foundation-hooks/357201be804e18ab48567172fb6c8b07acb30a2c/src/imd/automatic/AutoHookJobRequester.sol",
+    "sha256": "f2c8819c26d319f134415a81b80ebd4e6e10de8ef615087508814c5c17a64d3a"
+  },
+  "HookRequestCodec": {
+    "url": "https://raw.githubusercontent.com/identity-md-launches/launch-1811-build-technical-foundation-hooks/357201be804e18ab48567172fb6c8b07acb30a2c/src/imd/automatic/HookRequestCodec.sol",
+    "sha256": "2b13e3681db90fcf87b0d7beedc52771c369bfae3ffc67214be862b3a19fdb5d"
+  }
+}
