@@ -18,7 +18,8 @@ test('published automatic ABI equals compiler output and selectors are pinned', 
   const signatures = {open:'openJob('+type+',address,bytes,uint256,uint256)',commit:'commitArtifact(bytes32,'+artifactType+',bytes20)',
     verdict:'requestVerdict(bytes32)',retry:'retryVerdict(bytes32,uint256)',withdraw:'withdrawRefund(address)',cancel:'cancelReserve(bytes32)',
     job:'getJob(bytes32)',ask:'jobAsk(bytes32)',approved:'approvedArtifact(bytes32)',automatic:'automaticBindingSupported()',asset:'asset()',
-    intake:'intake()',jobAction:'jobAction()',candidate:'candidateDigest(bytes32)',epoch:'reviewReceiptSignerEpoch(bytes32)',revoked:'revokedSignerEpochs(uint32)',readiness:'verdictReadiness(bytes32)',head:'head()',depth:'WINDOW_DEPTH()'};
+    intake:'intake()',jobAction:'jobAction()',candidate:'candidateDigest(bytes32)',epoch:'reviewReceiptSignerEpoch(bytes32)',revoked:'revokedSignerEpochs(uint32)',readiness:'verdictReadiness(bytes32)',head:'head()',depth:'WINDOW_DEPTH()',
+    renew:'renewVerdict(bytes32)',reserveDeadline:'reserveDeadline(bytes32)',reserve:'reserveOf(bytes32)'};
   for (const [name,sig] of Object.entries(signatures)) assert.equal(A.selectors[name],artifact.methodIdentifiers[sig]);
   const ui = readFileSync('site/automatic-ui.js','utf8');
   assert.ok(ui.includes(cast('sig','requester()').slice(2)));
@@ -40,6 +41,101 @@ test('browser candidate encoding agrees with cast including bytes20 right paddin
   const tuple = '('+A.fields.map(f => String(a[f])).join(',')+')';
   assert.equal(A.commitCalldata(hash,a,commit),cast('calldata','commitArtifact(bytes32,'+artifactType+',bytes20)',hash,tuple,commit));
   assert.equal(A.idCalldata('verdict',hash),cast('calldata','requestVerdict(bytes32)',hash));
+  assert.equal(A.idCalldata('renew',hash),cast('calldata','renewVerdict(bytes32)',hash));
+  assert.equal(A.idCalldata('reserveDeadline',hash),cast('calldata','reserveDeadline(bytes32)',hash));
+});
+
+test('reserve and job decoders expose lifecycle state and reject malformed responses', () => {
+  const raw = '0x' + A.address(address) + A.uint(500) + A.uint(0);
+  assert.deepEqual(A.decodeReserve(raw, '0x'+A.uint(1800000000)), {
+    token:address, amount:'500', cancelled:false, reserveDeadline:'1800000000'
+  });
+  assert.throws(() => A.decodeReserve('0x','0x'+A.uint(1)));
+  assert.throws(() => A.decodeReserve(raw,'0x'+A.uint(1n<<64n)));
+  assert.throws(() => A.decodeReserve('0x'+A.address(address)+A.uint(0)+A.uint(2),'0x'+A.uint(1)));
+  const words = Array(15).fill(A.uint(0));
+  words[0] = A.address(address); words[3] = A.uint(2);
+  assert.equal(A.decodeJob('0x'+words.join('')).status,2);
+  assert.equal(A.decodeJob('0x'+words.join('')).requester,address);
+  words[3] = A.uint(5);
+  assert.throws(() => A.decodeJob('0x'+words.join('')));
+  assert.throws(() => A.decodeJob('0x'));
+});
+
+test('wallet refuses commitment before delivery and after cancellation before estimating or sending', async () => {
+  const vm = require('node:vm');
+  for (const [status,cancelled,expected] of [[1,0,/Wait for Delivered/],[3,0,/Wait for Delivered/],
+    [4,0,/Wait for Delivered/],[2,1,/Cancelled reserve/]]) {
+    const elements = new Map();
+    const element = id => {
+      if (!elements.has(id)) elements.set(id,{value:'',textContent:'',addEventListener(event,fn){this.click=fn;}});
+      return elements.get(id);
+    };
+    element('requester').value = address; element('job').value = hash;
+    const seen = [];
+    const provider = {async request({method,params}) {
+      seen.push(method); assert.equal(method,'eth_call');
+      const data = params[0].data;
+      if (data.startsWith('0x'+A.selectors.job)) {
+        const words = Array(15).fill(A.uint(0)); words[0] = A.address(address); words[3] = A.uint(status);
+        return '0x'+words.join('');
+      }
+      if (data.startsWith('0x'+A.selectors.reserveDeadline)) return '0x'+A.uint(1800000000);
+      if (data.startsWith('0x'+A.selectors.reserve)) return '0x'+A.address(address)+A.uint(0)+A.uint(cancelled);
+      throw Error('unexpected call');
+    }};
+    vm.runInNewContext(readFileSync('site/automatic-ui.js','utf8'),{
+      AutoHooks:A,document:{getElementById:element},window:{ethereum:provider},setTimeout
+    });
+    await element('commitArtifact').click();
+    assert.match(element('output').textContent,expected);
+    assert.ok(seen.every(m => m === 'eth_call'));
+  }
+});
+
+test('wallet renewal sends only requester calldata and refreshes the reserve deadline', async () => {
+  const vm = require('node:vm');
+  const elements = new Map();
+  const element = id => {
+    if (!elements.has(id)) elements.set(id,{value:'',textContent:'',addEventListener(event,fn){this.click=fn;}});
+    return elements.get(id);
+  };
+  element('requester').value = address; element('job').value = hash;
+  const sent = [], methods = [];
+  const provider = {async request({method,params}) {
+    methods.push(method);
+    if (method === 'eth_requestAccounts' || method === 'eth_accounts') return [address];
+    if (method === 'eth_estimateGas') return '0x10000';
+    if (method === 'eth_sendTransaction') { sent.push(params[0]); return hash; }
+    if (method === 'eth_getTransactionReceipt') return {status:'0x1'};
+    assert.equal(method,'eth_call');
+    const data = params[0].data;
+    if (data === '0x'+A.selectors.automatic) return '0x'+A.uint(1);
+    if (data === '0x'+A.selectors.asset) return '0x'+A.address(address);
+    if (data === '0x'+A.selectors.depth) return '0x'+A.uint(8);
+    if (data.startsWith('0x'+A.selectors.job)) {
+      const words = Array(15).fill(A.uint(0)); words[0] = A.address(address); words[3] = A.uint(2);
+      return '0x'+words.join('');
+    }
+    if (data.startsWith('0x'+A.selectors.ask)) return hash;
+    if (data.startsWith('0x'+A.selectors.approved) || data.startsWith('0x'+A.selectors.epoch)) return '0x'+A.uint(0);
+    if (data.startsWith('0x'+A.selectors.readiness)) return '0x'+[0,900000,900000,899992].map(n => A.uint(n)).join('');
+    if (data.startsWith('0x'+A.selectors.reserveDeadline)) return '0x'+A.uint(1800086400);
+    if (data.startsWith('0x'+A.selectors.reserve)) return '0x'+A.address(address)+A.uint(500)+A.uint(0);
+    throw Error('unexpected call');
+  }};
+  vm.runInNewContext(readFileSync('site/automatic-ui.js','utf8'),{
+    AutoHooks:A,document:{getElementById:element},window:{ethereum:provider},setTimeout
+  });
+  await element('connect').click();
+  await element('renew').click();
+  assert.equal(sent.length,1);
+  assert.equal(sent[0].data,cast('calldata','renewVerdict(bytes32)',hash));
+  assert.equal(sent[0].value,'0x0'); assert.equal(sent[0].to,address);
+  const status = JSON.parse(element('output').textContent);
+  assert.equal(status.reserve.reserveDeadline,'1800086400');
+  assert.equal(status.verdictReadiness.blocksRemaining,'8');
+  assert.ok(!methods.some(m => /sign/i.test(m)));
 });
 
 test('browser rejects injection, invalid UTF-8, unsafe integers and a mismatched candidate', () => {

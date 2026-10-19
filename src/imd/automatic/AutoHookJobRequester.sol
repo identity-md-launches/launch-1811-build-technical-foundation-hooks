@@ -6,16 +6,16 @@ import {ExactStoreToken} from "../../store/ExactStoreToken.sol";
 import {IIntake} from "../IIntake.sol";
 import {OracleAttestation, OracleAttestationConsumer} from "../OracleAttestation.sol";
 import {HookJobRequester} from "../HookJobRequester.sol";
-import {HookSpec, HookSpecLib} from "../../HookSpec.sol";
+import {HookSpec} from "../../HookSpec.sol";
 import {GatedHookDeployer} from "../../deployment/GatedHookDeployer.sol";
-import {HookRequestCodec, HookQuestionPin} from "./HookRequestCodec.sol";
+import {HookRequestCodec} from "./HookRequestCodec.sol";
+import {ECDSA} from "../../vendor/openzeppelin/utils/cryptography/ECDSA.sol";
+import {SignatureChecker} from "../../vendor/openzeppelin/utils/cryptography/SignatureChecker.sol";
 
 /// @notice Automatic successor to the legacy owner-bound requester. No per-job owner binding.
 /// The job requester commits one candidate, then anyone can spend its prepaid verdict reserve.
 /// A signed, reconstructed question authorizes exactly that candidate; publication never does.
 contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
-    using HookSpecLib for HookSpec;
-
     struct Payment {
         address intake;
         address asset;
@@ -41,7 +41,7 @@ contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
         uint64 deadline;
         uint64 fromBlock;
         uint64 toBlock;
-        // Allocated before callback. Bits 0..63 verifiedAt, 64..95 signer epoch.
+        // Snapshotted at trigger: bits 96..255 signer, 64..95 epoch; 0..63 verifiedAt on receipt.
         uint256 verification;
         bytes32 oracleUUID;
     }
@@ -56,7 +56,6 @@ contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
     uint16 public minAgreed = 5;
     uint64 private constant JOB_TIMEOUT = 7 days;
     uint64 private constant REVIEW_TIMEOUT = 1 days;
-    uint64 private constant MAX_ANSWER_AGE = 1 hours;
     uint64 public constant WINDOW_DEPTH = 8;
     // Block bound is deliberately independent of chain block-time estimates.
     uint64 public maxWindowAgeBlocks = 7200;
@@ -112,6 +111,7 @@ contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
     event VerdictAnswered(bytes32 indexed askId, bytes32 indexed oracleUUID, bool passed, bytes32 digest);
     event VerdictUnanswered(bytes32 indexed askId, bytes32 reason);
     event ReserveRefunded(bytes32 indexed jobId, address asset, address requester, uint256 amount);
+    event VerdictRenewed(bytes32 indexed jobId, bytes32 indexed askId, uint64 windowStartBlock, uint64 reserveDeadline);
     event RefundWithdrawn(address indexed asset, address indexed requester, uint256 amount);
     event ProtocolSet(address intake, address asset, uint256 maxPrice, bytes32 jobAction, bytes32 reviewAction);
     event PanelSet(uint16 panelSize, uint16 quorum, uint64 maxWindowAgeBlocks);
@@ -157,15 +157,13 @@ contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
         uint256 maxBuildFee,
         uint256 verdictReserve
     ) external nonReentrant returns (bytes32 jobId, bytes32 askId) {
-        if (address(codec).codehash != 0x8a908370b3cc7912662a39a14926bbe3ad917c70a2476aaceee0f0dc4916bd3e) revert NotConfigured();
+        if (address(codec).codehash != 0x859f399b399577f66ec08206409147fbab279c93545cd77f9aaa447e4faddcc5) revert NotConfigured();
         uint64 currentBlock = head();
-        codec.validateOpen(spec, deployer, address(this));
-        codec.validateBrief(brief);
         if (verdictReserve > maxPrice) revert PriceExceeded(verdictReserve, maxPrice);
         uint256 price = _quote(address(intake), jobAction, asset, maxBuildFee < maxPrice ? maxBuildFee : maxPrice);
         _quote(address(intake), reviewAction, asset, verdictReserve);
         askId = keccak256(abi.encode(block.chainid, address(this), ++nonce));
-        bytes memory body = _jobBody(spec, askId, deployer, brief);
+        (bytes32 specHash, bytes memory body) = codec.prepareJob(spec, askId, address(intake), deployer, brief);
         ExactStoreToken.pull(asset, msg.sender, price + verdictReserve);
         reserved[asset] += verdictReserve;
         jobId = _request(
@@ -177,7 +175,7 @@ contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
         j.openedAt = uint64(block.timestamp);
         j.deadline = uint64(block.timestamp) + JOB_TIMEOUT;
         j.status = HookJobRequester.JobStatus.Open;
-        j.specHash = HookSpecLib.hash(spec);
+        j.specHash = specHash;
         j.bodyHash = keccak256(body);
         specs[jobId] = spec;
         deployerOf[jobId] = deployer;
@@ -198,23 +196,15 @@ contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
         emit JobOpened(jobId, msg.sender, j.specHash, price, body);
     }
 
-    function _jobBody(HookSpec calldata spec, bytes32 askId, address deployer, bytes calldata brief)
-        private
-        view
-        returns (bytes memory)
-    {
-        return codec.jobBody(spec, HookSpecLib.hash(spec), askId, address(this), address(intake), deployer, brief);
-    }
-
     /// @notice One immutable candidate per job, selected explicitly by its requester. This call
-    /// can precede or follow job delivery. The panel must prove it is the accepted reviewed build.
+    /// requires delivery first. The panel must prove it is the accepted reviewed build.
     function commitArtifact(bytes32 jobId, GatedHookDeployer.Artifact calldata a, bytes20 reviewedCommit) external {
         HookJobRequester.Job storage j = jobs[jobId];
         if (msg.sender != j.requester) revert NotRequester();
         if (candidateDigest[jobId] != bytes32(0)) revert AlreadyCommitted();
-        if (payments[jobId].cancelled) revert NotReady();
+        if (j.status != HookJobRequester.JobStatus.Delivered || payments[jobId].cancelled) revert NotReady();
         bytes32 digest = codec.validateCandidate(a, specs[jobId], jobId, deployerOf[jobId], reviewedCommit);
-        payments[jobId].windowStartBlock = head();
+        _refreshReserveWindow(payments[jobId]);
         candidates[jobId] = Candidate(a, reviewedCommit);
         candidateDigest[jobId] = digest;
         emit CandidateCommitted(jobId, jobAsk[jobId], digest, reviewedCommit);
@@ -226,7 +216,7 @@ contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
         HookJobRequester.Job storage j = jobs[jobId];
         j.status = HookJobRequester.JobStatus.Delivered;
         j.resultHash = resultHash;
-        payments[jobId].windowStartBlock = head();
+        _refreshReserveWindow(payments[jobId]);
         emit JobDelivered(jobId, resultHash);
         if (bytes(uri).length <= 1024) emit JobResultURI(jobId, uri);
         else emit JobResultURIOmitted(jobId, bytes(uri).length);
@@ -263,13 +253,24 @@ contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
         a.deadline = uint64(block.timestamp) + REVIEW_TIMEOUT;
         a.fromBlock = fromBlock;
         a.toBlock = toBlock;
-        bytes memory q = _question(jobId, askId);
-        bytes memory prefix_ = codec.prefix(block.chainid, q);
-        a.pin = address(new HookQuestionPin(prefix_));
-        a.verification = uint256(1) << 255;
+        a.verification = (uint256(uint160(oracleSigner)) << 96) | (uint256(oracleSignerEpoch) << 64);
         windowAge[askId] = maxWindowAgeBlocks;
-        bytes memory body =
-            codec.oracleBody(block.chainid, address(this), q, a.fromBlock, a.toBlock, p.panelSize, p.quorum);
+        bytes memory body;
+        (a.pin, body) = codec.prepareOracle(
+            HookRequestCodec.VerdictRequest({
+                intake: p.intake,
+                jobId: jobId,
+                askId: askId,
+                specHash: j.specHash,
+                resultHash: j.resultHash,
+                reviewedCommit: candidates[jobId].reviewedCommit,
+                artifactDigest: candidateDigest[jobId],
+                fromBlock: fromBlock,
+                toBlock: toBlock,
+                panelSize: p.panelSize,
+                quorum: p.quorum
+            })
+        );
         // Mark/spend before external interactions. Reverts restore reserve on refusal or bad spend.
         j.review = HookJobRequester.ReviewStatus.Pending;
         j.reviewDeadline = a.deadline;
@@ -314,21 +315,6 @@ contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
         ready = true;
     }
 
-    function _question(bytes32 jobId, bytes32 askId) private view returns (bytes memory) {
-        HookJobRequester.Job storage j = jobs[jobId];
-        return codec.question(
-            block.chainid,
-            payments[jobId].intake,
-            address(this),
-            jobId,
-            askId,
-            j.specHash,
-            j.resultHash,
-            candidates[jobId].reviewedCommit,
-            candidateDigest[jobId]
-        );
-    }
-
     function questionPrefix(bytes32 askId) public view returns (bytes memory out) {
         address pin = asks[askId].pin;
         if (pin == address(0)) revert NotReady();
@@ -358,8 +344,9 @@ contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
         if (
             att.fromBlock != a.fromBlock || att.toBlock != a.toBlock || att.fromBlock > att.toBlock
                 || att.toBlock >= currentBlock || currentBlock - att.toBlock > windowAge[askId]
-                || att.issuedAt < a.askedAt || att.issuedAt > block.timestamp || att.issuedAt > att.expiresAt
-                || block.timestamp - att.issuedAt > MAX_ANSWER_AGE
+                || att.issuedAt < a.askedAt || att.issuedAt > uint256(a.deadline) + ISSUED_AT_TOLERANCE
+                || att.issuedAt > block.timestamp + ISSUED_AT_TOLERANCE || att.issuedAt > att.expiresAt
+                || att.expiresAt > uint256(att.issuedAt) + REVIEW_TIMEOUT || block.timestamp > att.expiresAt
         ) revert InvalidWindow();
         if (
             att.panelSize < p.panelSize || att.quorum == 0 || att.quorum > att.panelSize || att.agreed < att.quorum
@@ -368,11 +355,11 @@ contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
         if (att.requestId == bytes32(0) || att.panelJobId == bytes32(0) || att.answer.length != 32) {
             revert InvalidArtifact();
         }
-        bytes32 digest = _verifyAttestation(att, signature);
+        bytes32 digest = _verifyRecordedAttestation(a.verification, att, signature);
         bool passed = decodeBool(att);
         _consume(att.requestId);
         a.oracleUUID = att.requestId;
-        a.verification = (uint256(1) << 255) | uint256(att.issuedAt) | (uint256(oracleSignerEpoch) << 64);
+        a.verification |= uint64(att.issuedAt < block.timestamp ? att.issuedAt : block.timestamp);
         delete reviewOf[intakeId];
         HookJobRequester.Job storage j = jobs[jobId];
         j.review = passed ? HookJobRequester.ReviewStatus.Passed : HookJobRequester.ReviewStatus.NotPassed;
@@ -380,6 +367,23 @@ contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
         j.reviewAgreed = att.agreed;
         j.reviewPanelJobId = att.panelJobId;
         emit VerdictAnswered(askId, att.requestId, passed, digest);
+    }
+
+    /// @dev Verify in the consumer's domain and ERC-1271 caller context, against the trigger's
+    /// signer. ECDSA first also preserves an EOA key with EIP-7702 delegated code.
+    function _verifyRecordedAttestation(
+        uint256 verification,
+        OracleAttestation.Attestation calldata att,
+        bytes calldata signature
+    ) private view returns (bytes32 digest) {
+        if (revokedSignerEpochs[uint32(verification >> 64)] != bytes32(0)) {
+            revert Revoked();
+        }
+        address signer = address(uint160(verification >> 96));
+        digest = attestationDigest(att);
+        (address recovered, ECDSA.RecoverError err,) = ECDSA.tryRecoverCalldata(digest, signature);
+        if (err == ECDSA.RecoverError.NoError && recovered == signer) return digest;
+        if (!SignatureChecker.isValidERC1271SignatureNow(signer, digest, signature)) revert BadSignature();
     }
 
     function onReviewFailure(bytes32 intakeId, uint8, bytes32 reason, uint16, uint16, bytes calldata) external {
@@ -412,6 +416,28 @@ contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
         if (block.timestamp <= j.deadline) revert DeadlineNotReached();
         j.status = HookJobRequester.JobStatus.Expired;
         emit JobExpired(jobId);
+    }
+
+    function _refreshReserveWindow(Payment storage p) private {
+        p.windowStartBlock = head();
+        uint64 deadline = uint64(block.timestamp) + REVIEW_TIMEOUT;
+        if (deadline > p.reserveDeadline) p.reserveDeadline = deadline;
+    }
+
+    /// @notice Refresh an expired, unspent ask without paying again or changing its identity.
+    /// The refreshed native window must mature for eight blocks before a verdict can be triggered.
+    function renewVerdict(bytes32 jobId) external {
+        HookJobRequester.Job storage j = jobs[jobId];
+        if (msg.sender != j.requester) revert NotRequester();
+        Payment storage p = payments[jobId];
+        bytes32 askId = jobAsk[jobId];
+        if (
+            j.status != HookJobRequester.JobStatus.Delivered || j.review != HookJobRequester.ReviewStatus.None
+                || p.cancelled || p.reserve == 0 || asks[askId].intakeId != bytes32(0)
+        ) revert NotReady();
+        if (block.timestamp <= p.reserveDeadline) revert DeadlineNotReached();
+        _refreshReserveWindow(p);
+        emit VerdictRenewed(jobId, askId, p.windowStartBlock, p.reserveDeadline);
     }
 
     function _refund(bytes32 jobId) private {
@@ -459,6 +485,10 @@ contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
         return (p.asset, p.reserve, p.cancelled);
     }
 
+    function reserveDeadline(bytes32 jobId) external view returns (uint64) {
+        return payments[jobId].reserveDeadline;
+    }
+
     function getJob(bytes32 jobId) external view returns (HookJobRequester.Job memory) {
         return jobs[jobId];
     }
@@ -489,7 +519,8 @@ contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
     }
 
     function reviewReceiptSignerEpoch(bytes32 intakeId) public view returns (uint32) {
-        return uint32(_askForIntake(intakeId).verification >> 64);
+        Ask storage a = _askForIntake(intakeId);
+        return a.oracleUUID == bytes32(0) ? 0 : uint32(a.verification >> 64);
     }
     // An immutable historic mapping is needed after reviewOf is cleared.
     mapping(bytes32 => bytes32) private historicalAsk;
@@ -509,7 +540,7 @@ contract AutoHookJobRequester is OracleAttestationConsumer, StoreAdmin {
     }
 
     // Protocol and panel settings are snapshotted per job. Window age is snapshotted at trigger.
-    // The signature trust root is intentionally current at delivery; current maxPrice caps new prepayments.
+    // Signer and epoch are snapshotted at trigger; current maxPrice caps new prepayments.
     function setProtocol(address intake_, address asset_, uint256 cap_, bytes32 jobAction_, bytes32 reviewAction_)
         external
         onlyOwner

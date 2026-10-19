@@ -1,7 +1,8 @@
 # Automatic oracle authorization
 
-This revision continues `378cd9b20db99e2190ed5a73fc73849250996e72` with confirmed native-chain
-oracle windows, preserving the working automatic binding. Use `AutoHookJobRequester`, its immutable `HookRequestCodec`, and `GatedHookDeployer`.
+This revision continues `205fa11271ab17a26630154815fae4c390aac624`, fixing the four actionable
+findings in audit `2218802d-0828-4f00-81cf-487b51c12aac`. It preserves confirmed native-chain
+windows, automatic binding and exact-artifact authorization. Use `AutoHookJobRequester`, its immutable `HookRequestCodec`, and `GatedHookDeployer`.
 The old `HookJobRequester` remains a legacy manual consumer for existing integrations and tests;
 its owner-binding methods are not part of the new flow. No live deployment, payment, wallet
 signature, token, pool, backend or new trusted signer was created by this work. Local tests use disposable
@@ -22,14 +23,14 @@ HookSpec v1, ArtifactV2, and the official deployment policy. Both requesters exp
    Defaults are 0.5 IMD per action, so the usual prepayment is **1 IMD**. The current Intake price
    must be nonzero and within the caller's caps and the configured per-action ceiling. No native
    currency is accepted as the fee asset.
-3. Obtain the accepted build and independent review from the job's public records. Inspect their
+3. Wait for **Delivered**, then obtain the accepted build and independent review from the job's public records. Inspect their
    exact source/build, commit and deployment context. Call `commitArtifact(jobId, ArtifactV2,
    reviewedCommit)` from the job requester. `reviewedCommit` is the full 20-byte git SHA-1, encoded
-   as `0x` plus 40 hex digits. A job accepts **one immutable candidate**. Delivery and commitment
-   may occur in either order. Commitment is a candidate selection, not approval.
+   as `0x` plus 40 hex digits. A job accepts **one immutable candidate**, only after delivery and
+   only if the reserve has not been cancelled. Commitment is a candidate selection, not approval.
 4. Once the job is Delivered and the candidate committed, **any wallet** may call
-   `requestVerdict(askId)`. The native head must be at least eight blocks beyond both candidate
-   commitment and job delivery (or beyond the new ask creation on retry), with an active reserve.
+   `requestVerdict(askId)`. The native head must be at least eight blocks beyond candidate
+   commitment (or beyond retry creation or renewal), with an active reserve.
    `verdictReadiness(askId)` reports readiness, native head, start and closing block. Early calls
    revert before quoting, pin creation or payment, and cannot spend reserves.
    The trigger pays native transaction gas only; the contract spends its reserved IMD once.
@@ -45,9 +46,22 @@ HookSpec v1, ArtifactV2, and the official deployment policy. Both requesters exp
    reserve cannot be spent by a permissionless trigger. The build price and any already-spent
    verdict price are never refundable by this contract.
 
+Delivery and commitment each refresh the native start block and extend the reserve deadline to
+`max(existingDeadline, now + 1 day)`. They never shorten the original seven-day deadline. Late
+delivery remains reviewable, including after `expireJob`, unless the reserve was cancelled.
+`reserveDeadline(jobId)` exposes this separate deadline, which can differ from the build deadline.
+
+For an **untriggered** expired window the requester may call `renewVerdict(jobId)` instead of
+cancelling. Renewal requires Delivered, review None, an uncancelled positive reserve, no Intake
+ID on the current ask, and `now > reserveDeadline` (strict). It only refreshes the start/deadline:
+no token transfer, quote, new ask, new candidate, pin or oracle request. The same ask must then
+mature for eight native blocks. This also repairs an expired untriggered retry. It cannot revive
+Pending, Passed, NotPassed, Unanswered or cancelled attempts. After the renewed deadline the
+requester may still cancel and withdraw the same unused funds.
+
 Every wallet transaction needs the chain's native gas currency. The UI estimates gas before asking
 the wallet to send. Local Anvil transaction measurements using **MockIntake, which stores entire
-bodies**, were approximately 46k for approval, 3.35m for openJob, 482k for commitArtifact, 3.18m
+bodies**, were approximately 46k for approval, 3.34m for openJob, 485k for commitArtifact, 3.18m
 for requestVerdict and 1.09m for deployment. These are local measurements, not live quotes or gas limits: the live Intake
 emits its body instead of storing this mock's full copy, and compiler, token behavior and calldata
 change costs. Use a fresh wallet/RPC estimate for every transaction. The immutable prefix accounts
@@ -77,8 +91,8 @@ the absolute window requested. There is no owner-supplied question mapping or UU
 A writer may mispair Intake and oracle IDs, but a different ask's signed question cannot pass.
 Even a separately bought answer to this identical question only approves this identical candidate.
 
-The absolute window starts at the later of candidate commitment and job delivery (or at the
-new ask creation on retry), and closes at **native head minus eight** (`WINDOW_DEPTH = 8`).
+The absolute window starts at candidate commitment following delivery (or at retry creation or
+renewal), and closes at **native head minus eight** (`WINDOW_DEPTH = 8`).
 The start must be less than or equal to that closing block before payment. A one-block window
 is valid at the first eligible head: for a latest input at native block S, head S+7 is too early;
 head S+8 requests [S,S]. This is already eight blocks deep at the trigger, satisfying IMD's
@@ -87,7 +101,7 @@ Ethereum Intake setting is only three confirmations; Robinhood's is two. Neither
 consumer's depth. The fixed window intentionally ends **before** the oracle trigger; only the
 signed issuance time must be at or after that trigger.
 
-Every recorded height uses the same `head()` function: open, commitment, job delivery, retry,
+Every recorded height uses the same `head()` function: open, commitment, job delivery, retry, renewal,
 trigger and callback freshness. Its implementation is in the immutable, runtime-pinned codec:
 
 | Question chain | Clock |
@@ -106,9 +120,21 @@ capabilities. Adding a chain requires a reviewed codec/requester revision, not a
 
 At callback, the signed window must equal the requested window exactly. The closing block must
 be strictly behind the native head and no more than the snapshotted block-age bound behind it
-(default 7,200). The signed issue time must be at or after the oracle trigger, no later than the
-current timestamp, no older than one hour and not after expiresAt. Signature expiry is also
-checked. `setPanel` rejects an age bound below eight, which could never accept even an immediate
+(default 7,200). Timestamp checks use widened arithmetic and inclusive bounds:
+
+```text
+askedAt <= issuedAt <= ask.deadline + 300 seconds
+issuedAt <= now + 300 seconds
+issuedAt <= expiresAt <= issuedAt + 86400 seconds
+now <= expiresAt
+```
+
+There is no separate one-hour answer-age cap. Valid delayed true **and false** answers are
+accepted, including after the local ask deadline, subject to the exact question/window, native
+block-age, domain, panel, signer and replay checks. The receipt time is `min(issuedAt, now)` so
+permitted future skew cannot create a future deployment timestamp. The deployment gate retains
+its separate approval freshness policy; acceptance of an old answer does not extend that policy.
+`setPanel` rejects an age bound below eight, which could never accept even an immediate
 answer. Eight leaves no delivery slack; the operator must select a larger bound suited to native
 block cadence and observed oracle latency. Delayed delivery can still fail the chosen policy.
 The eight-block margin is admission depth, not a finality or reorg guarantee.
@@ -116,12 +142,43 @@ The eight-block margin is admission depth, not a finality or reorg guarantee.
 Protocol canonicalization drift fails closed. Updating the prefix algorithm requires a reviewed
 new codec/consumer deployment; existing prefix bytes cannot be silently replaced. The codec's
 exact runtime hash is checked before a build can take payment. Its prefix, question, definitions
-and body encoding are unchanged; only clock support and shared open-time validation were added.
-The existing deployer/requester check now runs in `validateOpen` on that pinned codec, and quote
-checks share one helper to retain the 24,576-byte runtime cap. New prepayments/retries still obey
+and body encoding retain the previous semantics; composition moves their assembly out of the requester.
+`prepareJob` composes the existing `validateOpen`, `validateBrief`, HookSpec hash and jobBody.
+`prepareOracle` composes the existing question, prefix, immutable pin creation and oracleBody.
+Both derive the consumer from `msg.sender`; the codec's address never substitutes for the
+requester in the body or signed question. Signature verification remains in the requester,
+including its EIP-712 domain and ERC-1271 caller context. This retains the 24,576-byte runtime cap.
+New prepayments/retries still obey
 the current maxPrice; a funded verdict still obeys its original reserve cap. Compiler changes require an
 explicit code/hash update; the project still pins solc 0.8.26, Cancun, optimizer 200, without IR,
 metadata hash, FFI or filesystem access.
+
+## Per-chain maxWindowAgeBlocks policy
+
+This deployment setting is a **native block count**, independent of the signed timestamp bounds.
+The unchanged default is 7,200 on every supported chain. It is not a promised delivery duration.
+The launch owner must choose and record a policy for each deployment with
+`setPanel(panelSize, quorum, maxWindowAgeBlocks)` before admitting fees. Changes only affect asks
+triggered afterward; an existing ask retains its age bound.
+
+| Chain | Configured default | Operator sizing responsibility |
+|---|---|---|
+| Ethereum (1) | 7,200 EVM blocks | At an assumed 12 seconds/block, about 24 hours less the eight-block depth; size for the intended issue and delivery delay. |
+| Sepolia (11155111) | 7,200 EVM blocks | Size from this chain's measured cadence and oracle latency if job.open becomes available; clock support alone does not enable paid builds. |
+| Robinhood (4663) | 7,200 ArbSys native blocks | Measure the native counter, never L1 block.number. Sub-second cadence makes this default minutes; select a larger value if the intended delivery budget needs it. No cadence was measured in this assignment. |
+| Local (31337) | 7,200 test blocks | Deterministic test policy only, no wall-clock implication. |
+| Other chains, including 46630 and 84532 | Unsupported | There is no fallback clock or configured automatic workflow. |
+
+For a chosen maximum trigger-to-delivery budget `D` seconds and conservative fastest native
+cadence `b` seconds/block, a sizing lower bound is `8 + ceil(D / b)`, plus an operator-selected
+margin for burstiness and observation uncertainty. Covering the entire permitted timestamp
+interval needs up to `D = 86400 + 300 + 86400 = 173100` seconds. At an **assumed** 12 seconds/block
+that lower bound is 14,433; at an **assumed** 0.1 seconds/block it is 1,731,008. These are arithmetic
+examples, not verified chain settings or launch defaults. A shorter selected age policy can
+still reject an otherwise valid delayed true or false callback. Monitor cadence and latency;
+there is no onchain guarantee that an arbitrary registry, clock or callback will fit its stipend.
+The read-only preflight reports `maxWindowAgeBlocks`, depth and native head, but does not certify
+cadence, finality, oracle delivery or the operator's selected policy.
 
 ## What the panel must establish
 
@@ -184,14 +241,24 @@ an in-flight callback can lose it: this remains an explicit incident/recovery tr
 
 `retryVerdict(jobId, reserve)` is requester-funded and only permitted after Unanswered. It keeps
 the same immutable candidate, creates a fresh unique ask and a one-day reserve deadline, and
-cannot replay an earlier attempt's question/UUID. NotPassed cannot retry. `setOracleSigner`
-starts a new epoch; ordinary rotation does not revoke past approvals. After rotation,
-`revokeSignerEpoch(oldEpoch, incidentHash)` blocks deployment immediately. `closeRevokedVerdict`
+cannot replay an earlier attempt's question/UUID. NotPassed cannot retry. At trigger, each ask
+records `(uint256(uint160(oracleSigner)) << 96) | (uint256(oracleSignerEpoch) << 64)`.
+The low 64 bits start at zero and later receive the receipt time by OR, preserving signer and epoch.
+`reviewReceiptSignerEpoch(intakeId)` returns zero until an oracle UUID is recorded, then the
+recorded epoch, including after recovery/retry.
+
+`setOracleSigner` starts a new epoch; ordinary rotation preserves in-flight answers and past
+approvals. Verification tries ECDSA first (even if the recorded signer has code), then ERC-1271
+against that **recorded address in the requester context**. The new signer cannot answer an old
+ask. Registry membership/implementation remains that registry's current policy; snapshotting an
+address does not freeze its keys or code. After rotation,
+`revokeSignerEpoch(oldEpoch, incidentHash)` rejects pending callbacks and blocks finalized
+deployment immediately. `closeRevokedVerdict`
 can close an affected finalized verdict for recovery, preserving the old ask, UUID consumption
 and events. It is an explicit compromised-signer exception, not normal review shopping.
 
 Protocol, token and action settings and panel minimums are snapshotted per job. Window-age policy
-is snapshotted at trigger. The current signer verifies delivery; current maxPrice caps new
+and signer address/epoch are snapshotted at trigger. Current maxPrice caps new
 prepayments/retries. Two-step ownership and cancelled handovers are preserved. The owner cannot
 sweep reserves or refund credits. Job callbacks emit the full untrusted URI only up to 1,024 bytes; larger URIs emit JobResultURIOmitted
 with their length, so the result hash/status can still be recorded within the stipend (tested at 64 KiB).
@@ -234,21 +301,24 @@ it needs no result JSON or manual artifact metadata. It checks the signed approv
 through eth_call before printing unsigned calldata.
 
 Use `python3 -m sdk.automatic --help` for unsigned approve/open/commit/verdict/retry/refund
-transactions, plus `status <askId>` for native-window readiness, and the [wallet UI](../site/automatic.html). Each SDK invocation reads one pinned
-block; make a fresh invocation after any transaction. The UI displays native head, closing block and blocks remaining, and reads readiness again before
+transactions, `renew <jobId>` for a simulated unsigned renewal, `reserve <jobId>` for the token,
+amount, cancellation flag and reserve deadline, and `status <askId>` for native-window readiness.
+The [wallet UI](../site/automatic.html) provides renewal as a requester wallet transaction.
+SDK and UI check Delivered before commitment. Each SDK invocation reads one pinned
+block; make a fresh invocation after any transaction. The UI displays the reserve deadline in Unix seconds, native head, closing block and blocks remaining, and reads readiness again before
 requesting a verdict. Both SDK and UI fail closed on unavailable clock/readiness calls, without
 substituting an RPC or L1 height. Readiness is a snapshot; price changes can still prevent an ask.
 The UI uses textContent and never fetches a worker URI or asks a backend to sign.
 
 ## Evidence and limitations
 
-[Current window regressions, exact free checks and validation](checks/oracle-window/README.md)
-record the current build. [Earlier automatic-binding vectors and logs](checks/automatic-binding/README.md)
+[Current audit-fix regressions and checks](checks/audit-2218802d/README.md) record this build.
+[Earlier window regressions and free checks](checks/oracle-window/README.md) are historical evidence. [Earlier automatic-binding vectors and logs](checks/automatic-binding/README.md)
 remain historical evidence. Together they distinguish:
 
 - Four genuine public v2 signatures and canonical preimages (price, two panel/bool, panel/uint256
   with definitions). The required 76587543 vector exactly reproduces its live questionHash.
-- Offline/local contract tests, including cold callback gas, both candidate/delivery orders,
+- Offline/local contract tests, including cold callback gas, Delivered-before-commit and renewal,
   legacy callback/binding orders, refund accounting, swaps, tampering and genuine hook execution.
 - Free public checks of the exact emitted Ethereum/Robinhood examples. Both job bodies have no
   blockers. Exact oracle-body checks return HTTP 400 because the free endpoint rejects v, window,

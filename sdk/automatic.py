@@ -1,7 +1,8 @@
 """Unsigned automatic Hooks Store workflow. Python stdlib + Foundry cast, no signer/backend.
 
-Approval + openJob prepay both fees. The requester explicitly commits one reviewed candidate.
+Approval + openJob prepay both fees. After Delivered, the requester commits one reviewed candidate.
 Anyone can then trigger requestVerdict(askId), paying gas only. Deployment uses sdk.gated_deploy.
+An expired unspent verdict window can be renewed without transferring tokens or creating an ask.
 """
 import argparse
 import json
@@ -59,15 +60,38 @@ class AutomaticClient:
                               abi_tuple(spec), deployer, '0x' + brief.encode().hex(), str(max_build_fee), str(verdict_reserve))
         return {'unsigned': True, 'approvalTransaction': approval, 'transaction': tx,
                 'prepayment': price + verdict_reserve,
-                'next': 'Read JobOpened and jobAsk(jobId); inspect the accepted build/review, then commitArtifact once.'}
+                'next': 'Wait for Delivered, inspect the accepted build/review, then commitArtifact once.'}
 
     def commit_artifact(self, *, sender, job, artifact, reviewed_commit):
         reviewed_commit = _hex(reviewed_commit, 20, 'reviewed git commit')
         job = _hex(job, 32, 'job')
         if int(reviewed_commit, 16) == 0 or artifact['jobRequestId'].lower() != job:
             raise StoreError('nonzero reviewed commit and matching job required')
+        raw = _hex(self.rpc.call(self.requester, 'getJob(bytes32)', job), 480, 'job response')
+        if int(raw[2+3*64:2+4*64], 16) != 2:
+            raise StoreError('job must be Delivered before committing an artifact')
+        if raw[26:66] != _hex(sender, 20, 'sender')[2:]:
+            raise StoreError('only the job requester can commit an artifact')
+        if self.reserve_status(job)['cancelled']:
+            raise StoreError('cancelled reserve cannot be revived')
         return self.transaction(sender, 'commitArtifact(bytes32,' + ARTIFACT + ',bytes20)',
                                 job, artifact_tuple(artifact), reviewed_commit)
+
+    def reserve_status(self, job):
+        job = _hex(job, 32, 'job')
+        raw = _hex(self.rpc.call(self.requester, 'reserveOf(bytes32)(address,uint256,bool)', job), 96, 'reserve response')
+        words = [raw[2+i*64:2+(i+1)*64] for i in range(3)]
+        deadline = int(_hex(self.rpc.call(self.requester, 'reserveDeadline(bytes32)(uint64)', job), 32, 'reserve deadline'), 16)
+        if int(words[0], 16) >= 1 << 160 or int(words[2], 16) not in (0, 1) or deadline >= 1 << 64:
+            raise StoreError('malformed reserve response')
+        return {'token': '0x' + words[0][-40:], 'amount': int(words[1], 16),
+                'cancelled': bool(int(words[2], 16)), 'reserveDeadline': deadline}
+
+    def renew_verdict(self, *, sender, job):
+        tx = self.transaction(sender, 'renewVerdict(bytes32)', _hex(job, 32, 'job'))
+        # Simulate as the requester at the pinned read block. No token approval, signing or send.
+        self.rpc.request('eth_call', [{k: tx[k] for k in ('from', 'to', 'data', 'value')}, self.rpc.block])
+        return tx
 
     def verdict_readiness(self, ask):
         ask = _hex(ask, 32, 'ask')
@@ -107,6 +131,8 @@ def main():
     v = sub.add_parser('verdict'); v.add_argument('ask')
     s = sub.add_parser('status'); s.add_argument('ask')
     r = sub.add_parser('retry'); r.add_argument('job'); r.add_argument('--reserve', type=int, required=True)
+    n = sub.add_parser('renew'); n.add_argument('job')
+    d = sub.add_parser('reserve'); d.add_argument('job')
     w = sub.add_parser('withdraw'); w.add_argument('token')
     args = p.parse_args()
     try:
@@ -118,6 +144,8 @@ def main():
         elif args.command == 'verdict': out = client.request_verdict(sender=args.sender, ask=args.ask)
         elif args.command == 'status': out = client.verdict_readiness(args.ask)
         elif args.command == 'retry': out = client.retry_verdict(sender=args.sender, job=args.job, reserve=args.reserve)
+        elif args.command == 'renew': out = client.renew_verdict(sender=args.sender, job=args.job)
+        elif args.command == 'reserve': out = client.reserve_status(args.job)
         else: out = client.withdraw_refund(sender=args.sender, token=args.token)
         print(json.dumps(out, indent=2))
     except (StoreError, OSError, KeyError, ValueError) as exc:

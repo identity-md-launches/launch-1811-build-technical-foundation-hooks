@@ -1,6 +1,8 @@
 # Threat model
 
-Current integration and launch limitations are in [INTEGRATION_RESOLUTION.md](INTEGRATION_RESOLUTION.md). This revision binds a worker publication to an exact source submission, independent-review submission and build, but only a correctly bound oracle answer can approve it. The current protocol lacks the authenticated mapping required to eliminate owner assertions; automatic binding remains disabled. Revoked finalized verdict recovery preserves consumed IDs and deployment replay guards. Approval freshness starts at authenticated receipt and cannot be reset by late binding. Positive confirmations after 23 hours require a fresh review; negatives stay terminal. This leaves at least one hour after a usable approval under the minimum one-day policy, subject to owner veto/revocation.
+Current automatic-requester assumptions and limits are in [AUTOMATIC_BINDING.md](AUTOMATIC_BINDING.md). A canonical signed question binds the exact delivered result, accepted source/review, immutable candidate and native window. Commitment requires delivery; renewal only refreshes an expired unspent window. Valid delayed false verdicts remain terminal. Signer address/epoch are recorded at trigger, ordinary rotation preserves in-flight answers, and explicit revocation blocks pending answers and finalized approvals. The existing oracle signer/panel and exceptional owner recovery powers remain trusted. No live end-to-end integration is claimed.
+
+The legacy manual-requester analysis below and [INTEGRATION_RESOLUTION.md](INTEGRATION_RESOLUTION.md) describe the earlier owner-asserted binding model. Its 23-hour positive-confirmation cutoff and both binding orders remain covered for that legacy implementation; they are not the automatic requester's callback rules.
 
 The listing registry and ad escrow have their own
 [custody model, assumptions and complete admin-powers account](LISTINGS_AND_ADS.md).

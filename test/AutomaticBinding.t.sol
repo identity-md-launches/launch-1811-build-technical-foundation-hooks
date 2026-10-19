@@ -90,16 +90,11 @@ abstract contract AutomaticFixture is Fixture {
         );
     }
 
-    function _ready(bool deliveryFirst) internal virtual {
+    function _ready() internal virtual {
         (jobId, askId) = _open();
         artifact = _artifact(jobId);
-        if (deliveryFirst) {
-            _deliver(jobId);
-            _commit(jobId, artifact);
-        } else {
-            _commit(jobId, artifact);
-            _deliver(jobId);
-        }
+        _deliver(jobId);
+        _commit(jobId, artifact);
         vm.roll(vm.getBlockNumber() + 20);
         vm.prank(outsider);
         verdictId = automatic.requestVerdict(askId);
@@ -158,7 +153,7 @@ abstract contract AutomaticFixture is Fixture {
 
 contract AutomaticBindingTest is AutomaticFixture {
     function testPrepayBothFeesAndPermissionlessTriggerNoOwnerCall() public {
-        _ready(true);
+        _ready();
         assertTrue(gated.automaticBindingSupported());
         assertEq(imd.balanceOf(creator), 99 ether);
         assertEq(imd.balanceOf(address(intake)), 1 ether);
@@ -173,14 +168,14 @@ contract AutomaticBindingTest is AutomaticFixture {
         assertEq(automatic.reviewVerifiedAt(verdictId), block.timestamp);
     }
 
-    function testCandidateAndBuildCallbackBothOrders() public {
-        _ready(false);
+    function testCandidateAfterBuildCallback() public {
+        _ready();
         _answer(true);
         assertEq(automatic.approvedArtifact(jobId), gated.artifactDigest(artifact));
     }
 
     function testNoCallerSelectedArtifactAndNoNotPassedShopping() public {
-        _ready(true);
+        _ready();
         _answer(false);
         assertEq(uint8(_review(jobId)), uint8(HookJobRequester.ReviewStatus.NotPassed));
         vm.expectRevert(AutoHookJobRequester.NotReady.selector);
@@ -201,10 +196,10 @@ contract AutomaticBindingTest is AutomaticFixture {
         vm.expectRevert(AutoHookJobRequester.NotReady.selector);
         automatic.requestVerdict(askId);
         artifact = _artifact(jobId);
-        _commit(jobId, artifact);
+        _deliver(jobId);
         vm.expectRevert(AutoHookJobRequester.NotReady.selector);
         automatic.requestVerdict(askId);
-        _deliver(jobId);
+        _commit(jobId, artifact);
         vm.expectRevert(AutoHookJobRequester.NotReady.selector);
         automatic.requestVerdict(askId);
         vm.roll(1008);
@@ -218,8 +213,8 @@ contract AutomaticBindingTest is AutomaticFixture {
         (jobId, askId) = _open();
         vm.expectRevert(AutoHookJobRequester.EscrowProtected.selector);
         automatic.sweep(address(imd), address(this), 1);
-        _commit(jobId, _artifact(jobId));
         _deliver(jobId);
+        _commit(jobId, _artifact(jobId));
         vm.roll(1010);
         intake.setPrice(automatic.reviewAction(), address(imd), FEE / 2);
         automatic.requestVerdict(askId);
@@ -260,8 +255,8 @@ contract AutomaticBindingTest is AutomaticFixture {
 
     function testPriceRiseAndSynchronousRefusalCannotSpendReserve() public {
         (jobId, askId) = _open();
-        _commit(jobId, _artifact(jobId));
         _deliver(jobId);
+        _commit(jobId, _artifact(jobId));
         vm.roll(1008);
         intake.setPrice(automatic.reviewAction(), address(imd), FEE + 1);
         vm.expectRevert(abi.encodeWithSelector(AutoHookJobRequester.PriceExceeded.selector, FEE + 1, FEE));
@@ -281,7 +276,7 @@ contract AutomaticBindingTest is AutomaticFixture {
     }
 
     function testVerdictFailureRetryUsesFreshAskAndPreservesHistory() public {
-        _ready(true);
+        _ready();
         assertTrue(intake.fail(verdictId, 2, "disagreed", 2, 7));
         vm.prank(creator);
         bytes32 retry = automatic.retryVerdict(jobId, FEE);
@@ -295,10 +290,10 @@ contract AutomaticBindingTest is AutomaticFixture {
     }
 
     function testSwapAcrossJobsFailsEvenWhenSignedAndUUIDFresh() public {
-        _ready(true);
+        _ready();
         bytes32 first = verdictId;
         bytes32 firstAsk = askId;
-        _ready(false);
+        _ready();
         OracleAttestation.Attestation memory a = _att(firstAsk, true);
         assertFalse(intake.complete(verdictId, abi.encode(verdictId, a, _sign(a))));
         assertFalse(automatic.consumed(a.requestId));
@@ -307,7 +302,7 @@ contract AutomaticBindingTest is AutomaticFixture {
     }
 
     function testOnlyIntakeUnknownAndConsumedUUIDReplay() public {
-        _ready(true);
+        _ready();
         OracleAttestation.Attestation memory a = _att(askId, true);
         bytes memory signature = _sign(a);
         vm.expectRevert(AutoHookJobRequester.NotIntake.selector);
@@ -317,14 +312,14 @@ contract AutomaticBindingTest is AutomaticFixture {
         vm.expectRevert();
         automatic.onReviewResult(verdictId, a, signature);
         bytes32 uuid = a.requestId;
-        _ready(false);
+        _ready();
         a = _att(askId, true);
         a.requestId = uuid;
         assertFalse(intake.complete(verdictId, abi.encode(verdictId, a, _sign(a))));
     }
 
     function testFuzzSignedTamperingFailsClosed(uint8 field) public {
-        _ready(true);
+        _ready();
         OracleAttestation.Attestation memory a = _att(askId, true);
         uint256 f = bound(field, 0, 15);
         if (f == 0) a.questionHash = keccak256("drifted canonicalization");
@@ -332,7 +327,7 @@ contract AutomaticBindingTest is AutomaticFixture {
         if (f == 2) a.answerType = 3;
         if (f == 3) a.fromBlock--;
         if (f == 4) a.toBlock++;
-        if (f == 5) a.issuedAt = uint64(block.timestamp + 1);
+        if (f == 5) a.issuedAt = uint64(block.timestamp + 301);
         if (f == 6) a.issuedAt = uint64(block.timestamp - 1);
         if (f == 7) a.expiresAt = uint64(block.timestamp - 1);
         if (f == 8) a.panelSize = 6;
@@ -349,7 +344,7 @@ contract AutomaticBindingTest is AutomaticFixture {
     }
 
     function testStaleWindowAndStaleSignatureAndWrongDomain() public {
-        _ready(true);
+        _ready();
         OracleAttestation.Attestation memory a = _att(askId, true);
         bytes memory sig = _sign(a);
         uint256 snap = vm.snapshotState();
@@ -369,7 +364,7 @@ contract AutomaticBindingTest is AutomaticFixture {
     }
 
     function testSignerRevocationBlocksDeploymentAndRecoveryKeepsUUID() public {
-        _ready(true);
+        _ready();
         _answer(true);
         bytes32 uuid = automatic.getAsk(askId).oracleUUID;
         automatic.setOracleSigner(makeAddr("replacement signer"));
@@ -386,7 +381,7 @@ contract AutomaticBindingTest is AutomaticFixture {
     }
 
     function testNegativeCallbackPreventsExpiryAndOwnerRecovery() public {
-        _ready(true);
+        _ready();
         _answer(false);
         vm.warp(vm.getBlockTimestamp() + 2 days);
         vm.expectRevert(AutoHookJobRequester.UnknownOrSettled.selector);
@@ -395,7 +390,7 @@ contract AutomaticBindingTest is AutomaticFixture {
     }
 
     function testExactArtifactGateRejectsSubstitutionAndExecutesGenuineHook() public {
-        _ready(true);
+        _ready();
         _answer(true);
         (bytes32 salt, address predicted) = _mine();
         GatedHookDeployer.Artifact memory changed = artifact;
@@ -431,7 +426,7 @@ contract AutomaticBindingTest is AutomaticFixture {
     }
 
     function testFuzzEveryArtifactFieldIsBound(uint8 field) public {
-        _ready(true);
+        _ready();
         _answer(true);
         GatedHookDeployer.Artifact memory changed = artifact;
         uint256 f = bound(field, 0, 13);
@@ -458,9 +453,9 @@ contract AutomaticBindingTest is AutomaticFixture {
         assertEq(automatic.getAsk(askId).toBlock, 1020);
         (bytes32 secondJob, bytes32 secondAsk) = _open();
         vm.roll(1030);
-        _commit(secondJob, _artifact(secondJob));
-        vm.roll(1040);
         _deliver(secondJob);
+        vm.roll(1040);
+        _commit(secondJob, _artifact(secondJob));
         vm.expectRevert(AutoHookJobRequester.NotReady.selector);
         automatic.requestVerdict(secondAsk);
         vm.roll(1048);
@@ -470,8 +465,8 @@ contract AutomaticBindingTest is AutomaticFixture {
 
     function testExpiredUnspentReadyReserveCannotBeGriefSpent() public {
         (jobId, askId) = _open();
-        _commit(jobId, _artifact(jobId));
         _deliver(jobId);
+        _commit(jobId, _artifact(jobId));
         vm.warp(automatic.getJob(jobId).deadline + 1);
         vm.roll(vm.getBlockNumber() + 1);
         vm.prank(outsider);
@@ -484,7 +479,7 @@ contract AutomaticBindingTest is AutomaticFixture {
     }
 
     function testSignedCanonicalFutureOrPreAskWindowFailsWindowPolicy() public {
-        _ready(true);
+        _ready();
         OracleAttestation.Attestation memory a = _att(askId, true);
         a.toBlock = uint64(block.number + 1);
         a.questionHash = automatic.expectedQuestionHash(askId, a.fromBlock, a.toBlock);
@@ -502,7 +497,7 @@ contract AutomaticBindingTest is AutomaticFixture {
     }
 
     function testProtocolSettingsCannotRedirectPendingFundsOrCallback() public {
-        _ready(true);
+        _ready();
         automatic.setProtocol(outsider, outsider, 1, bytes32("replacement job"), bytes32("replacement oracle"));
         _answer(true);
         assertEq(uint8(_review(jobId)), uint8(HookJobRequester.ReviewStatus.Passed));
@@ -510,7 +505,7 @@ contract AutomaticBindingTest is AutomaticFixture {
     }
 
     function testLowerSignedQuorumWithSufficientActualAgreementAccepted() public {
-        _ready(true);
+        _ready();
         OracleAttestation.Attestation memory a = _att(askId, true);
         a.quorum = 4;
         assertTrue(intake.complete(verdictId, abi.encode(verdictId, a, _sign(a))));
@@ -519,6 +514,7 @@ contract AutomaticBindingTest is AutomaticFixture {
 
     function testMismatchedCandidateAndUntrustedCallerRejected() public {
         (jobId, askId) = _open();
+        _deliver(jobId);
         artifact = _artifact(jobId);
         vm.prank(outsider);
         vm.expectRevert(AutoHookJobRequester.NotRequester.selector);
@@ -559,7 +555,7 @@ contract AutomaticBindingTest is AutomaticFixture {
     }
 
     function testExpiryRecoveryBothOrdersAndNegativeCannotRetry() public {
-        _ready(true);
+        _ready();
         vm.warp(automatic.getAsk(askId).deadline + 1);
         OracleAttestation.Attestation memory a = _att(askId, false);
         bytes memory signature = _sign(a);
@@ -580,8 +576,8 @@ contract AutomaticBindingTest is AutomaticFixture {
 
     function testDuplicateIntakeIdRollsBackPaymentAndReservation() public {
         (jobId, askId) = _open();
-        _commit(jobId, _artifact(jobId));
         _deliver(jobId);
+        _commit(jobId, _artifact(jobId));
         vm.roll(1008);
         intake.setReuseIds(true);
         vm.expectRevert(AutoHookJobRequester.DuplicateId.selector);
@@ -592,7 +588,7 @@ contract AutomaticBindingTest is AutomaticFixture {
     }
 
     function testSaveActualBodiesForIndependentPreflight() public {
-        _ready(true);
+        _ready();
         emit log_named_string("JOB_BODY", string(intake.bodyOf(jobId)));
         emit log_named_string("ORACLE_BODY", string(intake.bodyOf(verdictId)));
         emit log_named_string("QUESTION_PREFIX", string(automatic.questionPrefix(askId)));
@@ -607,7 +603,7 @@ contract AutomaticGasTest is AutomaticFixture {
 
     function setUp() public override {
         super.setUp();
-        _ready(true);
+        _ready();
         registry = new ColdReadReceiptSigner(vm.addr(key), 22);
         (pendingJob,) = _open();
         address[] memory members = new address[](7);
@@ -648,6 +644,7 @@ contract AutomaticGasTest is AutomaticFixture {
     }
 
     function testColdEOACallbackUnder200k() public {
+        automatic.setOracleSigner(makeAddr("rotated gas signer"));
         OracleAttestation.Attestation memory a = _att(askId, true);
         bytes memory payload = abi.encodeCall(automatic.onReviewResult, (verdictId, a, _sign(a)));
         uint256 measured = _minimum(payload, vm.addr(key));
@@ -658,6 +655,8 @@ contract AutomaticGasTest is AutomaticFixture {
 
     function testColdRealisticERC1271CallbackUnder200k() public {
         automatic.setOracleSigner(address(registry));
+        _ready();
+        automatic.setOracleSigner(makeAddr("rotated gas signer"));
         OracleAttestation.Attestation memory a = _att(askId, false);
         bytes memory payload = abi.encodeCall(automatic.onReviewResult, (verdictId, a, _sign(a)));
         uint256 measured = _minimum(payload, address(registry));
@@ -668,6 +667,8 @@ contract AutomaticGasTest is AutomaticFixture {
 
     function testColdFiveOfSevenCallbackUnder200k() public {
         automatic.setOracleSigner(address(multisigner));
+        _ready();
+        automatic.setOracleSigner(makeAddr("rotated gas signer"));
         OracleAttestation.Attestation memory a = _att(askId, true);
         bytes32 digest = automatic.attestationDigest(a);
         bytes memory signature;

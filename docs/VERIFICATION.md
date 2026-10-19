@@ -1,6 +1,6 @@
 # Local verification
 
-For the current oracle-window revision use [checks/oracle-window/README.md](checks/oracle-window/README.md) and `bash script/check_automatic.sh`. Earlier logs below are historical. Current tests include captured live signature verification (no signing), parser limits and maximal runtime, incident recovery, both callback orders, SDK parity, and isolated 200k callback checks.
+For the current audit-2218802d fixes use [checks/audit-2218802d/README.md](checks/audit-2218802d/README.md) and `bash script/check_automatic.sh`. Earlier logs below are historical. Current tests include Delivered-only commitment, reserve renewal/refunds, signed timing boundaries, recorded EOA/ERC-1271 signer epochs, captured public signature vectors, exact artifact binding, incident recovery, SDK/UI parity, and isolated 200k callback checks on both clocks.
 
 Historical results below describe successive revisions and do not describe the current build.
 

@@ -11,6 +11,50 @@ import {Strings} from "../../vendor/openzeppelin/utils/Strings.sol";
 contract HookRequestCodec {
     using Strings for uint256;
 
+    struct VerdictRequest {
+        address intake;
+        bytes32 jobId;
+        bytes32 askId;
+        bytes32 specHash;
+        bytes32 resultHash;
+        bytes20 reviewedCommit;
+        bytes32 artifactDigest;
+        uint64 fromBlock;
+        uint64 toBlock;
+        uint16 panelSize;
+        uint16 quorum;
+    }
+
+    /// @notice Compose the existing validation and exact job encoding in the pinned codec.
+    /// The caller is always the consumer, including the deployer/requester relationship check.
+    function prepareJob(HookSpec calldata spec, bytes32 askId, address intake, address deployer, bytes calldata brief)
+        external
+        view
+        returns (bytes32 specHash, bytes memory body)
+    {
+        validateOpen(spec, deployer, msg.sender);
+        validateBrief(brief);
+        specHash = HookSpecLib.hash(spec);
+        body = jobBody(spec, specHash, askId, msg.sender, intake, deployer, brief);
+    }
+
+    /// @notice The immutable pin and request body share exactly the same consumer/question.
+    function prepareOracle(VerdictRequest calldata r) external returns (address pin, bytes memory body) {
+        bytes memory q = question(
+            block.chainid,
+            r.intake,
+            msg.sender,
+            r.jobId,
+            r.askId,
+            r.specHash,
+            r.resultHash,
+            r.reviewedCommit,
+            r.artifactDigest
+        );
+        pin = address(new HookQuestionPin(prefix(block.chainid, q)));
+        body = oracleBody(block.chainid, msg.sender, q, r.fromBlock, r.toBlock, r.panelSize, r.quorum);
+    }
+
     error UnsupportedClock(uint256 chainId);
     error InvalidClock();
     error InvalidConfig();
@@ -40,7 +84,7 @@ contract HookRequestCodec {
     error BriefLength(uint256 length);
     error InvalidBrief(uint256 index);
 
-    function validateBrief(bytes calldata b) external pure {
+    function validateBrief(bytes calldata b) public pure {
         uint256 n = b.length;
         if (n == 0 || n > 2000) revert BriefLength(n);
         uint256 i;
@@ -112,7 +156,7 @@ contract HookRequestCodec {
     }
 
     /// @dev Existing open-time validation composed here to keep the requester below EIP-170.
-    function validateOpen(HookSpec calldata spec, address deployer, address consumer) external view {
+    function validateOpen(HookSpec calldata spec, address deployer, address consumer) public view {
         HookSpecLib.validateChain(spec);
         if (deployer.code.length == 0 || address(GatedHookDeployer(deployer).requester()) != consumer) {
             revert InvalidConfig();
@@ -156,7 +200,7 @@ contract HookRequestCodec {
         address intake,
         address deployer,
         bytes calldata brief
-    ) external pure returns (bytes memory) {
+    ) public pure returns (bytes memory) {
         bytes memory context = bytes.concat(
             "Template hooks-store/bounded-swap/v1: cap only amountSpecified in raw units and count successful swaps on new static-fee pools, with no custody or accounting deltas. Source and pinned dependencies: https://github.com/identity-md-launches/launch-1811-build-technical-foundation-hooks/tree/9dd97150d292fee26912f9605e0686e4ddbb1645 . Use solc 0.8.26, Cancun, optimizer 200, bytecode_hash none, cbor_metadata false, no FFI or filesystem permissions. Full HookSpec=",
             specJSON(spec),
@@ -258,7 +302,7 @@ contract HookRequestCodec {
         uint64 toBlock,
         uint16 panelSize,
         uint16 quorum
-    ) external pure returns (bytes memory) {
+    ) public pure returns (bytes memory) {
         return bytes.concat(
             '{"v":1,"question":"',
             q,

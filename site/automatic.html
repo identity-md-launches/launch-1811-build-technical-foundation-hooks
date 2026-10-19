@@ -31,13 +31,15 @@ textarea{min-height:7rem}button{font:inherit;margin:.7rem .5rem .7rem 0}pre{whit
 <button id="status">Read job, ask and approval</button>
 <label>Full HookArtifactV2 JSON from the accepted build/review<textarea id="artifact" spellcheck="false"></textarea></label>
 <label>Reviewed git commit (0x plus 40 hex digits)<input id="commit" autocomplete="off"></label>
-<p class="note">Compare the accepted source, independent review, compiler settings, bytecode and deployment context before committing. One candidate per job: this choice cannot be replaced. Worker publication grants no approval. The panel must independently verify acceptance and reproduction.</p>
+<p class="note">Wait for the job to show Delivered, then compare the accepted source, independent review, compiler settings, bytecode and deployment context before committing. One candidate per job: this choice cannot be replaced. Worker publication grants no approval. The panel must independently verify acceptance and reproduction.</p>
 <button id="commitArtifact">Commit artifact</button>
 </fieldset>
 <fieldset><legend>3. Trigger the oracle and prepare deployment</legend>
 <label>Unique ask ID<input id="ask" autocomplete="off"></label>
 <button id="verdict">Request verdict (any wallet pays gas)</button>
-<p class="note">The build must be Delivered and the candidate committed. Wait eight native chain blocks after the later event, or after funding a retry. Read status to check readiness and remaining blocks; Robinhood uses its own L2 block counter. Early calls revert without spending reserves. A ready request spends the reserve once and pins its fixed question. The asynchronous callback records true or false. A false result is terminal. An expired or missing answer needs exceptional owner recovery; a signed false cannot be cleared by expiry.</p>
+<p class="note">The build must be Delivered and the candidate committed. Wait eight native chain blocks after commitment, retry funding or renewal. Read status to check readiness, remaining blocks and the reserve deadline (Unix seconds); Robinhood uses its own L2 block counter. Early calls revert without spending reserves. A ready request spends the reserve once and pins its fixed question. The asynchronous callback records true or false. A false result is terminal. A pending ask with an expired or missing answer needs exceptional owner recovery; a signed false cannot be cleared by expiry.</p>
+<p class="note">If your unspent reserve deadline has passed, renew the verdict window to keep the same candidate and ask, or cancel for a refund. Renewal is requester-only, requires Delivered with no pending or finalized verdict, transfers no tokens, and starts another eight-block wait. It cannot revive a cancelled reserve or a false verdict. It only costs native transaction gas.</p>
+<button id="renew">Renew expired unspent verdict window</button>
 <p>After Passed, use <code>python3 -m sdk.gated_deploy --binding-mode automatic</code> to produce the unsigned deployment transaction for the exact candidate. The official contract checks it again. No result JSON is needed in automatic mode. See <a href="../docs/AUTOMATIC_BINDING.md">the workflow and operational runbook</a>.</p>
 <label>Refund token address (the job's IMD)<input id="token" autocomplete="off"></label>
 <button id="withdraw">Withdraw unused reserve credit</button><button id="cancel">Cancel unspent reserve after build failure/deadline</button>

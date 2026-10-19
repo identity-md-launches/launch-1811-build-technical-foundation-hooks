@@ -1,0 +1,40 @@
+✔ published automatic ABI equals compiler output and selectors are pinned (99.734915ms)
+✔ browser open encoding agrees with cast for UTF-8 and static HookSpec tuple (172.550455ms)
+✔ browser candidate encoding agrees with cast including bytes20 right padding (109.183483ms)
+✔ reserve and job decoders expose lifecycle state and reject malformed responses (1.564658ms)
+✔ wallet refuses commitment before delivery and after cancellation before estimating or sending (8.769684ms)
+✔ wallet renewal sends only requester calldata and refreshes the reserve deadline (22.868922ms)
+✔ browser rejects injection, invalid UTF-8, unsafe integers and a mismatched candidate (0.616217ms)
+✔ wallet UI renders untrusted content as text and never needs a backend signer (0.357893ms)
+✔ native readiness decodes boundaries including Robinhood and rejects malformed data (0.659489ms)
+✔ wallet refuses an early native-window trigger before gas estimation or sending (1.901179ms)
+✔ browser selectors match compiler artifacts (3.269794ms)
+✔ decode static listing and dynamic metadata including label offsets (89.143384ms)
+✔ decode ordered featured and organic pages with continuation cursors (108.175519ms)
+✔ every paid card visibly carries #ad and renders hostile text as text (99.077249ms)
+✔ reject malformed ABI, absent ad labels and unexpected placement status (102.587811ms)
+✔ listing references visibly escape bidi and invisible characters without link creation (41.857615ms)
+✔ label encoding matches independent ABI encoder and rejects noncanonical search text (60.846848ms)
+✔ published requester ABI is exactly the compiler ABI and has only capped paid calls (7.124673ms)
+✔ status page selectors and job event topics match the compiled contract (498.047356ms)
+✔ pending receipt shows explicit signer revocation before individual closure (2.562371ms)
+✔ receipt reads distinguish pending arrival, retained answer and terminal job (4.027217ms)
+✔ malformed revocation reads fail rather than display a verified receipt (2.103165ms)
+✔ job callback and URI event use the protocol tuple without changing the static Job or oracle ABI (0.475778ms)
+✔ URI event decoder agrees with cast for IPFS, HTTPS, Unicode and empty strings (101.290965ms)
+✔ URI decoder rejects malformed offsets, lengths, padding, oversized data and invalid UTF-8 (2.90692ms)
+✔ history visibly escapes every bidi, zero-width and control code point including leading BOM (3.089318ms)
+✔ history exposes URI only as unverified text, with no HTML, links or content fetching (2.157649ms)
+✔ history filters other contracts, requests, unknown topics and removed logs (1.308919ms)
+✔ malformed URI logs show unavailable without hiding later history or granting review approval (2.245607ms)
+✔ build fingerprints match compiler artifacts and requester runtime stays below EIP-170 (343.50957ms)
+✔ Passed history remains visible while missing or revoked signer provenance blocks deployment (4.475504ms)
+✔ gated deployer ABI is current and both deployed runtimes fit EIP-170 (1.77059ms)
+ℹ tests 32
+ℹ suites 0
+ℹ pass 32
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1170.92098

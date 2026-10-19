@@ -69,18 +69,23 @@
   async function readStatus() {
     const job = value('job'); A.hex(job, 32);
     const raw = await call(requester(), A.idCalldata('job', job));
-    const words = raw.slice(2).match(/.{64}/g);
-    if (!words || words.length !== 15) throw Error('Malformed job response');
+    const {words, status, review} = A.decodeJob(raw);
     const ask = await call(requester(), A.idCalldata('ask', job)); el('ask').value = ask;
     const approved = await call(requester(), A.idCalldata('approved', job));
     const epoch = await call(requester(), '0x' + A.selectors.epoch + words[13]);
     const incident = BigInt(epoch) === 0n ? null : await call(requester(), '0x' + A.selectors.revoked + A.uint(BigInt(epoch)));
     const readiness = await readReadiness(ask);
-    show({job, ask, jobStatus: ['None','Open','Delivered','Failed','Expired'][Number(BigInt('0x' + words[3]))],
-      verdict: ['None','Pending','Passed','NotPassed','Unanswered'][Number(BigInt('0x' + words[4]))],
+    const reserve = await readReserve(job);
+    show({job, ask, jobStatus: ['None','Open','Delivered','Failed','Expired'][status],
+      verdict: ['None','Pending','Passed','NotPassed','Unanswered'][review],
       exactAuthorizedArtifact: approved, signerEpoch: BigInt(epoch).toString(), revokedEpochIncident: incident,
-      verdictReadiness: readiness,
+      verdictReadiness: readiness, reserve,
       note: 'A Passed label alone cannot deploy: exact artifact, signer revocation, freshness, manager, bytecode and replay checks still apply.'});
+  }
+  async function readReserve(job) {
+    const raw = await call(requester(), A.idCalldata('reserve', job));
+    const deadline = await call(requester(), A.idCalldata('reserveDeadline', job));
+    return A.decodeReserve(raw, deadline);
   }
   async function readReadiness(ask) {
     const raw = await call(requester(), A.idCalldata('readiness', ask));
@@ -88,7 +93,16 @@
     return A.decodeReadiness(raw, depth);
   }
   bind('status', readStatus);
-  bind('commitArtifact', async () => { await send(requester(), A.commitCalldata(value('job'), JSON.parse(value('artifact')), value('commit'))); await readStatus(); });
+  bind('commitArtifact', async () => {
+    const job = value('job');
+    const state = A.decodeJob(await call(requester(), A.idCalldata('job', job)));
+    if (state.status !== 2) throw Error('Wait for Delivered before committing an artifact.');
+    if ((await readReserve(job)).cancelled) throw Error('Cancelled reserve cannot be revived.');
+    const sender = await connected();
+    if (state.requester !== sender.toLowerCase()) throw Error('Only the job requester can commit an artifact.');
+    await send(requester(), A.commitCalldata(job, JSON.parse(value('artifact')), value('commit')));
+    await readStatus();
+  });
   bind('verdict', async () => {
     const readiness = await readReadiness(value('ask'));
     if (!readiness.ready) throw Error('Verdict not ready: ' + readiness.blocksRemaining +
@@ -96,5 +110,6 @@
     await send(requester(), A.idCalldata('verdict', value('ask'))); await readStatus();
   });
   bind('cancel', async () => { await send(requester(), A.idCalldata('cancel', value('job'))); await readStatus(); });
+  bind('renew', async () => { await send(requester(), A.idCalldata('renew', value('job'))); await readStatus(); });
   bind('withdraw', async () => { await send(requester(), '0x' + A.selectors.withdraw + A.address(value('token'))); });
 })();

@@ -21,8 +21,8 @@ contract WindowArbSysMock {
 contract OracleWindowRegressionTest is AutomaticFixture {
     function _prepared() internal {
         (jobId, askId) = _open();
-        _commit(jobId, _artifact(jobId));
         _deliver(jobId);
+        _commit(jobId, _artifact(jobId));
     }
 
     function _reserveIntact() internal view {
@@ -76,9 +76,9 @@ contract OracleWindowRegressionTest is AutomaticFixture {
         arb.setHead(900_000);
         (jobId, askId) = _open();
         arb.setHead(900_010);
-        _commit(jobId, _artifact(jobId));
-        arb.setHead(900_020);
         _deliver(jobId);
+        arb.setHead(900_020);
+        _commit(jobId, _artifact(jobId));
         arb.setHead(900_028);
         vm.roll(1001);
         verdictId = automatic.requestVerdict(askId);
@@ -109,7 +109,7 @@ contract OracleWindowRegressionTest is AutomaticFixture {
     }
 
     function testRetryMustMatureItsOwnWindowBeforeSpending() public {
-        _ready(true);
+        _ready();
         assertTrue(intake.fail(verdictId, 2, "disagreed", 2, 7));
         vm.prank(creator);
         bytes32 retry = automatic.retryVerdict(jobId, FEE);
@@ -156,7 +156,7 @@ contract OracleWindowPolicyTest is AutomaticFixture {
         assertEq(to, end);
     }
 
-    function testNativeClockRecordedAtOpenAndBothCommitDeliveryOrders() public {
+    function testNativeClockRecordedAtOpenDeliveryAndCommit() public {
         _robinhood(900_000);
         (jobId, askId) = _open();
         _assertReadiness(askId, false, 900_000, 900_000, 899_992);
@@ -178,9 +178,9 @@ contract OracleWindowPolicyTest is AutomaticFixture {
         _answer(true); // The large L1 height must not make the L2 window stale.
         (jobId, askId) = _open();
         _native(900_030);
-        _commit(jobId, _artifact(jobId));
-        _native(900_040);
         _deliver(jobId);
+        _native(900_040);
+        _commit(jobId, _artifact(jobId));
         _native(900_047);
         _assertReadiness(askId, false, 900_047, 900_040, 900_039);
         _native(900_048);
@@ -192,8 +192,8 @@ contract OracleWindowPolicyTest is AutomaticFixture {
     function testNativeRetryClockAndWrongOldQuestion() public {
         _robinhood(900_000);
         (jobId, askId) = _open();
-        _commit(jobId, _artifact(jobId));
         _deliver(jobId);
+        _commit(jobId, _artifact(jobId));
         _native(900_008);
         verdictId = automatic.requestVerdict(askId);
         assertTrue(intake.fail(verdictId, 2, "disagreed", 2, 7));
@@ -224,8 +224,8 @@ contract OracleWindowPolicyTest is AutomaticFixture {
     function testNativeFreshnessBoundaryAndFutureClosingBlock() public {
         _robinhood(900_000);
         (jobId, askId) = _open();
-        _commit(jobId, _artifact(jobId));
         _deliver(jobId);
+        _commit(jobId, _artifact(jobId));
         _native(900_008);
         verdictId = automatic.requestVerdict(askId);
         OracleAttestation.Attestation memory a = _att(askId, true);
@@ -247,14 +247,12 @@ contract OracleWindowPolicyTest is AutomaticFixture {
         assertTrue(intake.complete(verdictId, abi.encode(verdictId, a, sig)));
     }
 
-    function testFuzzReadinessExactEightBlockBoundary(uint8 elapsed, bool deliveryFirst) public {
+    function testFuzzReadinessExactEightBlockBoundary(uint8 elapsed) public {
         (jobId, askId) = _open();
         vm.roll(1010);
-        if (deliveryFirst) _deliver(jobId);
-        else _commit(jobId, _artifact(jobId));
+        _deliver(jobId);
         vm.roll(1020);
-        if (deliveryFirst) _commit(jobId, _artifact(jobId));
-        else _deliver(jobId);
+        _commit(jobId, _artifact(jobId));
         uint256 n = bound(elapsed, 0, 20);
         vm.roll(1020 + n);
         (bool ready,, uint64 from, uint64 to) = automatic.verdictReadiness(askId);
@@ -276,8 +274,8 @@ contract OracleWindowPolicyTest is AutomaticFixture {
     function testSmallNativeHeadDoesNotUnderflowOrSpend() public {
         _robinhood(0);
         (jobId, askId) = _open();
-        _commit(jobId, _artifact(jobId));
         _deliver(jobId);
+        _commit(jobId, _artifact(jobId));
         for (uint256 i; i < 8; ++i) {
             _native(i);
             _assertReadiness(askId, false, uint64(i), 0, 0);
@@ -305,8 +303,15 @@ contract OracleWindowPolicyTest is AutomaticFixture {
         // A fresh job is needed because the mock correctly models one-shot callback loss.
         _native(1010);
         (jobId, askId) = _open();
-        _commit(jobId, _artifact(jobId));
         _deliver(jobId);
+        _native(1 << 64);
+        artifact = _artifact(jobId);
+        vm.prank(creator);
+        vm.expectRevert(HookRequestCodec.InvalidClock.selector);
+        automatic.commitArtifact(jobId, artifact, COMMIT);
+        assertEq(automatic.candidateDigest(jobId), bytes32(0));
+        _native(1010);
+        _commit(jobId, _artifact(jobId));
         _native(1 << 53); // the protocol also requires exact JavaScript integers
         vm.expectRevert();
         automatic.requestVerdict(askId);
@@ -348,20 +353,20 @@ contract OracleWindowPolicyTest is AutomaticFixture {
     }
 
     function testSignedIssuanceExpiryAndAgeBoundaries() public {
-        _ready(true);
+        _ready();
         OracleAttestation.Attestation memory a = _att(askId, true);
         uint256 now_ = vm.getBlockTimestamp();
         a.expiresAt = uint64(now_ + 2 hours);
         bytes memory sig = _sign(a);
         uint256 snap = vm.snapshotState();
         vm.warp(now_ + 1 hours + 1);
-        assertFalse(intake.complete(verdictId, abi.encode(verdictId, a, sig)));
+        assertTrue(intake.complete(verdictId, abi.encode(verdictId, a, sig)));
         assertTrue(vm.revertToStateAndDelete(snap));
         for (uint256 i; i < 3; ++i) {
             snap = vm.snapshotState();
             OracleAttestation.Attestation memory bad = _att(askId, false);
             if (i == 0) bad.issuedAt = uint64(now_ - 1);
-            if (i == 1) bad.issuedAt = uint64(now_ + 1);
+            if (i == 1) bad.issuedAt = uint64(now_ + 301);
             if (i == 2) bad.expiresAt = uint64(now_ - 1);
             assertFalse(intake.complete(verdictId, abi.encode(verdictId, bad, _sign(bad))));
             assertFalse(automatic.consumed(bad.requestId));
@@ -374,8 +379,8 @@ contract OracleWindowPolicyTest is AutomaticFixture {
     function testReadinessDeadlineUnknownAndSettledBoundaries() public {
         _assertReadiness(keccak256("unknown"), false, 1000, 0, 992);
         (jobId, askId) = _open();
-        _commit(jobId, _artifact(jobId));
         _deliver(jobId);
+        _commit(jobId, _artifact(jobId));
         vm.roll(1008);
         uint256 deadline = automatic.getJob(jobId).deadline;
         vm.warp(deadline + 1);
@@ -397,8 +402,8 @@ contract OracleWindowPolicyTest is AutomaticFixture {
         automatic.openJob(spec, address(gated), "bounded hook", FEE - 1, FEE);
         assertEq(imd.balanceOf(address(intake)), 0);
         (jobId, askId) = _open();
-        _commit(jobId, _artifact(jobId));
         _deliver(jobId);
+        _commit(jobId, _artifact(jobId));
         automatic.setProtocol(address(intake), address(imd), FEE / 2, automatic.jobAction(), automatic.reviewAction());
         vm.roll(1008);
         verdictId = automatic.requestVerdict(askId); // already-prepaid reserve keeps its original cap
@@ -421,7 +426,7 @@ contract OracleWindowPolicyTest is AutomaticFixture {
         vm.expectRevert(AutoHookJobRequester.InvalidConfig.selector);
         automatic.setPanel(7, 5, 7);
         automatic.setPanel(7, 5, 8);
-        _ready(true);
+        _ready();
         _answer(true); // age == depth is the minimum valid policy, with no delivery slack
     }
 
@@ -445,8 +450,8 @@ contract OracleWindowPolicyTest is AutomaticFixture {
 
     function _checkOfficialQuestionAndSaveBody() private {
         (jobId, askId) = _open();
-        _commit(jobId, _artifact(jobId));
         _deliver(jobId);
+        _commit(jobId, _artifact(jobId));
         if (block.chainid == 4663) _native(900_008);
         else vm.roll(1008);
         verdictId = automatic.requestVerdict(askId);
@@ -485,8 +490,16 @@ contract OracleWindowPolicyTest is AutomaticFixture {
 
 /// @dev Repeat every isolated EOA/ERC-1271 and job callback gas check with an actual
 /// external system-clock read and native heights far from Solidity's block.number.
+contract EthereumAutomaticGasTest is AutomaticGasTest {
+    function _ready() internal override {
+        vm.chainId(1);
+        spec.chainId = 1;
+        super._ready();
+    }
+}
+
 contract RobinhoodAutomaticGasTest is AutomaticGasTest {
-    function _ready(bool deliveryFirst) internal override {
+    function _ready() internal override {
         vm.chainId(4663);
         spec.chainId = 4663;
         vm.etch(address(100), type(WindowArbSysMock).runtimeCode);
@@ -494,13 +507,8 @@ contract RobinhoodAutomaticGasTest is AutomaticGasTest {
         arb.setHead(900_000);
         (jobId, askId) = _open();
         artifact = _artifact(jobId);
-        if (deliveryFirst) {
-            _deliver(jobId);
-            _commit(jobId, artifact);
-        } else {
-            _commit(jobId, artifact);
-            _deliver(jobId);
-        }
+        _deliver(jobId);
+        _commit(jobId, artifact);
         arb.setHead(900_008);
         verdictId = automatic.requestVerdict(askId);
     }

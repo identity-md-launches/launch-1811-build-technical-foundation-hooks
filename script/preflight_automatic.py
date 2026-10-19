@@ -44,6 +44,8 @@ def preflight(rpc, requester, deployer, spec):
     native_head = int(rpc.call(requester,'head()(uint64)'),16)
     depth = int(rpc.call(requester,'WINDOW_DEPTH()(uint64)'),16)
     require('native question clock and confirmed window depth',depth == 8)
+    age_blocks = int(rpc.call(requester,'maxWindowAgeBlocks()(uint64)'),16)
+    require('native window age permits confirmed depth',age_blocks >= depth)
     code = rpc.code(spec['poolManager'])
     require('PoolManager code hash',code != '0x' and keccak_hex(code) == spec['poolManagerCodeHash'])
     policy = rpc.call(deployer,'managers(address)(bool,bytes32)',spec['poolManager'])
@@ -60,7 +62,7 @@ def preflight(rpc, requester, deployer, spec):
         prices[action] = {'actionId':action_id,'price':price}
     return {'readOnly':True,'readBlock':rpc.block,'chainId':chain,'requester':requester,'deployer':deployer,
             'codec':codec,'intake':intake,'asset':asset,'prices':prices,'checks':checks,
-            'nativeHead':native_head,'windowDepth':depth,
+            'nativeHead':native_head,'windowDepth':depth,'maxWindowAgeBlocks':age_blocks,
             'limitation':'Code/configuration preflight only. No live Hooks Store oracle verdict, accepted build, finality or operational handoff is proven.'}
 
 

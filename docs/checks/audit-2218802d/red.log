@@ -1,0 +1,34 @@
+Compiling 113 files with Solc 0.8.26
+Solc 0.8.26 finished in 9.47s
+Compiler run successful!
+
+Ran 9 tests for test/Audit2218802d.t.sol:Audit2218802dTest
+[FAIL: NotReady()] testIssue1ExpiredBuildCanBeDeliveredAndReviewed() (gas: 4226794)
+[FAIL: late delivered candidate must still mature] testIssue1LateDeliveryLeavesTimeToMature() (gas: 4166584)
+[FAIL: valid delayed answer rejected] testIssue2DelayedFalseStillTerminal() (gas: 7807542)
+[FAIL: valid delayed answer rejected] testIssue2DelayedTrueStillValid() (gas: 7807600)
+[FAIL: valid skew rejected] testIssue2OneSecondSkewTrue() (gas: 7806192)
+[FAIL: valid skew rejected] testIssue2ThreeHundredSecondSkewFalse() (gas: 7806223)
+[FAIL: ordinary rotation lost answer] testIssue3EOARotationKeepsPendingSigner() (gas: 7872124)
+[FAIL: registry rotation lost answer] testIssue3ERC1271RotationKeepsPendingSigner() (gas: 8747376)
+[FAIL: next call did not revert as expected] testIssue4CommitRequiresDelivered() (gas: 4353138)
+Suite result: FAILED. 0 passed; 9 failed; 0 skipped; finished in 79.16ms (129.42ms CPU time)
+
+Ran 1 test suite in 82.63ms (79.16ms CPU time): 0 tests passed, 9 failed, 0 skipped (9 total tests)
+
+Failing tests:
+Encountered 9 failing tests in test/Audit2218802d.t.sol:Audit2218802dTest
+[FAIL: NotReady()] testIssue1ExpiredBuildCanBeDeliveredAndReviewed() (gas: 4226794)
+[FAIL: late delivered candidate must still mature] testIssue1LateDeliveryLeavesTimeToMature() (gas: 4166584)
+[FAIL: valid delayed answer rejected] testIssue2DelayedFalseStillTerminal() (gas: 7807542)
+[FAIL: valid delayed answer rejected] testIssue2DelayedTrueStillValid() (gas: 7807600)
+[FAIL: valid skew rejected] testIssue2OneSecondSkewTrue() (gas: 7806192)
+[FAIL: valid skew rejected] testIssue2ThreeHundredSecondSkewFalse() (gas: 7806223)
+[FAIL: ordinary rotation lost answer] testIssue3EOARotationKeepsPendingSigner() (gas: 7872124)
+[FAIL: registry rotation lost answer] testIssue3ERC1271RotationKeepsPendingSigner() (gas: 8747376)
+[FAIL: next call did not revert as expected] testIssue4CommitRequiresDelivered() (gas: 4353138)
+
+Encountered a total of 9 failing tests, 0 tests succeeded
+
+Tip: Run `forge test --rerun` to retry only the 9 failed tests
+Tip: Run `forge test --debug --match-test <TEST_NAME>` to inspect one failing test in the debugger

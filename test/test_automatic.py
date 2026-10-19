@@ -63,11 +63,17 @@ class AutomaticSdkTest(unittest.TestCase):
         from sdk.result_snapshot import evidence_document
         core = self.rpc.call(self.gate,'artifactDigest('+ARTIFACT+')(bytes32)',artifact_tuple(a))
         a['evidenceHash']='0x'+hashlib.sha256(evidence_document(core,a['sourceSubmissionHash'],a['reviewSubmissionHash'])).hexdigest()
+        self.client = AutomaticClient(Rpc(self.local.url), self.requester)
+        with self.assertRaisesRegex(StoreError, 'Delivered'):
+            self.client.commit_artifact(sender=self.creator,job=job,artifact=a,reviewed_commit='0x'+keccak_hex('local commit')[2:42])
+        result = _cast('abi-encode','f(bytes32,bytes32,string)',job,keccak_hex('local exact completion'),'ipfs://local')
+        self.local.call_transaction(self.intake,'complete(bytes32,bytes)',job,result)
+        self.client = AutomaticClient(Rpc(self.local.url), self.requester)
+        with self.assertRaisesRegex(StoreError, 'only the job requester'):
+            self.client.commit_artifact(sender=self.outsider,job=job,artifact=a,reviewed_commit='0x'+keccak_hex('local commit')[2:42])
         tx = self.client.commit_artifact(sender=self.creator,job=job,artifact=a,reviewed_commit='0x'+keccak_hex('local commit')[2:42])
         receipt = self.local.send(tx)
         self.gas['commitArtifact']=int(receipt['gasUsed'],16)
-        result = _cast('abi-encode','f(bytes32,bytes32,string)',job,keccak_hex('local exact completion'),'ipfs://local')
-        self.local.call_transaction(self.intake,'complete(bytes32,bytes)',job,result)
         if not ask_verdict:
             return job, ask
         self.local.request('anvil_mine', ['0x8'])
@@ -119,6 +125,50 @@ class AutomaticSdkTest(unittest.TestCase):
 
     def test_approval_open_commit_permissionless_verdict_encoding(self):
         self._candidate_asked()
+
+    def test_unsigned_renewal_keeps_reserve_and_ask_and_resets_maturity(self):
+        job, ask = self._candidate_asked(ask_verdict=False)
+        client = AutomaticClient(Rpc(self.local.url), self.requester)
+        reserve = client.reserve_status(job)
+        self.assertEqual(reserve['amount'], FEE)
+        self.assertFalse(reserve['cancelled'])
+        self.assertEqual(reserve['token'], self.imd)
+        with self.assertRaises(StoreError):
+            client.renew_verdict(sender=self.creator, job=job)
+        self.local.request('evm_setNextBlockTimestamp', [reserve['reserveDeadline'] + 1])
+        self.local.request('anvil_mine', ['0x1'])
+        client = AutomaticClient(Rpc(self.local.url), self.requester)
+        with self.assertRaises(StoreError):
+            client.renew_verdict(sender=self.outsider, job=job)
+        tx = client.renew_verdict(sender=self.creator, job=job)
+        self.assertEqual(tx['data'], _cast('calldata', 'renewVerdict(bytes32)', job))
+        self.assertEqual(tx['value'], '0x0')
+        # Preparing the transaction only simulates it; the old deadline and funds are unchanged.
+        self.assertEqual(AutomaticClient(Rpc(self.local.url), self.requester).reserve_status(job), reserve)
+        self.local.send(tx)
+        client = AutomaticClient(Rpc(self.local.url), self.requester)
+        self.assertGreater(client.reserve_status(job)['reserveDeadline'], reserve['reserveDeadline'])
+        self.assertEqual(client.reserve_status(job)['amount'], FEE)
+        self.assertEqual(client.rpc.call(self.requester, 'jobAsk(bytes32)(bytes32)', job), ask)
+        self.assertEqual(client.verdict_readiness(ask)['blocksRemaining'], 8)
+        self.assertEqual(int(client.rpc.call(self.imd, 'balanceOf(address)(uint256)', self.intake), 16), FEE)
+        self.local.request('anvil_mine', ['0x8'])
+        client = AutomaticClient(Rpc(self.local.url), self.requester)
+        self.assertTrue(client.verdict_readiness(ask)['ready'])
+        self.local.send(client.request_verdict(sender=self.outsider, ask=ask))
+        with self.assertRaises(StoreError):
+            AutomaticClient(Rpc(self.local.url), self.requester).renew_verdict(sender=self.creator, job=job)
+
+    def test_cancelled_reserve_renewal_is_refused_without_payment(self):
+        job, ask = self._candidate_asked(ask_verdict=False)
+        deadline = self.client.reserve_status(job)['reserveDeadline']
+        self.local.request('evm_setNextBlockTimestamp', [deadline + 1])
+        self.local.request('anvil_mine', ['0x1'])
+        self.local.call_transaction(self.requester, 'cancelReserve(bytes32)', job, sender=self.creator)
+        client = AutomaticClient(Rpc(self.local.url), self.requester)
+        self.assertTrue(client.reserve_status(job)['cancelled'])
+        with self.assertRaises(StoreError):
+            client.renew_verdict(sender=self.creator, job=job)
 
     def test_real_local_v2_answer_then_automatic_candidate_deployment(self):
         # The preceding transaction/encoding test commits and asks using the real consumer.

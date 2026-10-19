@@ -1,0 +1,62 @@
+No files changed, compilation skipped
+
+Ran 4 tests for test/AutomaticQuestionVectors.t.sol:AutomaticQuestionVectorsTest
+[PASS] testLive76587543PricePreimageAndSignature() (gas: 372992)
+[PASS] testLivePanelBoolArgentinaPreimageAndSignature() (gas: 362390)
+[PASS] testLivePanelBoolBitcoinPreimageAndSignature() (gas: 362349)
+[PASS] testLivePanelUintWithDefinitionsPreimageAndSignature() (gas: 377477)
+Suite result: ok. 4 passed; 0 failed; 0 skipped; finished in 8.08ms (7.59ms CPU time)
+
+Ran 3 tests for test/Audit2218802d.t.sol:AuditCodecCompositionTest
+[PASS] testComposedJobPreservesFullBodyHashAndConsumer() (gas: 4374025)
+[PASS] testComposedOraclePreservesQuestionPinAndBodyConsumer() (gas: 8368020)
+[PASS] testWrongCodecCodehashRejectedBeforeTakingFunds() (gas: 87289)
+Suite result: ok. 3 passed; 0 failed; 0 skipped; finished in 21.87ms (14.50ms CPU time)
+
+Ran 9 tests for test/Audit2218802d.t.sol:Audit2218802dTest
+[PASS] testIssue1ExpiredBuildCanBeDeliveredAndReviewed() (gas: 7584744)
+[PASS] testIssue1LateDeliveryLeavesTimeToMature() (gas: 7575825)
+[PASS] testIssue2DelayedFalseStillTerminal() (gas: 7889157)
+[PASS] testIssue2DelayedTrueStillValid() (gas: 7847664)
+[PASS] testIssue2OneSecondSkewTrue() (gas: 7879530)
+[PASS] testIssue2ThreeHundredSecondSkewFalse() (gas: 7879581)
+[PASS] testIssue3EOARotationKeepsPendingSigner() (gas: 7890173)
+[PASS] testIssue3ERC1271RotationKeepsPendingSigner() (gas: 8824836)
+[PASS] testIssue4CommitRequiresDelivered() (gas: 7911759)
+Suite result: ok. 9 passed; 0 failed; 0 skipped; finished in 217.06ms (204.62ms CPU time)
+
+Ran 6 tests for test/Audit2218802d.t.sol:AuditSignerEpochTest
+[PASS] testEOAWithCodeUsesECDSAFirstAfterRotation() (gas: 7894945)
+[PASS] testERC1271IsVerifiedInRequesterContextAfterRotation() (gas: 8219048)
+[PASS] testFuzzFinalizedRevocationPreservesHistoryAndAllowsOnlyOwnerRecovery(bool,bool) (runs: 256, μ: 8652373, ~: 8778434)
+[PASS] testFuzzRevokedPendingSignerFailsAndRecoveryIsGuarded(bool) (runs: 256, μ: 11573678, ~: 11573678)
+[PASS] testNewSignerCannotAnswerOldAsk() (gas: 8011661)
+[PASS] testTriggerRecordsSignerAndEpochButReceiptViewsWaitForAnswer() (gas: 7986810)
+Suite result: ok. 6 passed; 0 failed; 0 skipped; finished in 5.25s (7.33s CPU time)
+
+Ran 8 tests for test/Audit2218802d.t.sol:AuditAnswerWindowTest
+[PASS] testDelayedFalseAfterDeadlineStillBlocksExpiryRenewAndRetry() (gas: 7973073)
+[PASS] testFuzzClockToleranceExactBoundaries(bool,uint8) (runs: 256, μ: 7853024, ~: 7870330)
+Logs:
+  Bound result 1
+
+[PASS] testFuzzExpiryAndMaximumLifetimeInclusive(bool,bool) (runs: 256, μ: 7822434, ~: 7802654)
+[PASS] testFuzzInvalidSignedLifetime(bool,bool) (runs: 256, μ: 7799205, ~: 7799412)
+[PASS] testFuzzIssuanceBoundedByAskDeadlineWithTolerance(bool,bool) (runs: 256, μ: 7850085, ~: 7823287)
+[PASS] testIssuanceMustNotPrecedeAsk() (gas: 7819631)
+[PASS] testTimestampMaximumCannotWrapLifetimeBounds() (gas: 7798188)
+[PASS] testZeroLifetimeValidAtIssuance() (gas: 7843923)
+Suite result: ok. 8 passed; 0 failed; 0 skipped; finished in 5.32s (18.27s CPU time)
+
+Ran 8 tests for test/Audit2218802d.t.sol:AuditReserveWindowTest
+[PASS] testCancelledReserveCannotReviveAfterLateDeliveryOrRenewal() (gas: 4212129)
+[PASS] testDeliveryAndCommitEachExtendExpiredReserve() (gas: 7558485)
+[PASS] testExpiredRetryCanRenewWithoutAnotherPaymentAndRefundSurplus() (gas: 11600570)
+[PASS] testFuzzRefreshNeverShortensDeadlineAndUsesNativeClock(bool) (runs: 256, μ: 7716243, ~: 7716243)
+[PASS] testFuzzRenewUnspentAskPreservesFundsIdentityAndMaturity(bool,bool) (runs: 256, μ: 8976205, ~: 8777705)
+[PASS] testRenewRejectsOpenExpiredFailedPendingAndUnanswered() (gas: 11200754)
+[PASS] testRenewThenCancelRefundsExactlyOnce() (gas: 4399142)
+[PASS] testRenewUsesNativeClockAndFailsAtomicallyIfUnavailable() (gas: 4281571)
+Suite result: ok. 8 passed; 0 failed; 0 skipped; finished in 5.32s (8.25s CPU time)
+
+Ran 6 test suites in 5.32s (16.13s CPU time): 38 tests passed, 0 failed, 0 skipped (38 total tests)

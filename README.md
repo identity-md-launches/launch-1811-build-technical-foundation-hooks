@@ -1,6 +1,6 @@
 # Hooks Store foundation
 
-Current revision: confirmed native-chain oracle windows, continuing `378cd9b20`, preserving automatic oracle binding and exact-artifact deployment authorization. The [automatic workflow and runbook](docs/AUTOMATIC_BINDING.md) covers prepaid build/verdict fees, a permissionless `requestVerdict(askId)`, canonical signed-question reconstruction, immutable candidate selection and the official deployment gate. Use `AutoHookJobRequester` with `HookRequestCodec`; the legacy manual requester remains available for compatibility. [Window regressions, vectors and checks](docs/checks/oracle-window/README.md) separate public signature/preimage reproduction from local tests and free wording checks. No public deployment or paid work occurred.
+Current revision: fixes for audit `2218802d`, continuing `205fa11271ab17a26630154815fae4c390aac624`. Commitment requires Delivered; delivery and commitment extend the reserve deadline; expired unspent asks can renew without another payment; signed validity tolerates bounded skew/delay; each ask keeps its trigger-time signer and epoch across rotation. The [automatic workflow and runbook](docs/AUTOMATIC_BINDING.md) covers funding, renewal, per-chain block-age policy, exact-artifact authorization and operator responsibilities. Use `AutoHookJobRequester` with its immutable `HookRequestCodec`; the legacy requester remains available for compatibility. [RED/GREEN regressions, vectors and check results](docs/checks/audit-2218802d/README.md) are local evidence, not a live end-to-end proof. No public deployment, payment, backend or new trust root was introduced.
 
 Deployment preparation from `b157921` is in the [executable runbook](docs/DEPLOYMENT_PREPARATION.md) and
 [manifest](deployment/manifest.json). Owner and ad-recipient approvals remain open; no public deployment
@@ -44,9 +44,9 @@ node --test test/*.test.cjs
 
 The repository fuzz seed is pinned in `foundry.toml`:
 `0x936d89b088020ddf36122a88c4c9aed7130c7a410f5c44680a7d121950c99345`.
-The automatic-binding revision also runs the assignment seed
-`0x63141e4fb7e43e7da95e0ee07c1fb764e4512f7c4b40763dcc1324444f87f3de`.
-[Current results](docs/checks/automatic-binding/README.md) include the complete Foundry, Python SDK and
+This audit-fix revision also runs the assignment seed
+`0xe1cee08ccc29120111028768a3aec176c1fef4b508e16a2c358555bd62e98669`.
+[Current results](docs/checks/audit-2218802d/README.md) include the complete Foundry, Python SDK and
 Node site suites. Tests do not read or mutate environment variables. Python integration tests start
 and stop disposable Anvil instances on loopback; they never use a public RPC or a funded wallet.
 

@@ -1,6 +1,6 @@
 {
   "format": "hooks-store-automatic-infrastructure-draft/v1",
-  "baseCommit": "378cd9b20db99e2190ed5a73fc73849250996e72",
+  "baseCommit": "205fa11271ab17a26630154815fae4c390aac624",
   "status": "Source and local tests only; no transactions authorized or executed. This is not launch.json.",
   "runbook": "docs/AUTOMATIC_BINDING.md",
   "contracts": [
@@ -49,7 +49,8 @@
         "maxPrice()",
         "automaticBindingSupported()",
         "head()",
-        "WINDOW_DEPTH()"
+        "WINDOW_DEPTH()",
+        "maxWindowAgeBlocks()"
       ],
       "configurationChanges": [
         "setProtocol(address,address,uint256,bytes32,bytes32)",
@@ -58,7 +59,7 @@
       ],
       "windowPolicy": {
         "depth": 8,
-        "start": "latest candidate commitment/job delivery, or retry creation, using the native question-chain clock",
+        "start": "Delivered-before-commit; native start refreshed by delivery, commitment, retry creation or renewal",
         "ready": "nativeHead >= start + 8; active delivered job, candidate and reserve; within deadline",
         "clockChains": {
           "1": "block.number",
@@ -66,8 +67,11 @@
           "4663": "ArbSys(address(100)).arbBlockNumber()",
           "31337": "local block.number only"
         },
-        "otherChains": "revert before payment"
-      }
+        "otherChains": "revert before payment",
+        "reserveDeadline": "max(existing, now + 1 day) on delivery/commit; requester can renew an expired unspent None ask without transferring funds or creating an ask",
+        "agePolicyRunbook": "docs/AUTOMATIC_BINDING.md#per-chain-maxwindowageblocks-policy"
+      },
+      "signerPolicy": "Signer address and epoch recorded at trigger. Ordinary rotation preserves pending answers; explicit epoch revocation blocks pending and finalized verdicts."
     },
     {
       "contract": "GatedHookDeployer",
@@ -106,6 +110,7 @@
     "Compare requester head() with the same-block native question-chain RPC height. On Robinhood, never use Solidity block.number for oracle windows. Monitor eight-block depth separately from finality and choose maxWindowAgeBlocks for native cadence and callback latency (minimum eight, default 7200).",
     "Ethereum and Robinhood sell both actions in the captured capabilities. Sepolia is oracle-only; Base has no supported Intake. Never guess support.",
     "The existing listing/ad fee and recipient configuration remain as in the historical Store runbook.",
-    "Obtain independent adversarial review and separate authorization for any later live pilot or deployment."
+    "Obtain independent adversarial review and separate authorization for any later live pilot or deployment.",
+    "Set and record maxWindowAgeBlocks per deployment using native cadence and intended issuance/delivery budget; the unchanged 7200 default is not a per-chain latency guarantee. Requalify production ERC-1271 gas and registry policy changes before use."
   ]
 }

@@ -1,0 +1,31 @@
+{
+  "offline": true,
+  "freshEmittedBodies": [
+    {
+      "chainId": 1,
+      "questionHash": "0xbb257364fc177036a51cdae61746a4df363e7e37705ab9deb52188b86622bb2f",
+      "consumer": {
+        "chainId": 1,
+        "verifyingContract": "0xa0cb889707d426a7a386870a03bc70d1b0697598"
+      },
+      "window": {
+        "fromBlock": 1000,
+        "toBlock": 1000
+      },
+      "localOnly": true
+    },
+    {
+      "chainId": 4663,
+      "questionHash": "0xd3f0db4ea7a00b3292f11fbf96089f44cf3df1484024db0be86a2180a8e18b62",
+      "consumer": {
+        "chainId": 4663,
+        "verifyingContract": "0xa0cb889707d426a7a386870a03bc70d1b0697598"
+      },
+      "window": {
+        "fromBlock": 900000,
+        "toBlock": 900000
+      },
+      "localOnly": true
+    }
+  ]
+}

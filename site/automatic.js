@@ -8,7 +8,8 @@
     withdraw: 'a16c86f7', cancel: 'b2ca4edc', job: 'f729cf0d', ask: '326f999f',
     approved: '1648eac4', automatic: '0ff82b3a', asset: '38d52e0f', intake: '86d1508f',
     jobAction: '1079a365', candidate: '7868e9ab', epoch: '585ae49a', revoked: 'bc31fa7d',
-    readiness: '123667dd', head: '8f7dcfa3', depth: '08d87b1f'
+    readiness: '123667dd', head: '8f7dcfa3', depth: '08d87b1f',
+    renew: 'b65b7d6f', reserveDeadline: '364a74f5', reserve: 'd7b8c543'
   };
   const fields = ['jobRequestId', 'sourceHash', 'sourceSubmissionHash', 'reviewSubmissionHash', 'evidenceHash',
     'buildHash', 'creationCodeHash', 'constructorArgsHash', 'runtimeCodeHash', 'chainId', 'deployer',
@@ -50,7 +51,7 @@
     return '0x' + selectors.commit + hex(job, 32) + artifactWords(artifact).join('') + hex(reviewedCommit, 20).padEnd(64, '0');
   }
   function idCalldata(kind, id) {
-    if (!['verdict', 'cancel', 'job', 'ask', 'approved', 'candidate', 'readiness'].includes(kind)) throw Error('Unsupported ID call');
+    if (!['verdict', 'cancel', 'job', 'ask', 'approved', 'candidate', 'readiness', 'renew', 'reserveDeadline', 'reserve'].includes(kind)) throw Error('Unsupported ID call');
     return '0x' + selectors[kind] + hex(id, 32);
   }
   function decodeReadiness(raw, depth) {
@@ -63,5 +64,18 @@
     return {ready: ready === 1n, nativeHead: head.toString(), fromBlock: start.toString(), toBlock: end.toString(),
       windowDepth: depth.toString(), blocksRemaining: remaining.toString()};
   }
-  return {selectors, fields, hex, uint, address, openCalldata, commitCalldata, idCalldata, decodeReadiness};
+  function decodeJob(raw) {
+    const words = hex(raw, 480).match(/.{64}/g);
+    const status = Number(BigInt('0x' + words[3])), review = Number(BigInt('0x' + words[4]));
+    if (status > 4 || review > 4 || BigInt('0x' + words[0]) >= 1n << 160n) throw Error('Malformed job response');
+    return {words, requester: '0x' + words[0].slice(-40), status, review};
+  }
+  function decodeReserve(raw, deadline) {
+    const words = hex(raw, 96).match(/.{64}/g).map(w => BigInt('0x' + w));
+    const end = BigInt('0x' + hex(deadline, 32));
+    if (words[0] >= 1n << 160n || words[2] > 1n || end >= 1n << 64n) throw Error('Malformed reserve response');
+    return {token: '0x' + words[0].toString(16).padStart(40, '0'), amount: words[1].toString(),
+      cancelled: words[2] === 1n, reserveDeadline: end.toString()};
+  }
+  return {selectors, fields, hex, uint, address, openCalldata, commitCalldata, idCalldata, decodeReadiness, decodeJob, decodeReserve};
 });

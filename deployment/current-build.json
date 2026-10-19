@@ -1,7 +1,7 @@
 {
   "sourceCommit": null,
-  "baseCommit": "378cd9b20db99e2190ed5a73fc73849250996e72",
-  "description": "Local build of confirmed native-chain oracle windows preserving automatic binding and exact-artifact authorization; not independently audited. Historical audited-build.json is unchanged.",
+  "baseCommit": "205fa11271ab17a26630154815fae4c390aac624",
+  "description": "Local fixes for audit 2218802d: Delivered-only commitment, renewable reserves, bounded signed validity, trigger-time signer epochs and composed codec. Not independently audited; historical audited-build.json is unchanged.",
   "algorithm": "sha256",
   "files": {
     "dependencies.lock.json": "7e020eb009266adbc78c97455aacab9de9f36b071e1be718eb7af1ba994c0c00",
@@ -23,8 +23,8 @@
     "src/imd/HookJobRequester.sol": "ee866d553bbe4dfd4b1a1efed7803d6054f5f5cc545d06f6334764c4da85fc61",
     "src/imd/IIntake.sol": "1fbab751d469c12a3488a8f690e647aa315c6369478b3f34be46ba842f64cda2",
     "src/imd/OracleAttestation.sol": "36c589a16ab829e31d0549d7e81e5961d3172580ff8f4ef980c1e9617e087a20",
-    "src/imd/automatic/AutoHookJobRequester.sol": "4455d0d49526f369a4293e2c69ebed4f7d993bd57d180d481db99b045a612969",
-    "src/imd/automatic/HookRequestCodec.sol": "a9af74035ee30c9ddad096f9d15cd8c85c94cc57cecd38db58d27ec05144abdf",
+    "src/imd/automatic/AutoHookJobRequester.sol": "f2c8819c26d319f134415a81b80ebd4e6e10de8ef615087508814c5c17a64d3a",
+    "src/imd/automatic/HookRequestCodec.sol": "2b13e3681db90fcf87b0d7beedc52771c369bfae3ffc67214be862b3a19fdb5d",
     "src/interfaces/IHooksStore.sol": "9eedb6a4ef45f7ca3bd5c1b5b9ea628c7a8edd2ebf0359e2db618c6214f65a24",
     "src/store/ExactStoreToken.sol": "b745c4cee9e13edd71cd8290f52720197cf58da07bc7a5db9021d610719bf387",
     "src/store/FeaturedPlacements.sol": "38c8dfdda297d9107f69da9908c0d257f62b2a0af70508de39f69e634a517f7d",
@@ -79,43 +79,43 @@
         "bytes": 24559
       },
       "immutableReferences": {
-        "69663": [
+        "69859": [
           {
             "start": 19109,
             "length": 32
           }
         ],
-        "69665": [
+        "69861": [
           {
             "start": 19067,
             "length": 32
           }
         ],
-        "69667": [
+        "69863": [
           {
             "start": 19025,
             "length": 32
           }
         ],
-        "69669": [
+        "69865": [
           {
             "start": 19190,
             "length": 32
           }
         ],
-        "69671": [
+        "69867": [
           {
             "start": 19230,
             "length": 32
           }
         ],
-        "69674": [
+        "69870": [
           {
             "start": 18497,
             "length": 32
           }
         ],
-        "69677": [
+        "69873": [
           {
             "start": 18546,
             "length": 32
@@ -144,7 +144,7 @@
         "bytes": 8232
       },
       "immutableReferences": {
-        "64299": [
+        "64495": [
           {
             "start": 800,
             "length": 32
@@ -208,103 +208,87 @@
     },
     "AutoHookJobRequester": {
       "bytecode": {
-        "sha256": "dce1d87ca23cf172f3e7cec60d3de5091c8824b7d73eca2e2e6bb718ed9b2387",
-        "bytes": 26201
+        "sha256": "99b01b8aae98f2ec8e75d201e031bd1d2097619e50b2b461760f76275b6e4492",
+        "bytes": 25885
       },
       "deployedBytecode": {
-        "sha256": "9669b1f8f7e6a97203d8f2075f228a72bd4b41135ddb3558ca484b2bba2aad80",
-        "bytes": 24546
+        "sha256": "60f1374c11b39338ce80aa2bc1c59d8864d7231a406c33c1830499d0792007c8",
+        "bytes": 24258
       },
       "immutableReferences": {
-        "59444": [
+        "59466": [
           {
-            "start": 2000,
+            "start": 2143,
             "length": 32
           },
           {
-            "start": 4252,
+            "start": 4395,
             "length": 32
           },
           {
-            "start": 6114,
+            "start": 6226,
             "length": 32
           },
           {
-            "start": 6212,
+            "start": 6542,
             "length": 32
           },
           {
-            "start": 6334,
+            "start": 8820,
             "length": 32
           },
           {
-            "start": 8747,
+            "start": 10672,
             "length": 32
           },
           {
-            "start": 10433,
+            "start": 11693,
             "length": 32
           },
           {
-            "start": 11419,
-            "length": 32
-          },
-          {
-            "start": 13112,
-            "length": 32
-          },
-          {
-            "start": 13427,
-            "length": 32
-          },
-          {
-            "start": 16054,
-            "length": 32
-          },
-          {
-            "start": 18186,
+            "start": 13930,
             "length": 32
           }
         ],
-        "67382": [
+        "67718": [
           {
-            "start": 18390,
+            "start": 18601,
             "length": 32
           }
         ],
-        "67384": [
+        "67720": [
           {
-            "start": 18348,
+            "start": 18559,
             "length": 32
           }
         ],
-        "67386": [
+        "67722": [
           {
-            "start": 18306,
+            "start": 18517,
             "length": 32
           }
         ],
-        "67388": [
+        "67724": [
           {
-            "start": 18471,
+            "start": 18682,
             "length": 32
           }
         ],
-        "67390": [
+        "67726": [
           {
-            "start": 18511,
+            "start": 18722,
             "length": 32
           }
         ],
-        "67393": [
+        "67729": [
           {
-            "start": 17235,
+            "start": 17850,
             "length": 32
           }
         ],
-        "67396": [
+        "67732": [
           {
-            "start": 17279,
+            "start": 17894,
             "length": 32
           }
         ]
@@ -312,12 +296,12 @@
     },
     "HookRequestCodec": {
       "bytecode": {
-        "sha256": "b4367f8fb3866b08cc557d18dda888f04d8a57e36a7c1bd98a8162b6d3e01939",
-        "bytes": 14116
+        "sha256": "7c0f9181974dd96ab2cb052b737bf7cd490b7462a9dabfdb990a30d807b9abf6",
+        "bytes": 15320
       },
       "deployedBytecode": {
-        "sha256": "186f40ef67a93a32292bd95541ca640e94916e16a71c221d061a729b7810ae1a",
-        "bytes": 14088
+        "sha256": "3ca0b466e45f3d0f95283e4373865628ad69c01938e36e1b9213fb5195de4e22",
+        "bytes": 15292
       },
       "immutableReferences": {}
     }

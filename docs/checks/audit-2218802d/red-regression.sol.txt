@@ -1,0 +1,115 @@
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.26;
+
+import {AutomaticFixture} from "./AutomaticBinding.t.sol";
+import {AutoHookJobRequester} from "../src/imd/automatic/AutoHookJobRequester.sol";
+import {HookJobRequester} from "../src/imd/HookJobRequester.sol";
+import {OracleAttestation} from "../src/imd/OracleAttestation.sol";
+import {ColdReadReceiptSigner} from "./helpers/ReceiptSigners.sol";
+
+/// @dev Regressions for all four actionable findings at 205fa112. Local mock Intake is one-shot.
+contract Audit2218802dTest is AutomaticFixture {
+    function testIssue1LateDeliveryLeavesTimeToMature() public {
+        (jobId, askId) = _open();
+        vm.warp(automatic.getJob(jobId).deadline - 60);
+        _deliver(jobId);
+        _commit(jobId, _artifact(jobId));
+        vm.roll(vm.getBlockNumber() + 8);
+        vm.warp(vm.getBlockTimestamp() + 96);
+        (bool ready,,,) = automatic.verdictReadiness(askId);
+        assertTrue(ready, "late delivered candidate must still mature");
+        verdictId = automatic.requestVerdict(askId);
+        _answer(true);
+    }
+
+    function testIssue1ExpiredBuildCanBeDeliveredAndReviewed() public {
+        (jobId, askId) = _open();
+        vm.warp(automatic.getJob(jobId).deadline + 1);
+        vm.prank(creator);
+        automatic.expireJob(jobId);
+        _deliver(jobId);
+        _commit(jobId, _artifact(jobId));
+        vm.roll(vm.getBlockNumber() + 8);
+        verdictId = automatic.requestVerdict(askId);
+        _answer(false);
+    }
+
+    function testIssue2OneSecondSkewTrue() public {
+        _skew(1, true);
+    }
+
+    function testIssue2ThreeHundredSecondSkewFalse() public {
+        _skew(300, false);
+    }
+
+    function _skew(uint64 secondsAhead, bool passed) internal {
+        _ready(true);
+        OracleAttestation.Attestation memory a = _att(askId, passed);
+        a.issuedAt += secondsAhead;
+        a.expiresAt = a.issuedAt + 1 days;
+        assertTrue(intake.complete(verdictId, abi.encode(verdictId, a, _sign(a))), "valid skew rejected");
+        assertEq(automatic.reviewVerifiedAt(verdictId), block.timestamp, "future receipt clock");
+        assertEq(
+            uint8(_review(jobId)),
+            uint8(passed ? HookJobRequester.ReviewStatus.Passed : HookJobRequester.ReviewStatus.NotPassed)
+        );
+    }
+
+    function testIssue2DelayedTrueStillValid() public {
+        _delayed(true);
+    }
+
+    function testIssue2DelayedFalseStillTerminal() public {
+        _delayed(false);
+    }
+
+    function _delayed(bool passed) internal {
+        _ready(true);
+        OracleAttestation.Attestation memory a = _att(askId, passed);
+        a.expiresAt = a.issuedAt + 1 days;
+        bytes memory signature = _sign(a);
+        vm.warp(vm.getBlockTimestamp() + 3601);
+        assertTrue(intake.complete(verdictId, abi.encode(verdictId, a, signature)), "valid delayed answer rejected");
+        assertEq(automatic.reviewVerifiedAt(verdictId), a.issuedAt);
+        if (!passed) {
+            vm.prank(creator);
+            vm.expectRevert(AutoHookJobRequester.NotReady.selector);
+            automatic.retryVerdict(jobId, FEE);
+        }
+    }
+
+    function testIssue3EOARotationKeepsPendingSigner() public {
+        _ready(true);
+        OracleAttestation.Attestation memory a = _att(askId, true);
+        bytes memory signature = _sign(a);
+        automatic.setOracleSigner(makeAddr("replacement"));
+        assertTrue(intake.complete(verdictId, abi.encode(verdictId, a, signature)), "ordinary rotation lost answer");
+        assertEq(automatic.reviewReceiptSignerEpoch(verdictId), 1);
+    }
+
+    function testIssue3ERC1271RotationKeepsPendingSigner() public {
+        ColdReadReceiptSigner signer = new ColdReadReceiptSigner(vm.addr(key), 22);
+        automatic.setOracleSigner(address(signer));
+        _ready(true);
+        OracleAttestation.Attestation memory a = _att(askId, false);
+        bytes memory signature = _sign(a);
+        automatic.setOracleSigner(makeAddr("replacement"));
+        assertTrue(intake.complete(verdictId, abi.encode(verdictId, a, signature)), "registry rotation lost answer");
+        assertEq(automatic.reviewReceiptSignerEpoch(verdictId), 2);
+    }
+
+    function testIssue4CommitRequiresDelivered() public {
+        (jobId, askId) = _open();
+        artifact = _artifact(jobId);
+        vm.prank(creator);
+        vm.expectRevert(AutoHookJobRequester.NotReady.selector);
+        automatic.commitArtifact(jobId, artifact, COMMIT);
+        assertEq(automatic.candidateDigest(jobId), bytes32(0));
+        _deliver(jobId);
+        _commit(jobId, artifact);
+        vm.roll(vm.getBlockNumber() + 8);
+        verdictId = automatic.requestVerdict(askId);
+        _answer(true);
+    }
+}
+

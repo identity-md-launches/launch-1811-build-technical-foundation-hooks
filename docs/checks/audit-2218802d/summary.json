@@ -1,0 +1,69 @@
+{
+  "baseCommit": "205fa11271ab17a26630154815fae4c390aac624",
+  "audit": "2218802d-0828-4f00-81cf-487b51c12aac",
+  "scope": "Source and local checks only; no deployment, payment, backend or new trust root.",
+  "compiler": "0.8.26",
+  "settings": "Unchanged foundry.toml: Cancun, optimizer 200, no IR/metadata hash/CBOR/FFI/filesystem permissions.",
+  "red": {
+    "tests": 9,
+    "failed": 9,
+    "findingsCovered": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "log": "red.log"
+  },
+  "checks": {
+    "forgeBuild": "passed",
+    "forgeFmtCheck": "passed",
+    "solidity": 640,
+    "assignmentSeedSolidity": 640,
+    "focusedAndPublicVectors": 38,
+    "python": 66,
+    "node": 32,
+    "isolatedGasTests": 27,
+    "vendored": "96 files verified"
+  },
+  "assignmentSeed": "0xe1cee08ccc29120111028768a3aec176c1fef4b508e16a2c358555bd62e98669",
+  "repositorySeed": "0x936d89b088020ddf36122a88c4c9aed7130c7a410f5c44680a7d121950c99345",
+  "runtimeBytes": {
+    "AutoHookJobRequester": 24258,
+    "HookRequestCodec": 15292,
+    "GatedHookDeployer": 20967,
+    "HookJobRequester": 24559
+  },
+  "codecRuntimeHash": "0x859f399b399577f66ec08206409147fbab279c93545cd77f9aaa447e4faddcc5",
+  "minimumForwardedColdCallbackGas": {
+    "Ethereum": {
+      "EOA": 126557,
+      "ERC1271FiveOfSeven": 171617,
+      "ERC1271Cold22Reads": 188699
+    },
+    "RobinhoodMockArbSys": {
+      "EOA": 132223,
+      "ERC1271FiveOfSeven": 177283,
+      "ERC1271Cold22Reads": 194365
+    }
+  },
+  "limits": {
+    "runtimeBytes": 24576,
+    "callbackGas": 200000
+  },
+  "protectedPathsDiffClean": true,
+  "protectedConfigSHA256": {
+    "foundry.toml": "1bfc82a5c62b148d66ded9fa34096ae14ddc95d0bb3e5d067cf14126960cef36",
+    "remappings.txt": "b8941d09c2ce72d8cd25d6f4564fcba85b87b277fab9ad3eb643d085d91655f0",
+    "dependencies.lock.json": "7e020eb009266adbc78c97455aacab9de9f36b071e1be718eb7af1ba994c0c00"
+  },
+  "liveProof": false,
+  "additionalSecurityToolsRun": [],
+  "limitations": [
+    "Local ArbSys mock and gas measurements do not establish live chain support or signer gas cost.",
+    "Owner must select maxWindowAgeBlocks per chain using measured native cadence and intended latency; default 7200 remains.",
+    "Recorded ERC1271 address retains its own mutable validation policy; no snapshot of registry membership.",
+    "Owner expiry closure can suppress an in-flight answer; confirm non-delivery before recovery.",
+    "Independent review and separately authorized live pilot remain outstanding."
+  ]
+}
